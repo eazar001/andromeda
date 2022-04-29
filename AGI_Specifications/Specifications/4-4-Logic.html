@@ -1,0 +1,861 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" />
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 4.4 Description of the LOGIC Commands - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">4.4 Description of the LOGIC Commands</h1>
+  
+<div align="center">from AGDS docs*<br />
+  Last updated: 4 December 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp; 
+<blockquote>
+  <p>* This is from the manual of AGDS (Adventure Game Development Toolkit) which contains a good deal of information about the AGI interpreter and its data formats. Translated from Russian by Vassili 
+    Bykov, <a href="mailto:vbykov@cam.org">vbykov@cam.org</a></p>
+</blockquote>
+&nbsp;
+<h3><i>I.2.6 THE LOGIC RESOURCE</i></h3>
+<p>One of the most complex resources. It contains interpreter commands and messages. In essence, it is the LOGIC resource that determines the plot of the game. It describes all 
+  possible interactions between the objects and the use of the resources, according to the game script.</p>
+<p>Let us consider the interpreter commands in detail.</p>
+<h3><i>I.2.6.1 ARITHMETIC COMMANDS</i></h3>
+<p>Commands that operate on variables:</p>
+<p>[The allowed range of variable values is not specified anywhere explicitly, however implicitly it seems to be 8 bit (0..255). --VB]</p>
+<p><strong><u>increment(n)</u></strong></p>
+<p>The value of the variable Var(n) is incremented by one, i.e. Var(n) = Var(n)+1. If the value is already 255, it is left unchanged.</p>
+<p><strong><u>decrement(n)</u></strong></p>
+<p>The value of the variable Var(n) is decremented by one, i.e. Var(n) = Var(n)-1. If the value is 0, it is left unchanged.</p>
+<p><strong><u>assign(n, m)</u></strong></p>
+<p>Variable Var(n) is assigned the value m, i.e. Var(n) = m</p>
+<p><strong><u>assignv(n, m)</u></strong></p>
+<p>Variable Var(n) is assigned the value of Var(m), i.e. Var(n) = Var(m).</p>
+<p><strong><u>addn(n, m)</u></strong></p>
+<p>The value of variable Var(n) is incremented by m, i.e. Var(n) = Var(n) + m.</p>
+<p><strong><u>addv(n, m)</u></strong></p>
+<p>The value of variable Var(n) is incremented by the value of Var(m), i.e. Var(n) = Var(n) + m.</p>
+<p>[Now what happens in the above two commands on 8-bit overflow: does the result wrap over 0 or stays 255? I.e. is 250 + 10 == 4 or 250 + 10 == 255? --VB]</p>
+<p><strong><u>subn(n, m)</u></strong></p>
+<p>The value of Var(n) is decremented by M, i.e. Var(n) = Var(n) - m</p>
+<p><strong><u>subv(n, m)</u></strong></p>
+<p>The value of Var(n) is decremented by Var(m), i.e. Var(n) = Var(n) - Var(m).</p>
+<p>[Again, what happens when the result must be negative: is 1 - 2 == 255 or 1 - 2 == 0? --VB]</p>
+<p><strong><u>lindirectn(n, m)</u></strong></p>
+<p>Variable Var(i) where i is the value of Var(n) is assigned a value m, i.e. Var(Var(n)) = m.</p>
+<p><strong><u>lindirectv(n, m)</u></strong></p>
+<p>Variable Var(i) where i is the value of Var(n) is assigned the value of Var(m), i.e. Var(Var(n)) = Var(m).</p>
+<p><strong><u>rindirect(n, m)</u></strong></p>
+<p>Variable Var(n) is assigned the value of Var(i) where i is the value of Var(m), i.e. Var(n) = Var(Var(m)).</p>
+<p><strong><u>muln(n, m)</u></strong></p>
+<p>Variable Var(n) is multiplied by m, i.e. Var(n) = Var(n) * m.</p>
+<p><strong><u>mulv(n, m)</u></strong></p>
+<p>Variable Var(n) is multiplied by the value of Var(m), i.e. Var(n) = Var(n) * Var(m).</p>
+<p>[What happens on overflow? --VB]</p>
+<p><strong><u>divn(n, m)</u></strong></p>
+<p>Variable Var(n) is divided by m, i.e. Var(n) = Var(n) / m.</p>
+<p><strong><u>divv(n, m)</u></strong></p>
+<p>Variable Var(n) is divided by the value of Var(m), i.e. Var(n) = Var(n) / Var(m).</p>
+<p>[What happens on division by 0? --VB]</p>
+<p><strong><u>random(n, m, k)</u></strong></p>
+<p>Variable Var(k) is assigned a random value in the range between n and m.</p>
+<p>Now let us consider the commands changing flag values. Remember that a flag can only have a value 0 or 1.</p>
+<p><strong><u>set(n)</u></strong></p>
+<p>flag(n) is set to 1.</p>
+<p><strong><u>set.v(n)</u></strong></p>
+<p>flag(i), where i is the value of var (n), is set to 1. i.e. flag(var(n)) = 1.</p>
+<p><strong><u>reset(n)</u></strong></p>
+<p>flag(n) is set to 0.</p>
+<p><strong><u>reset.v(n)</u></strong></p>
+<p>flag(i), where i is the value of var (n), is set to 0, i.e. flag(var(n)) = 0.</p>
+<p><strong><u>toggle(n)</u></strong></p>
+<p>flag(n) toggles its value.</p>
+<p><strong><u>toggle.v(n)</u></strong></p>
+<p>flag(i), where i is the value of var (n), i.e. flag(var(n)), toggles is value.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.2 COMMANDS TO LOAD AND UNLOAD RESOURCES</i></h3>
+<p>Commands in this chapter load (into the interpreter's memory) and unload (discard, thus freeing interpreter's memory) LOGIC, PICTURE, VIEW, and SOUND resources. Always remember 
+  that the internal memory of the interpreter is 64K. This restriction is rarely a problem, but do not forget about it.</p>
+<p>When the internal memory is full, the program has to be broken into parts which are loaded and unloaded as the story unfolds in the given room, or PICTURE, VIEW, and SOUND resources 
+  have to be manipulated using the commands below.</p>
+<p>Remember that when a resource is unloaded, all resources loaded after it ARE ALSO AUTOMATICALLY UNLOADED!</p>
+<p><strong><u>load.logic(n)</u></strong></p>
+<p>Load into memory the LOGIC resource number n, i.e. Logic(n)</p>
+<p><strong><u>load.logic.v(n)</u></strong></p>
+<p>Load into memory the LOGIC resource number i, where i is the value of Var(n), i.e. Logic(Var(n))</p>
+<p><strong><u>load.pic(n)</u></strong></p>
+<p>Loads into memory the PICTURE resource number i, where i is the value of Var(n), i.e. Picture(Var(n))</p>
+<p>[This may be a mistake in the original: I would expect this command to be `load_pic_v', while `load_pic n' would load resource number n. --VB]</p>
+<p>[load_pic_v may be a more appropriate name for it, but the name above is what they gave it. There is no equivalent command that takes a number rather than a variable. --LE]</p>
+<p><strong><u>load.view(n)</u></strong></p>
+<p>Loads into memory the VIEW resource number n, i.e. View(n).</p>
+<p><strong><u>load.view.v(n)</u></strong></p>
+<p>Loads into memory the VIEW resource number i, where i is the value of Var(n), i.e. View(Var(n))</p>
+<p><strong><u>load.sound(n)</u></strong></p>
+<p>Loads into memory the SOUND resource number n, i.e. Sound(n).</p>
+<p>[Note that there is no load_sound_v listed. I wonder if this is a mistake or there really is no way to load a sound with indirection (unlikely, I think) --VB]</p>
+<p>[There really is no way of loading a sound with indirection. The command doesn't exist. --LE]</p>
+<p><strong><u>discard.pic(n)</u></strong></p>
+<p>Unloads PICTURE resource number i where i is the value of Var(n).</p>
+<p><strong><u>discard.view(n)</u></strong></p>
+<p>Unload VIEW resource number n, i.e. View(n)</p>
+<p><strong><u>discard.view.v(n)</u></strong></p>
+<p>Unloads VIEW resource number i where i the value of Var(n), i.e. View(Var(n)).</p>
+<p>[And what about discard_logic, discard_logic_v, discard_sound, and discard_sound_v? --VB]</p>
+<p>[There must be some other way that those commands are removed from memory, because the commands you mention above don't exist. --LE]</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.3 PROGRAM CONTROL COMMANDS</i></h3>
+<p>new.room command is one of the most powerful commands of the interpreter.</p>
+<p>It is used to change algorithms of the object behaviour, props, etc. Automatic change of EGO coordinates imitates moving into a room adjacent to the edge of the initial one. 
+  [Sounds awkward but that's what it says. --VB]</p>
+<p>The format of the command:</p>
+<p><strong><u>new.room(n)<br />
+  new.room.v(n)</u></strong></p>
+<p>These commands do the following:</p>
+<ol>
+  <li>Commands stop_update and unanimate are issued to all objects;</li>
+  <li>All resources except Logic(0) are discarded;</li>
+  <li>Command player_control is issued;</li>
+  <li>unblock command is issued;</li>
+  <li>`set_horizon 36' command is issued;</li>
+  <li>Var(1) is assigned the value of Var(0);<br />
+    Var(0) is assigned n (or the value of Var(n)<br />
+    when the command is new_room_v);<br />
+    Var(4) is assigned 0;<br />
+    Var(5) is assigned 0;<br />
+    Var(16) is assigned the ID number of the VIEW resource that was<br />
+    associated with EGO (the player character).</li>
+  <li>Logic(i) resource is loaded where i is the value of Var(0) !</li>
+  <li>Set EGO coordinates according to Var(2):<br />
+    - if EGO touched the bottom edge, put it on the horizon;<br />
+    - if EGO touched the top edge, put it on the bottom edge of the screen;<br />
+    - if EGO touched the right edge, put it at the left and vice versa.</li>
+  <li>Var(2) is assigned 0 (meaning EGO has not touched any edges).</li>
+  <li>Flag(5) is set to 1 (meaning in the first interpreter cycle after the new_room command all initialization parts of all logics loaded and called from the initialization part 
+    of the new room's logic will be called. In the subsequent cycle Flag(5) is reset to 0 (see Interpreter Work Cycle and the source of &quot;Thunderstorm&quot; program). THIS IS VERY IMPORTANT!). </li>
+  <li>Clear keyboard input buffer and return to the main AGI loop.</li>
+</ol>
+<p>&nbsp;</p>
+<p>Subroutine call commands:</p>
+<p><strong><u>call(n)<br />
+  call.v(n)</u></strong></p>
+<p>LOGIC resource number n (or number i where i the value of Var(n)) is executed as a subroutine. If the logic with the given ID is not loaded in memory, it is temporarily loaded 
+  and discarded after returning from the call (this takes extra time). call command does not change any variables or flags.</p>
+<p><strong><u>return</u></strong></p>
+<p>This command returns control to the interpreter if it is executed in Logic(0), or to the command following the call command which called the current logic.</p>
+<p><strong><u>jump &lt;label&gt;</u></strong></p>
+<p>This command unconditionally transfers control to a command starting with a symbol combination &lt;label&gt; within the same logic.</p>
+<p><strong><u>set.scan.start<br />
+  reset.scan.start</u></strong></p>
+<p>Normally, when a logic is called using call command, execution begins at the first instruction. set_scan_start command sets the entry point at the command following it, while 
+  reset_scan_start returns entry point to the beginning.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.4 OBJECT CONTROL COMMANDS</i></h3>
+<p>Interpreter controls movement of objects around the screen automatically checking the following conditions:</p>
+<p>- If an object priority is 0 it cannot cross an unconditional barrier (pixels with priority 0).</p>
+<p>- If an object priority is 15 and a command ignore_block has not been given to it, it cannot cross a conditional barrier (pixels with priority 1) and leave the block set using 
+  the `block' command.</p>
+<p>- If an object has not been given `ignore.horizon' command, it cannot move above the horizon set using the set_horizon command.</p>
+<p>- An object should follow the conditions set using object.on.water and object.on.land commands (see below).</p>
+<p>Object number 0 is called EGO. It is different from others in that the player may move it around using the keyboard.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.4.1 OBJECT DESCRIPTION COMMANDS</i></h3>
+<p><strong><u>animate.obj(n)</u></strong></p>
+<p>Object number n is included in the list of object controlled by the interpreter.</p>
+<p>OBJECTS NOT INCLUDED IN THAT LIST ARE CONSIDERED INEXISTENT!</p>
+<p><strong><u>unanimate.all</u></strong></p>
+<p>All objects are removed from the control list and are considered inexistent.</p>
+<p><strong><u>set.view(n, m)<br />
+  set.view.v(n, m)</u></strong></p>
+<p>Object n is associated with a VIEW resource number m (or pointed to by Var(m)), which may be an image of the object.</p>
+<p><strong><u>set.loop(n, m)<br />
+  set.loop.v(n, m)</u></strong></p>
+<p>Chooses a loop m (or Var(m)) in the VIEW resource associated with the object n.</p>
+<p><strong><u>fix.loop(n)</u></strong></p>
+<p>Turns off automatic choice of loop number for the object number n.</p>
+<p><strong><u>release.loop(n)</u></strong></p>
+<p>Turns on automatic choice of loop number depending on the direction of motion of the object n.</p>
+<pre>                      1
+                8     |     2
+                  \   |   /
+                    \ | /
+              7 ------------- 3      0 - object stands still
+                    / | \
+                  /   |   \
+                6     |     4
+                      5</pre>
+<p>Automatic choice of the loop is done according to the table:</p>
+<p>- for objects with fewer than 4 but more than 1 loops:</p>
+<table border="1">
+  <tbody>
+    <tr>
+      <td>Direction</td>
+      <td>still(0)</td>
+      <td>1</td>
+      <td>2</td>
+      <td>3</td>
+      <td>4</td>
+      <td>5</td>
+      <td>6</td>
+      <td>7</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td>Loop</td>
+      <td>*</td>
+      <td>*</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>*</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+<p>* - means the current loop number is retained</p>
+<p>- for objects with more than 4 loops:</p>
+<table border="1">
+  <tbody>
+    <tr>
+      <td>Direction</td>
+      <td>still(0)</td>
+      <td>1</td>
+      <td>2</td>
+      <td>3</td>
+      <td>4</td>
+      <td>5</td>
+      <td>6</td>
+      <td>7</td>
+      <td>8</td>
+    </tr>
+    <tr>
+      <td>Loop</td>
+      <td>*</td>
+      <td>3</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>2</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+<p>&nbsp;</p>
+<p><strong><u>set.cel(n, m)<br />
+  set.cel.v(n,m)</u></strong></p>
+<p>Selects a cel m in the current loop of the object m.</p>
+<p><strong><u>last.cel(n, m)</u></strong></p>
+<p>The number of the last cel of the current loop of the object n is stored in Var(m).</p>
+<p><strong><u>current.cel(n, m)</u></strong></p>
+<p>The number of the current cel of the object n is stored in Var(m).</p>
+<p><strong><u>current.loop(n, m)</u></strong></p>
+<p>The number of the current loop of the object n is stored in Var(m).</p>
+<p><strong><u>current.view(n, m)</u></strong></p>
+<p>The number of the current VIEW resource associated with the object n is stored in Var(m).</p>
+<p><strong><u>set.priority(n, m)<br />
+  set.priority.v(n,m)</u></strong></p>
+<p>Set priority of the view of the object n to m (or Var(m)).</p>
+<p><strong><u>release.priority(n)</u></strong></p>
+<p>Turns on the automatic priority choice for the object n. The priority is set depending on the vertical coordinate of the object.</p>
+<div align="center">
+  <div align="center">
+    <table border="0">
+      <tbody>
+        <tr>
+          <th>&lt;</th>
+          <th>y</th>
+          <th>&lt;</th>
+          <th>priority</th>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td>&nbsp;</td>
+          <td>48</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td>48</td>
+          <td>&nbsp;</td>
+          <td>60</td>
+          <td>5</td>
+        </tr>
+        <tr>
+          <td>60</td>
+          <td>&nbsp;</td>
+          <td>72</td>
+          <td>6</td>
+        </tr>
+        <tr>
+          <td>72</td>
+          <td>&nbsp;</td>
+          <td>84</td>
+          <td>7</td>
+        </tr>
+        <tr>
+          <td>84</td>
+          <td>&nbsp;</td>
+          <td>96</td>
+          <td>8</td>
+        </tr>
+        <tr>
+          <td>96</td>
+          <td>&nbsp;</td>
+          <td>108</td>
+          <td>9</td>
+        </tr>
+        <tr>
+          <td>108</td>
+          <td>&nbsp;</td>
+          <td>120</td>
+          <td>10</td>
+        </tr>
+        <tr>
+          <td>120</td>
+          <td>&nbsp;</td>
+          <td>132</td>
+          <td>11</td>
+        </tr>
+        <tr>
+          <td>132</td>
+          <td>&nbsp;</td>
+          <td>144</td>
+          <td>12</td>
+        </tr>
+        <tr>
+          <td>144</td>
+          <td>&nbsp;</td>
+          <td>156</td>
+          <td>13</td>
+        </tr>
+        <tr>
+          <td>156</td>
+          <td>&nbsp;</td>
+          <td>168</td>
+          <td>14</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<p>This way, as an object moves down it approaches the viewer.</p>
+<p><strong><u>get.priority(n, m)</u></strong></p>
+<p>The value of the current priority of the object n is stored in Var(m).</p>
+<p><strong><u>position(n, x, y)<br />
+  position.v(n, x, y)</u></strong></p>
+<p>Coordinates of the object n, not yet displayed on the screen, are set to x and y (or Var(x) and Var(y)).</p>
+<p><strong><u>draw(n)</u></strong></p>
+<p>Object n is shown on the screen. The image uses the values of the loop and the cel in the VIEW resource associated with the object n (see set_view), as well as the priority and 
+  coordinates of the object. If a command start_cycling is also issued, an infinite &quot;movie&quot; for the object n is shown until stopped (for example, with stop_cycling).</p>
+<p><strong><u>erase(n)</u></strong></p>
+<p>Object n is erased from the screen.</p>
+<p><strong><u>get.posn(n, x, y)</u></strong></p>
+<p>Coordinates of the object n are stored in Var(x) and Var(y). Coordinates of the object are coordinates of the base point (bottom left corner) of cels of the VIEW resource associated 
+  with<br />
+  the object.</p>
+<p>Interpreter automatically shows a &quot;movie&quot; (a loop in the VIEW resource) associated with the object, starting at the specified cel. The following commands control this process.</p>
+<p><strong><u>start.cycling(n)</u></strong></p>
+<p>Enables automatic change of cels in a chosen (using set_loop) loop of a VIEW resource associated with the object n (using set_view).</p>
+<p><strong><u>stop.cycling(n)</u></strong></p>
+<p>Disables automatic change of cels in a chosen (using set_loop_ loop of a VIEW resource associated with the object n (using set_view).</p>
+<p><strong><u>normal.cycle(n)</u></strong></p>
+<p>Cels of the loop associated with the object n follow in a normal order:</p>
+<p>0, 1, 2, .., k-1, 0, 1, 2..</p>
+<p><strong><u>reverse.cycle(n)</u></strong></p>
+<p>Cels of the loop associated with the object n follow in a reverse order:</p>
+<p>k-1, k-2, ..., 1, 0, k-1, k-2, ..1, 0, ..</p>
+<p><strong><u>end.of.loop(n, m)</u></strong></p>
+<p>Plays the loop associated with the object n once, from the current cel to the last. When finished, Flag(m) is set to 1.</p>
+<p><strong><u>reverse.loop(n, m)</u></strong></p>
+<p>Plays the loop associated with the object n once in a reverse order, from the current cel to the first. When finished, Flag(m) is set to 1.</p>
+<p><strong><u>cycle.time(n, m)</u></strong></p>
+<p>Var(m) sets the time in interpreter cycles between cel changes for the object n. When Var(m) = 1 cels are changed every cycle.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.4.2 OBJECT MOTION CONTROL COMMANDS</i></h3>
+<p>The following commands can be given to the object included in the interpreter control list with animate_obj:</p>
+<p><strong><u>set.horizon(n)</u></strong></p>
+<p>Set the horizon to y = n.</p>
+<p><strong><u>ignore.horizon(n)</u></strong></p>
+<p>Object n moves regardless of the horizon position.</p>
+<p><strong><u>observe.horizon(n)</u></strong></p>
+<p>Object n cannot move above the horizon.</p>
+<p><strong><u>block(x1, y1, x2, y2)</u></strong></p>
+<p>Sets a rectangular area (block).</p>
+<pre>(x1, y1)
+   ------------------
+   |                |
+   |                |
+   |                |
+   ------------------
+                  (x2, y2)</pre>
+<p><strong><u>unblock</u></strong></p>
+<p>Cancels previously set block.</p>
+<p><strong><u>ignore.blocks(n)</u></strong></p>
+<p>Object n moves ignoring conditional barriers (pixels with priority 1) and a block set with a block command.</p>
+<p><strong><u>observe.blocks(n)</u></strong></p>
+<p>Object n may not cross conditional barriers or leave the block.</p>
+<p><strong><u>ignore.objs(n)</u></strong></p>
+<p>Object n moves regardless of positions of other objects.</p>
+<p><strong><u>observe.objs(n)</u></strong></p>
+<p>Object n treats other objects as obstacles.</p>
+<p><strong><u>player.control</u></strong></p>
+<p>The player is allowed to control EGO (object number 0) using the keyboard or the joystick.</p>
+<p><strong><u>program.control</u></strong></p>
+<p>The player is not allowed to control object 0 (EGO).</p>
+<p><strong><u>stop.motion(n)</u></strong></p>
+<p>Motion of object n is stopped. If n = 0, program_control is automatically executed.</p>
+<p><strong><u>start.motion(n)</u></strong></p>
+<p>Motion of object n is started. If n = 0 (EGO), player_control automatically executed.</p>
+<p><strong><u>step.size(n, m)</u></strong></p>
+<p>Var(n) determines the number of pixels the object n moves each step.</p>
+<p><strong><u>step.time(n, m)</u></strong></p>
+<p>Var(n) determines the speed of object n motion: delay in the interpreter cycles between consecutive steps. If Var(m) = 1, step occurs on every cycle.</p>
+<p><strong><u>move.obj(n, x, y, s, m)<br />
+  move.obj.v(n, x, y, s, m</u></strong></p>
+<p>Object n is told to move to the point x,y (or Var(x), Var(y)) by s pixels every step. When the destination is reached, Flag(m) is set to 1. If n = 0 (EGO), program_control is 
+  executed automatically.</p>
+<p><strong><u>follow.ego(n, s, m)</u></strong></p>
+<p>Object n is told to chase object 0 (EGO) by s pixels every step. When EGO's and the object's coordinates become equal, Flag(m) is set to 1.</p>
+<p><strong><u>wander(n)</u></strong></p>
+<p>Object n randomly changes the direction of its motion (wanders). If n = 0 (EGO), program_control is issued automatically.</p>
+<p><strong><u>normal.motion(n)</u></strong></p>
+<p>Special object motion mode is canceled. The object continues to move in the direction it was moving in at the time the command was issued.</p>
+<p><strong><u>set.dir(n, m)</u></strong></p>
+<p>Object n is told to move in the direction Var(m)</p>
+<pre>                      1
+                8     |     2
+                  \   |   /
+                    \ | /
+              7 ------------- 3      0 - stop
+                    / | \
+                  /   |   \
+                6     |     4
+                      5</pre>
+<p><strong><u>get.dir(n, m)</u></strong></p>
+<p>Direction of object n motion is stored in Var(m).</p>
+<p><strong><u>object.on.water(n)</u></strong></p>
+<p>Object n is allowed to be only in the area where its base line is completely on pixels with priority 3 (water surface).</p>
+<p><strong><u>object.on.land(n)</u></strong></p>
+<p>Object n is not allowed to touch pixels of water surface (priority 3).</p>
+<p><strong><u>object.on.anything(n)</u></strong></p>
+<p>Motion restrictions previously set on the object n with commands object_on_water or object_on_land are cancelled.</p>
+<p><strong><u>reposition(n, dx, dy)</u></strong></p>
+<p>Object n jumps from its current location into the location with coordinates x + Var(dx), y + Var(dy).</p>
+<p>[Shouldn't there be reposition and reposition.v? --VB]</p>
+<p>[There should be, but they don't exist. --LE]</p>
+<p><strong><u>reposition.to(n, x, y)<br />
+  reposition.to.v(n, x, y)</u></strong></p>
+<p>Similar to the preceding command, but the object is moved to the point x, y (Var(x),Var(y)).</p>
+<p><strong><u>stop.update(n)</u></strong></p>
+<p>Object n is removed from the list of objects updated by the interpreter on each step. The object stays on the screen unchanged.</p>
+<p><strong><u>start.update(n)</u></strong></p>
+<p>Object n is redrawn on each interpreter step.</p>
+<p><strong><u>force.update(n)</u></strong></p>
+<p>Object n is redrawn immediately, without waiting for the end of the interpreter cycle.</p>
+<p><strong><u>distance(n, m, d)</u></strong></p>
+<p>If both objects n and m are on the screen, then</p>
+<p>Var(d) = ABS(x(n) - x(m)) + ABS(y(n) - y(m)),</p>
+<p>otherwise Var(d) = 255.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.4.3 INVENTORY ITEM MANAGEMENT COMMANDS</i></h3>
+<p>OBJECT resources, stored in a separate file OBJECT, are most often used to represent inventory items. An item is a structure which consists of a one-byte field called room and 
+  a string of text, the item name.</p>
+<p>If the room field of an item is 255, the item belongs to the player. Otherwise the item is considered to be in the room with the corresponding ID number.</p>
+<p>Let us consider item management commands.</p>
+<p><strong><u>get(n)<br />
+  get.v(n)</u></strong></p>
+<p>Stores 255 in room field of an object n, which means the player owns it.</p>
+<p><strong><u>drop(n)</u></strong></p>
+<p>Stores 0 in the room field of object n.</p>
+<p><strong><u>put(n, m)</u></strong></p>
+<p><strong><u>put.v(n, m)</u></strong></p>
+<p>Stores the value m (or Var(m)) in the room field of the object n.</p>
+<p><strong><u>get.room.v(n, m)</u></strong></p>
+<p>Stores the value of the room field of object Var(n) in Var(m).</p>
+<p><strong><u>status</u></strong></p>
+<p>The screen is switched to text mode; the top line displays &quot;You are carrying:&quot;, then the names of the object with room field equal to 255 are listed. If there are no such objects, 
+  the word &quot;nothing&quot; is displayed.</p>
+<p>If Flag(13) = 1 (allow item selection), a highlight appears which allows the player to select an item name. When Enter is pressed, the selected object number is stored in Var(25). 
+  When Esc is pressed, 255 is stored in Var(25).</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.5 PICTURE RESOURCE MANAGEMENT COMMANDS</i></h3>
+<p>The following commands operate on PICTURE resources (3D props), prepared using PM editor and loaded in the interpreter memory using load_pic:</p>
+<p><strong><u>draw.pic(n)</u></strong></p>
+<p>A PICTURE resource number i, where i is the value of Var(n) is executed. As the result, the background picture is created in the internal buffer of the interpreter. Before execution, 
+  the buffer is cleared, i.e. all pixels are set to colour 15 and priority 4.</p>
+<p><strong><u>overlay.pic(n)</u></strong></p>
+<p>Just like the above, only the internal buffer is not cleared before drawing. Picture(Var(n)) is drawn over the existing picture.</p>
+<p><strong><u>add.to.pic(a, b, c, d, e, f, g)<br />
+  add.to.pic.v(a, b, c, d, e, f, g)</u></strong></p>
+<p>A picture of a VIEW resource is added to the background as its component. Typically, this is used to add small complicated details which would require too many PICTURE resource 
+  commands to draw.</p>
+<p>Parameters are:</p>
+<p>a ( Var(a) ) - number of the VIEW resource;<br />
+  b ( Var(b) ) - loop number;<br />
+  c ( Var(c) ) - cel number;<br />
+  d ( Var(d) ) - x coordinate;<br />
+  e ( Var(e) ) - y coordinate;<br />
+  f ( Var(f) ) - priority;<br />
+  g ( Var(g) ) - margin.</p>
+<p>If margin is 0, 1, 2, or 3, the base of the cel is surrounded with a rectangle of the corresponding priority. If margin &gt; 4, this extra margin is not shown.</p>
+<p><strong><u>show.pic</u></strong></p>
+<p>Shows internal buffer on the screen.</p>
+<p><strong>ATTENTION!</strong></p>
+<p>Please use the following sequence of commands when loading PICTURE resources<br />
+  in the interpreter memory:</p>
+<p>load.pic(n);<br />
+  draw.pic(n);<br />
+  discard.pic(n);<br />
+  .............<br />
+  show.pic;</p>
+<p>Any other order may crash the interpreter without any diagnostic messages.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.6 SOUND RESOURCE MANAGEMENT COMMANDS</i></h3>
+<p><strong><u>sound(n, m)</u></strong></p>
+<p>Starts playback of the SOUND resource number n. When finished, Flag(m) is set to 1.</p>
+<p><strong><u>stop.sound</u></strong></p>
+<p>Stops the playback.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.7 TEXT MANAGEMENT COMMANDS</i></h3>
+<p><strong><u>prevent.input</u></strong></p>
+<p>Prevents the user from entering anything using the keyboard.</p>
+<p><strong><u>accept.input</u></strong></p>
+<p>Allows the user to enter text using the keyboard.</p>
+<p><strong><u>print(n)<br />
+  print.v(n)</u></strong></p>
+<p>Opens a text window in the centre of the screen, where a message number n (or Var(n)) from the messages field of the current LOGIC resource is displayed. Output mode is determined 
+  by Flag(15) (see flag description)</p>
+<p>The message is a NULL-terminated string of text. In addition to letters, digits, and other symbols, the string may contain:</p>
+<p>- Newline character (0Ah);<br />
+  - Format element:</p>
+<ul>
+  <li>%v&lt;decimal number&gt; - at this place the output will include a decimal value of variable with the given number.</li>
+  <li>%m &lt;number&gt; - the text of the message with the given number is inserted at this place.</li>
+  <li>%0 &lt;number&gt; - the name of the item with the given number is inserted at this place.</li>
+  <li>%w &lt;number&gt; - a vocabulary word with the given number is inserted at this place.</li>
+  <li>%s &lt;number&gt; - a string variable with the given number is inserted at this place.</li>
+  <li>%g &lt;number&gt; - a message with this number from message field of Logic(0) is inserted at this place.</li>
+</ul>
+<p>For v format, you can add a vertical line and a number of characters the output should take. In this case leading zeros are not suppressed in the output.</p>
+<p>Example: %v34 | 2</p>
+<p>When you write your messages, remember that the interpreter wraps<br />
+  the text between the lines as needed when the message is displayed.</p>
+<p><strong><u>display(R&lt;ow&gt;, C&lt;olumn&gt;, N&lt;umber&gt;)<br />
+  display.v(R&lt;ow&gt;, C&lt;olumn&gt;, N&lt;umber&gt;)</u></strong></p>
+<p>Prints a message number N (Var(N)) in the row R (Var(R)), starting with the column C (Var(C)). No window is created, so it is up to the programmer to erase the output when it 
+  is no longer needed.</p>
+<p><strong><u>print.at(n, x, y, l)<br />
+  print.at.v(n, x, y, l)</u></strong></p>
+<p>Analogous to print but the programmer can specify the window location. x, y, and l are constants specifying coordinates of the top left corner of the window and its width in 
+  character cells of a 40x25 screen.</p>
+<p><strong><u>version</u></strong></p>
+<p>Prints interpreter version in the centre of the screen.</p>
+<p><strong><u>text.screen</u></strong></p>
+<p>The screen switches to the text mode 40x25.</p>
+<p><strong><u>graphics</u></strong></p>
+<p>The screen returns to the graphics mode. The picture on the screen is restored.</p>
+<p><strong><u>set.cursor.char(n)</u></strong></p>
+<p>First byte of the message n is user as a text mode cursor.</p>
+<p><strong><u>set.text.attribute(F&lt;oreground&gt;, B&lt;ackground&gt;)</u></strong></p>
+<p>Sets foreground and background colours for display, get_num, and get_string commands.</p>
+<p><strong><u>clear.lines(n, m, C&lt;olor&gt;)</u></strong></p>
+<p>Clears text lines from n to m using colour C.</p>
+<p><strong><u>clear.text.rect(x1, y1, x2, y2, C&lt;olor&gt;)</u></strong></p>
+<p>Clears a rectangular area with top left corner coordinates (x1,y1) and bottom right coordinates (x2,y2) using colour C.</p>
+<p><strong><u>status.line.on</u></strong></p>
+<p>Shows the status line containing the current score and sound status (on/off).</p>
+<p><strong><u>status.line.off</u></strong></p>
+<p>Removes the status line.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.8 STRING MANAGEMENT COMMANDS</i></h3>
+<p><strong><u>set.string(n, m)</u></strong></p>
+<p>Stores message number m in the string variable n.</p>
+<p><strong><u>word.to.string(n, m)</u></strong></p>
+<p>Word number m of the user input is stored in String(n).</p>
+<p><strong><u>get.string(n, m, x, y, l)</u></strong></p>
+<p>User input is stored in String(n). m is the number of the message used as the prompt, x, y, l are input position and maximum string length.</p>
+<p><strong><u>parse(n)</u></strong></p>
+<p>Parses String(n) as if it were entered by the player.</p>
+<p><strong><u>get.num(n, m)</u></strong></p>
+<p>Enters a number from the keyboard into Var(m). Message n is used as the prompt.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.9 INITIALIZATION COMMANDS</i></h3>
+<p><strong><u>set.key(s, c)</u></strong></p>
+<p>Set interpreter's special key.</p>
+<p>c - code (decimal number from 0 to 255);</p>
+<p>s - if the key is a regular, or Ctrl+key pair,<br />
+  the ASCII code (for example, 0009h - TAB);</p>
+<p>- if the key is functional or Alt+key pair,<br />
+  the corresponding scan-code in the high byte of s.<br />
+  For example, the scan code of F1 is 3b00h, Alt+Z - 2c00h, etc.</p>
+<p><strong><u>set.game.id(n)</u></strong></p>
+<p>Message n is scanned by the interpreter and compared with its internal identifier. On mismatch, the program exits. For AGDS interpreter the identifier is 'TQ'.</p>
+<p><strong><u>script.size(n)</u></strong></p>
+<p>Sets the size of script table in bytes. Script table stores codes of some interpreter commands. It is needed to the interpreter can correctly reload resources when restore_game 
+  is executed.</p>
+<p><strong><u>trace.info(n, m, l)</u></strong></p>
+<p>Sets the built-in debugger parameters</p>
+<p>n - number of LOGIC resource with command names.<br />
+  m, l - first line and height of the debugger window.</p>
+<p><strong><u>trace.on</u></strong></p>
+<p>Turns on the debugger. In general, the debugger is turned on with Scroll Lock key when the command name table is loaded even if this command does not occur in the program.</p>
+<p><strong><u>log(n)</u></strong></p>
+<p>This is a debugging command. It writes a log message in a file:</p>
+<p>Room &lt;current room&gt; Input line &lt;current input line&gt;<br />
+  followed by the message number n.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.10 MENU MANAGEMENT COMMANDS</i></h3>
+<p>Creating your program, you can offer the player a choice using a system of menus. These may be short one-line questions (menu header) with several answers (menu elements), or 
+  a prompt to change some of the system parameters, for example, object movement speed. Let us consider these commands.</p>
+<p><strong><u>set.menu(n)</u></strong></p>
+<p>Message n is used as the header of the menu elements which follow.</p>
+<p><strong><u>set.menu.item(n, c)</u></strong></p>
+<p>Message n is used as a menu element, where c is this element's code (a number between 0 and 255).</p>
+<p><strong><u>submit.menu</u></strong></p>
+<p>Ends menu creation.</p>
+<p><strong><u>enable.item(c)<br />
+  disable.item(c)</u></strong></p>
+<p>Enables or disables a menu item with the code c.</p>
+<pre>                              |-------- heading
+                              v
+                          -------------------------------
+                          | Fill                        |
+                          -------------------------------
+               Menu   ---&gt;| Save       |
+               Element    |------------|
+                          | Restore    |
+                          |------------|
+                          |XXXXXXXXXXXX|&lt;---- menu element disabled
+                          |------------|      using disable.item
+                          | Quit       |
+                          --------------      </pre>
+<p><strong><u>menu.input</u></strong></p>
+<p>If Flag(14) = 1, a menu system is shown on the screen, allowing the user to choose an item. Whether an item with the code c has been chosen can be tested using a command 'controller 
+  c', where c is the code assigned to the menu item.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.11 LOGICAL COMMANDS</i></h3>
+<p>Apparently, to build a program you need commands that change the execution order of instructions. To check for various conditions, test commands are used.</p>
+<h3><i>I.2.6.11.1 TEST COMMANDS</i></h3>
+<p>The result of test command can be either TRUE or FALSE.</p>
+<p><strong><u>equaln(n,m)</u></strong></p>
+<p>True if Var(n) = m.</p>
+<p><strong><u>equalv(n, m)</u></strong></p>
+<p>true if Var(n) = Var(m).</p>
+<p><strong><u>lessn(n,m)</u></strong></p>
+<p>True if Var(n) &lt; m.</p>
+<p><strong><u>lessv(n, m)</u></strong></p>
+<p>True if Var(n) &lt; Var(m).</p>
+<p><strong><u>greatern(n, m)</u></strong></p>
+<p>True if Var(n) &gt; m.</p>
+<p><strong><u>greaterv(n, m)</u></strong></p>
+<p>True if Var(n) &gt; Var(m).</p>
+<p><strong><u>isset(n)</u></strong></p>
+<p>True if Flag(n) = 1 (set).</p>
+<p><strong><u>isset.v(n)</u></strong></p>
+<p>True if Flag(Var(n)) = 1 (set).</p>
+<p><strong><u>has(n)</u></strong></p>
+<p>True if the room field of item n is 255, i.e. the item belongs to the player.</p>
+<p><strong><u>obj.in.room(n, m)</u></strong></p>
+<p>True if room field of the object n is Var(m).</p>
+<p><strong><u>posn(n, x1, y1, x2, y2)</u></strong></p>
+<p>True if the coordinates of the base point of the cel which is the current image of object n satisfies the equation<br />
+  x1 &lt;= x &lt;= x2, y1 &lt;= y &lt;= y2.</p>
+<p><strong><u>obj.in.box(n, x1, y1, x2, y2)</u></strong></p>
+<p>True if the base of the object n is completely within the rectangle specified using its top left (x1,y1) and bottom right (x2,y2) corners.</p>
+<pre>(x1, y1)
+   ------------------
+   |                |
+   |                |
+   |                |
+   ------------------
+                  (x2, y2)</pre>
+<p><strong><u>center.position(n, x1, y1, x2, y2)</u></strong></p>
+<p>True of the center of the base line of the object n is inside the rectangle specified as its top left and bottom right corners.</p>
+<p><strong><u>right.position(n, x1, y1, x2, y2)</u></strong></p>
+<p>True of the right side of the base line of the object n is inside the rectangle specified as its top left and bottom right corners.</p>
+<p><strong><u>have.key</u></strong></p>
+<p>True if the user has pressed any key on the keyboard. Used to create cycles to wait until any key is pressed.</p>
+<p><strong><u>compare.strings(s1, s2)</u></strong></p>
+<p>True if string(s1) = string(s2).</p>
+<p><strong><u>said(n, W(i))</u></strong> , where i = 1, ..., n</p>
+<p>True if the player has entered a phrase that completely matches W(1),...W(n), where n is the number of W(i) which are codes of the vocabulary words.</p>
+<p>Here is how the input is matched. After the player types a message and presses Enter, the input line is processed by the interpreter.</p>
+<ol>
+  <li>Interpreter removes all punctuation marks.</li>
+  <li>All characters are converted to lowercase.</li>
+  <li>All sequences of more than one space are replaced with a single space.</li>
+  <li>Starting with the first word of the input, the interpreter looks up the vocabulary, trying to find the longest character sequence matching the entered.</li>
+</ol>
+<p>If the search is unsuccessful, Var(9) is assigned the number of<br />
+  the word in the message that failed to match and the processing<br />
+  ends. If all the words have been assigned some codes:</p>
+<ul>
+  <li>The Interpreter removes from the sequence of codes all zeros (that means all vocabulary words with zero codes are ignored).</li>
+  <li>Flag(2) (the user has entered an input line) is set to 1</li>
+  <li>Flag(4) (`said' command accepted the user input) is set to 0.</li>
+</ul>
+<p>If the sequence of code produced by the interpreter is</p>
+<p>V(1), V(2),...V(m).</p>
+<p>The test is performed as follows:</p>
+<p>If Flag(2) = 0 or Flag(4) = 1, return FALSE.</p>
+<p>Compare parameters W(i) and codes V(i) as follows:</p>
+<ul>
+  <li>if W(i) = 1, it matches any V(i);</li>
+  <li>if W(i) = 9999, it matches the whole remaining input i.e. the codes V(i), V(i+1),...V(m).</li>
+</ul>
+<p>Otherwise W(i) should be equal to V(i).</p>
+<p>If all elements match, Flag(4) (`said' accepted the user input) is set to<br />
+  1 and the command returns TRUE. Otherwise, FALSE is returned.</p>
+<p><strong><u>controller(n)</u></strong></p>
+<p>True if the event with code n has occurred:</p>
+<ul>
+  <li>a key with the code n was pressed (set using set_key);</li>
+  <li>menu item with code n was selected in command menu_input.</li>
+</ul>
+<p>&nbsp;</p>
+<h3><i>I.2.6.11.2 GENERAL FORMAT OF A LOGICAL COMMAND</i></h3>
+<p>The interpreter allows to work with logical expressions using a logical command. Its general format is the following:</p>
+<pre>                 if_
+                   logical expression   ; is the result true?
+                 else_  LABEL           ;  no: go to LABEL
+                                        ; yes: execute commands
+                   ................     ;     between else_
+                                        ;     and LABEL
+          LABEL: ..................
+                 ..................</pre>
+<p>Logical expressions are allowed only within a logical command and are sequences of tests and operations between if_ and else_ tokens. An expression is true if all its elements 
+  are true.</p>
+<p>The following operations are allowed, listed in the order of decreasing priority:</p>
+<ul>
+  <li>logical negation (not_, works on the expression that follows);</li>
+  <li>conjunction. It is performed by default on a sequence of test<br />
+    commands in a logical expression.</li>
+  <li>disjunction. It is performed on the group of test commands beginning<br />
+    and ending with or_ token. Therefore, we may call or_ a disjunctive<br />
+    bracket.</li>
+</ul>
+<p>If a logical expression is true, the commands following the expression are executed; if false, the program branches to the instruction labeled LABEL.</p>
+<p>Here are a few examples of the use of logical commands and calculating logical expressions.</p>
+<p><strong>Example 1</strong></p>
+<pre>        assignn 35, 10  ; v35 = 10
+        set     24      ; f24 -&gt; 1
+
+        if_             ; if
+          equaln 35, 10 ;   v35 = 10 and (conjunction by default)
+          isset  24     ;   f24 set to 1 ?
+        else_ A         ; no: go to A
+                        ;   yes:
+          sound 25, 52  ;   play sound 25, when finished f52 -&gt; 1
+          return        ;   return control
+
+     A: sound 30, 52    ; play sound 30, when finished f52 -&gt; 1
+        ............
+</pre>
+<p>Here the test commands are by default combined with AND operation, and the<br />
+  result is TRUE. Therefore, sound 25 will play and control will return to<br />
+  the interpreter (if we are in Logic(0), or to the command following the<br />
+  subroutine call (call or call_v) in the caller logic.</p>
+<p><strong>Example 2.</strong></p>
+<pre>        assignn 35, 40  ; v35 = 10
+        set     24      ; f24 -&gt; 1
+
+        if_             ; if
+          equaln 35, 40 ;   v35 = 10 and (conjunction by default)
+          not_          ;   not
+          isset 24      ;   set (equals to 1) f24 ?
+        else_ A         ; no: go to A
+                        ;   yes:
+          sound 25, 52  ;   play sound 25, when finished f52 -&gt; 1
+          return        ;   return control
+
+     A: sound 30, 52    ; play sound 30, when finished f52 -&gt; 1
+        ............</pre>
+<p>Let us consider how this fragment works. The result of &quot;test equaln 35, 40&quot; is TRUE, sequence &quot;not_ isset 24&quot; (negation first) is FALSE and the result of conjunction is FALSE, 
+  which will play sound 30.</p>
+<p><strong>Example 3.</strong></p>
+<pre>        assignn 25, 10  ; v35 = 10
+        set     24      ; f24 -&gt; 1
+        reset   25      ; f25 -&gt; 0
+
+        if_             ; if
+          isset  24     ;   f24 set to 1 and (conjunction by default
+          or_           ;   open disjunctive bracket
+            greatern 25, 11  ; if v25 &gt; 11
+            not_             ; and not
+            isset    25      ; set (equals 1) f25
+          or_           ;   close disjunctive bracket
+                        ; is TRUE ?
+        else_ A         ; no: go to A
+                        ;   yes:
+          sound 25, 52  ;   play sound 25, when finished f52 -&gt; 1
+          return        ;   return control
+
+     A: sound 30, 52    ; play sound 30, when finished f52 -&gt; 1
+        ............</pre>
+<p>In the result of this fragment execution, sound 25 will play because &quot;greatern 25, 11&quot; is FALSE, &quot;not_ isset 25&quot; is TRUE, disjunction of these is TRUE and (default) conjunction 
+  of them is - TRUE.</p>
+<p>If, after reading this section, not everything is clear, see the source code of the educational program &quot;Thunderstorm&quot; and analyze them yourself.</p>
+<p>&nbsp;</p>
+<h3><i>I.2.6.12 OTHER COMMANDS</i></h3>
+<p><strong><u>configure.screen(a, b, c)</u></strong></p>
+<p>Sets position of lines on the screen:<br />
+  a = 1 (minimum line number for print);<br />
+  b - user input line;<br />
+  c - status line.</p>
+<p><strong><u>obj.status.v(n)</u></strong></p>
+<p>Prints a message for the object Var (n):</p>
+<p>Obj &lt;number&gt; x: &lt;coordinate&gt; y: &lt;coordinate&gt; pri: &lt;priority&gt;<br />
+  stepsize: &lt;step size&gt;.</p>
+<p><strong><u>show.mem</u></strong></p>
+<p>Displays a report of the interpreter memory status.</p>
+<p><strong><u>show.pri.screen</u></strong></p>
+<p>Shows priorities of the screen pixels. Priority n is shown as color number n (see color setting commands in I.1.2.1.1).</p>
+<p><strong><u>show.obj(n)</u></strong></p>
+<p>In the centre at the bottom of the screen a cel 0 of loop 0 of the VIEW resource n is shown. In the centre of the screen, a message associated with the VIEW resource is printed.</p>
+<p>[That's what they say but I suspect they mean OBJECT n, not VIEW resource. --VB]</p>
+<p>[Actually, in this case the argument does refer to the VIEW resource. This is because the VIEW in question isn't meant to be a controlled object but instead is simply the picture 
+  and textual description of the an inventory item. --LE]</p>
+<p><strong><u>shake.screen(n)</u></strong></p>
+<p>The screen shakes n times.</p>
+<p><strong><u>echo.line</u></strong></p>
+<p>The last line entered by the user is displayed in the input line.</p>
+<p><strong><u>cancel.line</u></strong></p>
+<p>Input line is cleared.</p>
+<p><strong><u>close.window</u></strong></p>
+<p>If there is a text window on the screen, it is removed.</p>
+<p><strong><u>open.dialogue<br />
+  close.dialogue</u></strong></p>
+<p>Enables and disables get_string and get_num commands if prevent_input has been issued.</p>
+<p><strong><u>restart.game</u></strong></p>
+<p>Restarts the game from the very beginning.</p>
+<p><strong><u>save.game<br />
+  restore.game</u></strong></p>
+<p>These command save and restore the current state of the game into disk files.</p>
+<p><strong><u>pause</u></strong></p>
+<p>Stops the interpreter until any key is pressed.</p>
+<p><strong><u>quit(n)</u></strong></p>
+<p>Exits the interpreter.</p>
+<p>If n = 1, quits immediately<br />
+  If n = 0, asks &quot;Press ENTER to quit.&quot;, &quot;Press ESC to continue.&quot;</p>
+<p><strong><u>init.joy</u></strong></p>
+<p>Initialize joystick.</p>
+<p><strong><u>toggle.monitor</u></strong></p>
+<p>Switch RGB monitor into the graphics mode.</p>
+<p><strong><u>upper.left</u></strong></p>
+<p>Usually the crossing by an object of various areas and lines is tracked by the base point (bottom right corner) of its cel. After this command, top left corner is used as such 
+  a point.</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

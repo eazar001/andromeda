@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 2-4 Memory Usage - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">2.4 Memory Usage</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 31 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<p>The following information gives a rough guide as to how Sierra's AGI interpreter uses its memory. You can view this in operation by using a memory resident program like Game 
+  Wizard.</p>
+<table border="1" width="100%">
+  <tbody>
+    <tr>
+      <td align="center">Length of first data area (2 bytes)</td>
+    </tr>
+    <tr>
+      <td align="center">Game signature (8 bytes)</td>
+    </tr>
+    <tr>
+      <td align="center">Variables (256 bytes)</td>
+    </tr>
+    <tr>
+      <td align="center">Flags (256 bits, 32 bytes)</td>
+    </tr>
+    <tr>
+      <td align="center">Timers, blocks, and other special AGI variables</td>
+    </tr>
+    <tr>
+      <td align="center">Strings (12*40 bytes or 24*40 bytes)</td>
+    </tr>
+    <tr>
+      <td align="center">unknown</td>
+    </tr>
+    <tr>
+      <td align="center">&quot;Press ENTER to quit&quot; etc</td>
+    </tr>
+    <tr>
+      <td align="center">Script command jump table</td>
+    </tr>
+    <tr>
+      <td align="center">&quot;Avis Durgan&quot; encryption string</td>
+    </tr>
+    <tr>
+      <td align="center">Rest of AGIDATA.OVL is in here</td>
+    </tr>
+    <tr>
+      <td align="center">unknown</td>
+    </tr>
+    <tr>
+      <td align="center">WORDS.TOK file</td>
+    </tr>
+    <tr>
+      <td align="center">OBJECT file</td>
+    </tr>
+    <tr>
+      <td align="center">VIEW object table</td>
+    </tr>
+    <tr>
+      <td align="center">LOGIC.0</td>
+    </tr>
+    <tr>
+      <td align="center">Other loaded resources</td>
+    </tr>
+  </tbody>
+</table>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

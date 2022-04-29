@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:agi.sierrahelp.com)",
+      "WebFetch(domain:agiwiki.sierrahelp.com)",
+      "WebFetch(domain:wiki.scummvm.org)",
+      "WebFetch(domain:www.agidev.com)"
+    ]
+  }
+}

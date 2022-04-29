@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 3.1 Directory Files - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">3.1 Directory Files</h1>
+<div align="center">&nbsp; by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 31 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+<p>All AGI games have either one directory file, or more commonly, four. AGI version 2 games will have the files LOGDIR, PICDIR, VIEWDIR, and SNDDIR. Games that use version 3 of 
+  the AGI interpreter will have a single file called *DIR where the star is the initials of the game (eg. BC, GR, MH2, MH1, KQ4). This single file is basically the four version 
+  2 files joined together except that it has an 8 byte header giving the position of each directory within the single file.</p>
+<p>The directory files give the location of the data types within the VOL files. The type of directory determines the type of data. For example, the LOGDIR gives the locations of 
+  the LOGIC files. For a brief introduction to the different data types, read the AGIDOC.TXT document.</p>
+<p>Note: In this description and elsewhere in documents written by me, the AGI data called LOGIC, PICTURE, VIEW, and SOUND data are referred to by me as files even though they are 
+  part of a single VOL file. I think of the VOL file as sort of a virtual storage device in itself that holds many<br />
+  files. Some documents call the files contains in VOL files &quot;resources&quot;.</p>
+<h3><i>Version 2 directories</i></h3>
+<p>Each directory file is of the same format. They contain a finite number of three byte entries, no more than 256. The size will vary depending on the number of files of the type 
+  that the directory file is pointing to. Dividing the filesize by three gives the maximum file number of that type of data file. Each entry is of the following format:</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td colspan="8">Byte 1</td>
+      <td colspan="8">Byte 2</td>
+      <td colspan="8">Byte 3</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>6</td>
+      <td>5</td>
+      <td>4</td>
+      <td>3</td>
+      <td>2</td>
+      <td>1</td>
+      <td>0</td>
+      <td>7</td>
+      <td>6</td>
+      <td>5</td>
+      <td>4</td>
+      <td>3</td>
+      <td>2</td>
+      <td>1</td>
+      <td>0</td>
+      <td>7</td>
+      <td>6</td>
+      <td>5</td>
+      <td>4</td>
+      <td>3</td>
+      <td>2</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>V</td>
+      <td>V</td>
+      <td>V</td>
+      <td>V</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+      <td>P</td>
+    </tr>
+  </tbody>
+</table>
+<p>V = VOL number.<br />
+  P = Position (offset into VOL file)</p>
+<p>The entry number itself gives the number of the data file that it is pointing to. For example, if the following three byte entry is entry number 45 in the SOUND directory file,</p>
+<p>12 3D FE</p>
+<p>then SOUND.45 is located at position 0x23DFE in the VOL.1 file. The first entry number is entry 0.</p>
+<p>If the three bytes contain the value 0xFFFFFF, then the resource does not exist.</p>
+<h3><i>Version 3 directories</i></h3>
+<p>In the case of version 3 of the AGI interpreter, the LOGDIR, PICDIR, VIEWDIR, and SNDDIR are concatenated together in that order with an eight byte header giving the starting 
+  offset of each directory.</p>
+<p>Header</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>Byte</td>
+      <td>0</td>
+      <td>1</td>
+      <td>2</td>
+      <td>3</td>
+      <td>4</td>
+      <td>5</td>
+      <td>6</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>L</td>
+      <td>L</td>
+      <td>P</td>
+      <td>P</td>
+      <td>V</td>
+      <td>V</td>
+      <td>S</td>
+      <td>S</td>
+    </tr>
+  </tbody>
+</table>
+<p>L = offset of LOGDIR<br />
+  P = offset of PICDIR<br />
+  V = offset of VIEWDIR<br />
+  S = offset of SNDDIR</p>
+<p>Each offset is two bytes in length where the first byte is the low byte and the second byte is the high byte as is the case in the whole AGI system. For example, the first two 
+  bytes will always be 0x0800 since the header is a fixed size of eight bytes.</p>
+<p>The format of each of the individual directory sections then follows as above for AGI v2.</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

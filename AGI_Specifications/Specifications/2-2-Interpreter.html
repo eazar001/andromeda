@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 2.2 How the Interpreter Works - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">2.2 How the Interpreter Works</h1>
+<div align="center">from AGDS docs*<br />
+  Last updated: 27 January 1998<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp; 
+<blockquote>
+  <p>* This is from the manual of AGDS (Adventure Game Development Toolkit) which contains a good deal of information about the AGI interpreter and its data formats. Translated from Russian by Vassili 
+    Bykov, <a href="mailto:vbykov@cam.org">vbykov@cam.org</a></p>
+</blockquote>
+&nbsp;
+<h3><i>How AGI worls</i></h3>
+<p>The AGI interpreter contains:</p>
+<p>- 256 (0 - 255) one-byte variables (Var);<br />
+  - 256 (0 - 255) flags (Flag);<br />
+  - a number of objects controlled by the interpreter, one of which (the object 0) may be controlled by the player using the keyboard;<br />
+  - a number of inventory items;<br />
+  - 12 40-character string variables (string).</p>
+<p>Some variables (0 - 26) and flags (0 - 15) are reserved by the interpreter, all others are free to be used by the programmer.</p>
+<p>The interpreter provides a common variable and flag space for all programs simultaneously loaded in the memory. The number of objects and things is determined by the OBJECT resource.</p>
+<p>Interpreter's actions are described using the commands of the interpreter's language. For example, there are commands to manage objects, load and unload resources, etc. Further 
+  we shall consider the commands in detail.</p>
+<p><strong>Note!</strong></p>
+<p>Any variable, flag, object, string, word, message, etc. has a unique ID number, and numbering of different data types is independent (for example, there can be a variable number 
+  5, a string number 5, and a flag number 5).</p>
+<p>&nbsp;</p>
+<h3><i>Resources - the fundamental AGI data type</i></h3>
+<p>When we develop a game, we invent the plot, create objects of the game, animate them, develop scenery and a dictionary of words for the dialogue with the player. To describe 
+  all of these, resources are used. To create some of the resources, we use utilities included with AGDS, in this case the input of the utilities are resources. [Sounds weird, but 
+  that's literally what it says. --VB]</p>
+<p>Here is a list of all the existing resources. Resources are used to represent:</p>
+<ul>
+  <li>colour background drawings (PICTURE resource);</li>
+  <li>colour animated images (VIEW resource);</li>
+  <li>sound effects (music, noise) (SOUND resource);</li>
+  <li>inventory items and other objects (OBJECT resource);</li>
+  <li>system dictionary for communicating with the user (WORD resource);</li>
+  <li>programs in internal AGI programming language (LOGIC resource).</li>
+</ul>
+<h3><i>General principles of the interpreter operation</i></h3>
+<p>Let us now consider the interpreter algorithm and the purpose of reserved variables and flags.</p>
+<p>When interpreter starts, LOGIC resource number 0 is loaded in memory. It stays there during the whole play time and determines all the interpreter's actions related to the overall 
+  control of the game. The interpreter works in a loop, i.e. all its actions are described by the INTERPRETER WORK CYCLE shown in the block diagram below.</p>
+<p>In each cycle the interpreter performs the following basic actions:</p>
+<ul>
+  <li>time delay;</li>
+  <li>clears the keyboard buffer;</li>
+  <li>polls the keyboard and the joystick;</li>
+  <li>analyses some of the reserved variables and flags (see block diagram);</li>
+  <li>for all controllable objects for which animate_obj, start_update and draw commands were issued, directions of motion are recalculated;</li>
+  <li>LOGIC resource 0 is executed, as well as any logics it calls--which, in turn, can call other logics. Depending on the state of variables and flags analyzed at step 4 the number 
+    of commands interpreted at stage 4 commands varies from one iteration of the cycle to another depending, for example, on a number of LOGIC resources to be called in the current 
+    situation;</li>
+  <li>tests if the new_room command has been issued;</li>
+</ul>
+<p>Then the cycle is repeated.</p>
+<p>All logics (programs and subroutines) simultaneously loaded in memory operate on a common set of variables, flags, and strings, each identified by a unique for each data type 
+  ID number.</p>
+<p>The fact that the interpreter runs in a loop influences the general programming principles and style when programming for AGDS. This makes programming a little unusual and takes 
+  a certain time to get used to. For example, many cyclic activities requiring explicit loops in &quot;conventional&quot; programming languages, are executed in the interpreter programs by 
+  default, provided the program has a proper structure.</p>
+<p>General hints on how to reduce the time to adapt to the interpreter's language are given below, using an educational program &quot;Thunderstorm&quot; as an example. However, this does 
+  not reduce the usefulness of analyzing the game programs of Sierra Online, Inc.</p>
+<p>&nbsp;</p>
+<h3><i>Interpreter work cycle</i></h3>
+<pre>                     +---------------------------+
+                     |      1. delay time        |
+                     +---------------------------+
+                                   |
+                                   V
+                     +----------------------------+
+                     |2. clear the keyboard buffer|
+                     +----------------------------+
+                                   |
+                                   V
+                     +---------------------------+
+                     |      Flag (2) - &gt; 0       |
+                     |      Flag (4) - &gt; 0       |
+                     +---------------------------+
+                                   |
+                                   V
+                +-------------------------------------+
+                | 3. poll keyboard and joystick       |
+                +-------------------------------------+
+                                   |
+                                   V
+                +-------------------------------------+
+                | If the current mode is              |
+                | - program_control, the direction of |
+                |   EGO motion &lt;-- var(6).            |
+                | - player_control, var (6) --&gt; dir.  |
+                |   of EGO motion.                    |
+                +-------------------------------------+
+                                   |
+                                   V
++---------------------------------------------------------------+
+| For all objects for which command animate_obj, start_update   |
+| and draw were carried out, the recalculation of the direction |
+| of movement is performed.                                     |
++---------------------------------------------------------------+
+                                   |
+                                   V
++---------------------------------------------------------------+
+| If the score has changed (var (3)) or the sound has been      |
+| turned on or off (Flag (9)), the status line is updated.      |
++---------------------------------------------------------------+
+                                   |
+                                   +---------+
+                                             V
+                               +--------------------------+
+             +----------------&gt;| 4 Logic 0 is executed    |
+             |                 +--------------------------+
+             |                               |
+             |                               V
+             |          +--------------------------------------+
+             |          | - Dir. of motion of EGO  &lt;-- var (6) |
+             |          | - If score (var (3)) or Flag (9)     |
+             |          | have changed their values - update   |
+             |          | the status and score (on Var (3));   |
+             |          | - Var (5) - &gt; 0;                     |
+             |          | - Var (4) - &gt; 0;                     |
+             |          | - Flag (5) - &gt; 0!!!!                 |
+             |          | - Flag (6) - &gt; 0;                    |
+             |          | - Flag (12) - &gt; 0.                   |
+             |          +--------------------------------------+
+ +----------------------------+               |
+ | Execute:                   |               V
+ | ~~~~~~~~~~~~~~~~~~~~~~~~   |  +------------------------+
+ | - stop_update;             |  | Update all controlled  |
+ | - unanimate_all;           |  | objects on the screen. |
+ | - destroy all logic        |  +------------------------+
+ |   resources except         |                   |
+ |   for logic 0;             |                   V
+ | - player_control;          |            +--------------+
+ | - unblock;                 |            | new_room n   |
+ | - set_horizon 36;          |            | or           |
+ | - var (1) = var (0);       |            | new_room_v n |
+ | - var (0) = n | (var (n)); |            | was issued?  |
+ | - var (4) = 0;             |            |              |
+ | - var (5) = 0;             |            +-------+------+
+ | - var (9) = 0;             |&lt;-----------+  Yes  |  No  |
+ | - var (16) = number of     |            +-------+--+---+
+ | view assoc. w/EGO;         |                       |
+ | - EGO coords from var (2); |                       |
+ | - var (2) = 0;             |                       |
+ | - flag (2) - &gt; 0;          |                       V
+ | - flag (5) - &gt; 1!!!!       |               +--------------+
+ | - score &lt; - var (3);       |               | Go to step 1 |
+ +----------------------------+               +--------------+
+</pre>
+<h3><i>Variables used by the interpreter</i></h3>
+<p>On interpreter startup all variables are set to 0.</p>
+<p><strong>Var n</strong></p>
+<p>0 - Current room number (parameter new_room cmd), initially 0.<br />
+  1 - Previous room number.<br />
+  2 - Code of the border touched by EGO:</p>
+<blockquote>
+  <p>0 - Touched nothing;<br />
+    1 - Top edge of the screen or the horizon;<br />
+    2 - Right edge of the screen;<br />
+    3 - Bottom edge of the screen;<br />
+    4 - Left edge of the screen.</p>
+</blockquote>
+<p>3 - Current score.<br />
+  4 - Number of object, other than EGO, that touched the border.<br />
+  5 - The code of border touched by the object in Var (4).<br />
+  6 - Direction of EGO's motion.</p>
+<pre>                      1
+                8     |     2
+                  \   |   /
+                    \ | /
+              7 ------------- 3      0 - the object
+                    / | \                is motionless
+                  /   |   \
+                6     |     4
+                      5
+</pre>
+<p>7 - Maximum score.<br />
+  8 - Number of free 256-byte pages of the interpreter's memory.<br />
+  9 - If = 0, it is the number of the word in the user message that was not found in the dictionary. [I would assume they mean &quot;if != 0&quot;, but that's what they say. --VB]</p>
+<p>10 - Time delay between interpreter cycles in 1/20 second intervals.<br />
+  11 - Seconds (interpreter's internal clock)<br />
+  12 - Minutes (interpreter's internal clock)<br />
+  13 - Hours (interpreter's internal clock)<br />
+  14 - Days (interpreter's internal clock)<br />
+  15 - Joystick sensitivity (if Flag (8) = 1).<br />
+  16 - ID number of the view-resource associated with EGO.<br />
+  17 - Interpreter error code (if = 0) [again I would expect this to say &quot;if != 0&quot;. --VB]<br />
+  18 - Additional information that goes with the error code.<br />
+  19 - Key pressed on the keyboard.<br />
+  20 - Computer type. For IBM PC it always 0.<br />
+  21 - If Flag (15) = 0 (command reset 15 was issued) and Var (21) is not equal to 0, the window is automatically closed after 1/2 * Var (21) seconds.<br />
+  22 - Sound generator type: 1 = PC; 3 = Tandy.<br />
+  23 - 0:F - sound volume (for TANDY).<br />
+  24 - 29h.<br />
+  25 - ID number of the item selected using status command or FF if ESC was pressed.<br />
+  26 - monitor type</p>
+<blockquote>
+  <p>0 - CGA;<br />
+    2 - Hercules;<br />
+    3 - EGA.</p>
+</blockquote>
+<h3><i>Flags used by the interpreter</i></h3>
+<p>On the interpreter startup all flags are set to 0.</p>
+<p><strong>Flag n</strong></p>
+<p>0 - EGO base line is completely on pixels with priority = 3 (water surface).<br />
+  1 - EGO is invisible of the screen (completely obscured by another object).<br />
+  2 - the player has issued a command line.<br />
+  3 - EGO base line has touched a pixel with priority 2 (signal).<br />
+  4 - `said' command has accepted the user input.<br />
+  5 - The new room is executed for the first time.<br />
+  6 - `restart_game' command has been executed.<br />
+  7 - if this flag is 1, writing to the script buffer is blocked.<br />
+  8 - if 1, Var(15) determines the joystick sensitivity.<br />
+  9 - sound on/off.<br />
+  10 - 1 turns on the built-in debugger.<br />
+  11 - Logic 0 is executed for the first time.<br />
+  12 - `restore_game' command has been executed.<br />
+  13 - 1 allows the `status' command to select items.<br />
+  14 - 1 allows the menu to work.<br />
+  15 - Determines the output mode of `print' and `print_at' commands:</p>
+<blockquote>
+  <p>1 - message window is left on the screen<br />
+    0 - message window is closed when Enter or Esc key are pressed.<br />
+    If Var(21) is not 0, the window is closed automatically after 1/2 * Var(21) seconds</p>
+</blockquote>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

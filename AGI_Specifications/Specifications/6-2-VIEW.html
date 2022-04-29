@@ -1,0 +1,347 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 6.2 VIEW Table &amp; VIEW Test Commands - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">6.2 VIEW Table &amp; VIEW Test Commands</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 31 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<p>Firstly we should note that there is a difference between a VIEW and a VIEW object. A VIEW is a collection of animated sequences that are stored in a VOL file. When a view is 
+  loaded into memory, it is then connected to one or more VIEW table entries (see below) that store information on what the interpreter calls objects (don't confuse this with inventory 
+  items). An object is an animated sprite that is currently being controlled by the interpreter. With each interpretation cycle, the state of each object in the VIEW table is updated 
+  and, if required, updated on the screen. It is therefore possible to have five or more hungry crocodiles swimming in a moat each which have there own VIEW table entries, all of 
+  which point to the same VIEW data.</p>
+<p>View objects appear to have the following properties:</p>
+<p>x position:<br />
+  y position:<br />
+  current view:<br />
+  current loop:<br />
+  current cel:<br />
+  priority:<br />
+  cycle time: 1/n gives the fraction of the maximum speed.<br />
+  step time: 1/n gives the fraction of the maximum speed.<br />
+  x size: in pixels<br />
+  y size: in pixels<br />
+  step size:<br />
+  direction:<br />
+  number of loops:<br />
+  number of cels:<br />
+</p>
+<p>There are probably other properties that aren't listed here which they also possess. In an object oriented environment such as SCI, these properties are stored as instance variables 
+  (or selectors) as part of the object. Since AGI isn't object oriented, we would expect to find some sort of VIEW table stored in memory which holds theses properties within it. 
+  In SQ2 this VIEW table consisted of 43 byte entries. Most commands that deal with VIEW objects will make adjustments to the data in the entry for the relevant object.</p>
+<h3><i>VIEW TABLE ENTRY</i></h3>
+<table border="1" class="Outlined" cellspacing="0" align="center">
+  <tbody> 
+  <tr>
+      
+    <th>Offset</th>
+      
+    <th>Function</th>
+    </tr>
+    <tr>
+      <td valign="top">00-01</td>
+      <td valign="top">step.time (stored twice)</td>
+    </tr>
+    <tr>
+      <td valign="top">02</td>
+      <td valign="top">??</td>
+    </tr>
+    <tr>
+      <td valign="top">03-04</td>
+      <td valign="top">x position</td>
+    </tr>
+    <tr>
+      <td valign="top">05-06</td>
+      <td valign="top">y position</td>
+    </tr>
+    <tr>
+      <td valign="top">07</td>
+      <td valign="top">current view</td>
+    </tr>
+    <tr>
+      <td valign="top">08-09</td>
+      <td valign="top">pointer to start of view data.</td>
+    </tr>
+    <tr>
+      <td valign="top">0A</td>
+      <td valign="top">current loop</td>
+    </tr>
+    <tr>
+      <td valign="top">0B</td>
+      <td valign="top">number of loops</td>
+    </tr>
+    <tr>
+      <td valign="top">0C-0D</td>
+      <td valign="top">pointer to start of loop data</td>
+    </tr>
+    <tr>
+      <td valign="top">0E</td>
+      <td valign="top">current cel</td>
+    </tr>
+    <tr>
+      <td valign="top">0F</td>
+      <td valign="top">number of cels</td>
+    </tr>
+    <tr>
+      <td valign="top">10-11</td>
+      <td valign="top">pointer to start of cel data</td>
+    </tr>
+    <tr>
+      <td valign="top">12-13</td>
+      <td valign="top">pointer to start of cel data (same as above)</td>
+    </tr>
+    <tr>
+      <td valign="top">14-15</td>
+      <td valign="top">??</td>
+    </tr>
+    <tr>
+      <td valign="top">16-17</td>
+      <td valign="top">copy of x position</td>
+    </tr>
+    <tr>
+      <td valign="top">18-19</td>
+      <td valign="top">copy of y position</td>
+    </tr>
+    <tr>
+      <td valign="top">1A-1B</td>
+      <td valign="top">x size</td>
+    </tr>
+    <tr>
+      <td valign="top">1C-1D</td>
+      <td valign="top">y size</td>
+    </tr>
+    <tr>
+      <td valign="top">1E</td>
+      <td valign="top">step size</td>
+    </tr>
+    <tr>
+      <td valign="top">1F-20</td>
+      <td valign="top">cycle time (stored twice)</td>
+    </tr>
+    <tr>
+      <td valign="top">21</td>
+      <td valign="top">direction (heading)<br />
+        0 = stationary<br />
+        1 = north<br />
+        2 = north/east<br />
+        3 = east<br />
+        4 = south/east<br />
+        5 = south<br />
+        6 = south/west<br />
+        7 = west<br />
+        8 = north/west</td>
+    </tr>
+    <tr>
+      <td valign="top">22</td>
+      <td valign="top">0 = normal.motion<br />
+        1 = wander<br />
+        2 = follow.ego<br />
+        3 = move.obj</td>
+    </tr>
+    <tr>
+      <td valign="top">23</td>
+      <td valign="top">0 = normal.cycle<br />
+        1 = end.of.loop<br />
+        2 = reverse.loop<br />
+        3 = reverse.cycle</td>
+    </tr>
+    <tr>
+      <td valign="top">24</td>
+      <td valign="top">priority</td>
+    </tr>
+    <tr>
+      <td valign="top">25-26</td>
+      <td valign="top">View Flags
+        
+      <table border="0" cellspacing="0">
+        <tbody> 
+        <tr>
+                <th valign="top">Bit</th>
+                <th valign="top">Function</th>
+              </tr>
+              <tr>
+                <td valign="top">0</td>
+                <td valign="top">??</td>
+              </tr>
+              <tr>
+                <td valign="top">1</td>
+                <td valign="top">0= observe blocks, 1 = ignore blocks</td>
+              </tr>
+              <tr>
+                <td valign="top">2</td>
+                <td valign="top">0 = priority released, 1 = fixed priority</td>
+              </tr>
+              <tr>
+                <td valign="top">3</td>
+                <td valign="top">0 = observe horizon, 1 = ignore horizon</td>
+              </tr>
+              <tr>
+                <td valign="top">4</td>
+                <td valign="top">??</td>
+              </tr>
+              <tr>
+                <td valign="top">5</td>
+                <td valign="top">0 = stop cycling, 1 = cycling.</td>
+              </tr>
+              <tr>
+                <td valign="top">6</td>
+                <td valign="top">??</td>
+              </tr>
+              <tr>
+                <td valign="top">7</td>
+                <td valign="top">??</td>
+              </tr>
+              <tr>
+                <td valign="top">8</td>
+                <td valign="top">1 = view on water</td>
+              </tr>
+              <tr>
+                <td valign="top">9</td>
+                <td valign="top">0 = observe objects, 1 = ignore objects</td>
+              </tr>
+              <tr>
+                <td valign="top">10</td>
+                <td valign="top">??</td>
+              </tr>
+              <tr>
+                <td valign="top">11</td>
+                <td valign="top">1 = view on land</td>
+              </tr>
+              <tr>
+                <td valign="top">12</td>
+                <td valign="top">??</td>
+              </tr>
+              <tr>
+                <td valign="top">13</td>
+                <td valign="top">0 = loop released, 1 = loop fixed</td>
+              </tr>
+              <tr>
+                <td valign="top">14</td>
+                <td valign="top">??</td>
+              </tr>
+              <tr>
+                <td valign="top">15</td>
+                <td valign="top">??</td>
+              </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+      <td valign="top">27</td>
+      <td valign="top">?? Storage for some view related command parameters. </td>
+    </tr>
+    <tr>
+      <td valign="top">28</td>
+      <td valign="top">?? Storage for some view related command parameters. </td>
+    </tr>
+    <tr>
+      <td valign="top">29</td>
+      <td valign="top">?? Storage for some view related command parameters. </td>
+    </tr>
+    <tr>
+      <td valign="top">2A</td>
+      <td valign="top">?? Storage for some view related command parameters. </td>
+    </tr>
+  </tbody>
+</table>
+<p>Note: The above format structure is simply the way in which Sierras AGI interpreter stores information about VIEW objects. In attempting to write an AGI interpreter, you would 
+  not have to restrict yourself to this format, just as long as you store this information in some manner that the interpreter can have access to.</p>
+<h3><i>TEST COMMANDS AND VIEWS</i></h3>
+<p>There are four test commands that are to do with VIEWS. These are:</p>
+<pre>obj.in.box
+posn
+right.posn
+centre.posn </pre>
+<p>All of these commands are for testing whether a VIEW object is within a given rectangle on the screen. All of them take the same parameters and apart from a slight change in 
+  each case, they do exactly the same thing and even share about 95% of their code. The general form is the following:</p>
+<p>command(VIEW object num, left, top, right, bottom)</p>
+<p>A VIEW has a position stored in its VIEW table entry that says where abouts on the screen the view object is at the present time. The problem with this position is saying which 
+  pixel is the position pixel for an object that takes up usually over a hundred pixels. Okay, you might say that most views are actors or props that sit on the ground and therefore 
+  the bottom row of pixels will give you a y position. This is a good argument, but now you need to say which of these pixels in the bottom row is the actual position. Sierra must 
+  have faced this problem or they wouldn't have provided four commands for achieving essentially the same thing.</p>
+<p>By default the position hot spot in a VIEW is the bottom left pixel.</p>
+<pre>   .........
+   .........
+   .........
+   .........          X = position hot spot.
+   .........
+   .........
+   X........</pre>
+<p>This is the location that gets stored in the VIEW object table. The difference between the test commands given above is how they adjust the x position before testing it against 
+  the rectangle border lines.</p>
+<p><tt>posn</tt> Leaves the x position as it is (left side). <tt>right.posn</tt> Adds the x size - 1 to the x position giving the right side. <tt>center.posn</tt> Adds (xsize/2) 
+  to the x position giving the centre. <tt>obj.in.box</tt> Tests both the left and right sides which essentially tests whether the whole bottom row of pixels is in the 'box'.</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td valign="top"><tt>posn</tt></td>
+      <td valign="top">Leaves the x position as it is (left side).</td>
+    </tr>
+    <tr>
+      <td valign="top"><tt>right.posn</tt></td>
+      <td valign="top">Adds the x size - 1 to the x position giving the right side.</td>
+    </tr>
+    <tr>
+      <td valign="top"><tt>center.posn</tt></td>
+      <td valign="top">Adds (xsize/2) to the x position giving the centre.</td>
+    </tr>
+    <tr>
+      <td valign="top"><tt>obj.in.box</tt></td>
+      <td valign="top">Tests both the left and right sides which essentially tests whether the whole bottom row of pixels is in the 'box'.</td>
+    </tr>
+  </tbody>
+</table>
+<p>&nbsp;</p>
+<table border="1" cellspacing="0" class="Outlined" align="center">
+  <tbody> 
+  <tr>
+      <th>Command</th>
+      <th>X1</th>
+      <th>X2</th>
+      <th>Y</th>
+    </tr>
+    <tr>
+      <td><tt>posn</tt></td>
+      <td>x</td>
+      <td>x</td>
+      <td>y</td>
+    </tr>
+    <tr>
+      <td><tt>right.posn</tt></td>
+      <td>x + xsize - 1</td>
+      <td>x + xsize - 1</td>
+      <td>y</td>
+    </tr>
+    <tr>
+      <td><tt>center.posn</tt></td>
+      <td>x + (xsize/2)</td>
+      <td>x + (xsize/2)</td>
+      <td>y</td>
+    </tr>
+    <tr>
+      <td><tt>obj.in.box</tt></td>
+      <td>x</td>
+      <td>x + xsize - 1</td>
+      <td>y</td>
+    </tr>
+  </tbody>
+</table>
+<p>Test is TRUE if:</p>
+<p>(X1 &gt;= left) &amp;&amp; (y &gt;= top) &amp;&amp; (X2 &lt;= right) &amp;&amp; (y &lt;= bottom)</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

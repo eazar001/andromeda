@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 2.3 Variable Types - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">2.3 Variable Types Used</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 31 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<p>There appear to be a number of data types used as AGI command parameters. These are mentioned below:</p>
+<h3><i>(1) Variable</i></h3>
+<p>This is the equivalent of a a byte (or unsigned char). It can have a value from 0 to 255. There are 256 variables and in the LOGIC code they are numbered from 0 to 255 and are 
+  indentified by their number. The original LOGIC source code that Sierra's programmers wrote would have had textual identifiers for these variables, but when the LOGIC source was 
+  compiled into the LOGIC codes, the original variable names were lost. To the interpreter, the variables are known by their index into the<br />
+  variable table.</p>
+<p>Variables are probably the most commonly used type. They feature in arithmetic commands such as addition, multiplication, etc, and a lot of AGI commands have a version that has 
+  variable paramaters as an alternative to the normal constant parameter versions.</p>
+<h3><i>(2) Flag</i></h3>
+<p>Flags are the boolean type of the AGI system. Their value can be either 1 or 0 (true or false). There are 256 flags that are numbered 0 to 255. In the original LOGIC source code, 
+  they would have had textual identifiers, but in the compiled LOGIC code they are known only by their index into the interpreters flag table.</p>
+<p>Flags are used to indicate when certain things have taken place.</p>
+<h3><i>(3) String</i></h3>
+<p>According to another source, there are only 12 strings available. I don't know if this is true, but it agrees with the minimum amout of space set aside for strings that I have 
+  seen in examining memory usage during a game. However, the majority of AGI games have enough room for exactly 24 strings (see below).</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>AGI interp. version</td>
+      <td>Space available for strings</td>
+    </tr>
+    <tr>
+      <td>2.089<br />
+        2.411</td>
+      <td>12</td>
+    </tr>
+    <tr>
+      <td>.....</td>
+      <td>24</td>
+    </tr>
+    <tr>
+      <td>3.002.107<br />
+        3.002.149</td>
+      <td>12</td>
+    </tr>
+  </tbody>
+</table>
+<p>Whether the versions that have enough space for 24 strings do infact support 24 strings is not known. Strings are 40 characters long which includes the zero terminator. String 
+  number zero is usually the input prompt (e.g. &quot;&gt;&quot; or &quot;]&quot;).</p>
+<h3><i>(4) Word</i></h3>
+<p>Words are the words that the user types in. An input sentence is composed of a number of words. The important words (e.g. for the sentence &quot;look at the tree&quot;, &quot;look&quot; and &quot;tree&quot; 
+  are important) are assigned to the words variables corresponding to their place in the sentence once unimportant words and punctuation has been taken out. For example, in the 
+  earlier example word(1) would be &quot;look&quot; and<br />
+  word(2) would be &quot;tree&quot;. Words can be converted to strings.</p>
+<h3><i>(5) Inventory Item</i></h3>
+<p>There are a number of AGI commands that refer to inventory items (e.g. get(), drop()). One of the arguments to these commands will represent an inventory item number. In the 
+  original LOGIC source text, the programmer would have written things like &quot;<tt>get(dagger)</tt>&quot; but the interpreter knows them only as an index into the OBJECT table.</p>
+<h3><i>(6) Object</i></h3>
+<p>There can be a bit of confusion between this type and the inventory item because of the name of the OBJECT file. The OBJECT file has almost nothing to do with what the interpreter 
+  generally calls objects. There are a large number of AGI commands that deal with 'objects'. For example,</p>
+<p><tt>move.obj<br />
+  animate.obj<br />
+  set.view<br />
+  set.cel<br />
+  set.loop<br />
+  draw</tt><br />
+  etc, etc,</p>
+<p>In fact the interpreter calls its usage of the VIEW resource &quot;objects&quot;. An object is one usage of a VIEW resource. It is essentially an entry in the object table (or VIEW table/VIEW 
+  list). Many objects can use the same VIEW resource for its appearance which can be seen in KQ1 and BC with the crocodile filled moats.</p>
+<p>So when an AGI command has an object as a parameter to it, the value of the parameter is an index number into a table of objects that the interpreter is currently controlling.</p>
+<h3><i>(7) Message</i></h3>
+<p>At the end of every LOGIC file is a message section. There need not be any messages in it, but it will still exist. Messages in LOGIC.0 are global messages whereas all other 
+  messages can only be accessed from their own LOGIC code. AGI commands that have messages as parameters refer to a message number in their own LOGIC file. I say that those in LOGIC.0 
+  are global because messages and strings can contain format codes one of which is used to display messages from LOGIC.0</p>
+<p>eg.</p>
+<p><tt>print(&quot;Message 34 in LOGIC.0 is %g34.&quot;);</tt></p>
+<p>Therefore messages in LOGIC.0 can be displayed by any LOGIC in this way.<br />
+</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

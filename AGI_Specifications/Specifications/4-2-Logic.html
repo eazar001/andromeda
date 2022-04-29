@@ -1,0 +1,355 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 4.2 LOGIC Syntax - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">4.2 LOGIC Syntax</h1>
+<div align="center">by <a href="mailto:ptrkelly@ozemail.com.au">Peter Kelly</a><br />
+  Last updated: 27 January 1998<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<p>This is the &quot;official&quot; logic syntax that has been decided on. It is not the same syntax as Sierra used. All logic decoders and compilers should comply with this syntax, so that 
+  programmers can be sure that code they produce can be used properly with any program.</p>
+<h3><i>Action Commands</i></h3>
+<p>Normal action commands are specified by the command name followed by brackets which contain the arguments, separated by commas. A semicolon is placed after the brackets. The 
+  brackets are required even if there are no arguments. The arguments given must have the correct prefix for that type of argument as explained later in this document (this is to 
+  make sure the programmer does not use a var, for example, when they think they are using a flag).</p>
+<pre>assign.v(v50,0);
+
+program.control();
+</pre>
+<p>Multiple commands may be placed on the one line:</p>
+<pre>reset(f6); reset(f7);</pre>
+<p>Substitutions for the following action commands are available:</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td><tt>increment(v30);</tt></td>
+      <td><tt>v30++;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>decrement(v30);</tt></td>
+      <td><tt>v30--;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>assignn(v30,4);</tt></td>
+      <td><tt>v30 = 4;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>assignv(v30,v32);</tt></td>
+      <td><tt>v30 = v32;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>addn(v30,4);</tt></td>
+      <td><tt>v30 = v30 + 4;</tt></td>
+      <td><tt>or</tt></td>
+      <td><tt>v30 += 4;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>addv(v30,v32);</tt></td>
+      <td><tt>v30 = v30 + v32;</tt></td>
+      <td><tt>or</tt></td>
+      <td><tt>v30 += v32;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>subn(v30,4);</tt></td>
+      <td><tt>v30 = v30 - 4;</tt></td>
+      <td><tt>or</tt></td>
+      <td><tt>v30 -= 4;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>subv(v30,v32);</tt></td>
+      <td><tt>v30 = v30 - v32;</tt></td>
+      <td><tt>or</tt></td>
+      <td><tt>v30 -= v32;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>mul.n(v30,4);</tt></td>
+      <td><tt>v30 = v30 * 4;</tt></td>
+      <td><tt>or</tt></td>
+      <td><tt>v30 *= 4;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>mul.v(v30,v32);</tt></td>
+      <td><tt>v30 = v30 * v32;</tt></td>
+      <td><tt>or</tt></td>
+      <td><tt>v30 *= v32;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>div.n(v30,4);</tt></td>
+      <td><tt>v30 = v30 / 4;</tt></td>
+      <td><tt>or</tt></td>
+      <td><tt>v30 /= 4;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>div.v(v30,v32);</tt></td>
+      <td><tt>v30 = v30 / v32;</tt></td>
+      <td><tt>or</tt></td>
+      <td><tt>v30 /= v32;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>lindirectn(v30,4);</tt></td>
+      <td><tt>*v30 = 4;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>lindirectv(v30,v32);</tt></td>
+      <td><tt>*v30 = v32;</tt></td>
+    </tr>
+    <tr>
+      <td><tt>rindirect(v30,v32);</tt></td>
+      <td><tt>v30 = *v32;</tt></td>
+    </tr>
+  </tbody>
+</table>
+<h3><i>IF structures and test commands</i></h3>
+<p>An if structure looks like this:</p>
+<pre>if (&lt;test commands&gt;) {
+  &lt;action commands&gt;
+}
+</pre>
+<p>or like this :</p>
+<pre>if (&lt;test commands&gt;) {
+  &lt;action commands&gt;
+}
+else {
+  &lt;more action commands&gt;
+}
+</pre>
+<p>Carriage returns are not necessary:</p>
+<pre>if (&lt;test commands&gt;) { &lt;action Commands&gt; } else { &lt;more action commands&gt; }
+</pre>
+<p>Test commands are coded like action commands except there is no semicolon. They are separated by &amp;&amp; or || for AND or OR.</p>
+<pre>if (isset(f5) &amp;&amp;
+    greatern(v5,6)) { ......
+</pre>
+<p>Again, carriage returns are not necessary within the if statement:</p>
+<pre>if (lessn(v5,6) &amp;&amp; (greatern(v5,2)) { .......
+
+if (isset(f90) &amp;&amp; equalv(v32,v34)
+    &amp;&amp; greatern(v34,20)) { .......
+</pre>
+<p>A ! placed in front of a command signifies a NOT.</p>
+<pre>if (!isset(f7)) {
+  ......
+</pre>
+<p>Boolean expressions are not necessarily simplified so they must follow the rules set down by the file format. If test commands are to be ORred together, they must be placed in 
+  brackets.</p>
+<pre>if ((isset(f1) || isset(f2)) {
+  ......
+
+if (isset(f1) &amp;&amp; (isset(f2) || isset(f3))) {
+  ......
+
+if (isset(1) || (isset(2) &amp;&amp; isset(3))) {    is NOT legal
+</pre>
+<p>Depending on the compiler, simplification of boolean expressions may be supported, so the above may not apply in all cases (although if these are rules are followed then the 
+  logic will work with all compilers).</p>
+<p>Substitutions for the following test commands are available:</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td><tt>equaln(v30,4)</tt></td>
+      <td><tt>v30 == 4</tt></td>
+    </tr>
+    <tr>
+      <td><tt>equalv(v30,v32)</tt></td>
+      <td><tt>v30 == v32</tt></td>
+    </tr>
+    <tr>
+      <td><tt>greatern(v30,4)</tt></td>
+      <td><tt>v30 &gt; 4</tt></td>
+    </tr>
+    <tr>
+      <td><tt>greaterv(v30,v32)</tt></td>
+      <td><tt>v30 &gt; v32</tt></td>
+    </tr>
+    <tr>
+      <td><tt>lessn(v30,4)</tt></td>
+      <td><tt>v30 &lt; 4</tt></td>
+    </tr>
+    <tr>
+      <td><tt>lessv(v30,v32)</tt></td>
+      <td><tt>v30 &lt; v32</tt></td>
+    </tr>
+    <tr>
+      <td><tt>!equaln(v30,4)</tt></td>
+      <td><tt>v30 != 4</tt></td>
+    </tr>
+    <tr>
+      <td><tt>!equalv(v30,v32)</tt></td>
+      <td><tt>v30 != v32</tt></td>
+    </tr>
+    <tr>
+      <td><tt>!greatern(v30,4)</tt></td>
+      <td><tt>v30 &lt;= 4</tt></td>
+    </tr>
+    <tr>
+      <td><tt>!greaterv(v30,v32)</tt></td>
+      <td><tt>v30 &lt;= v32</tt></td>
+    </tr>
+    <tr>
+      <td><tt>!lessn(v30,4)</tt></td>
+      <td><tt>v30 &gt;= 4</tt></td>
+    </tr>
+    <tr>
+      <td><tt>!lessv(v30,v32)</tt></td>
+      <td><tt>v30 &gt;= v32</tt></td>
+    </tr>
+  </tbody>
+</table>
+<p>Also, flags can be tested for by just using the name of the flag:</p>
+<pre>if (f6) { .....
+
+if (v7 &gt; 0 &amp;&amp; !f6) { .....
+</pre>
+<h3><i>Argument types</i></h3>
+<p>There are 9 different types of arguments that commands use:</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>Number</td>
+      <td>(no prefix)</td>
+    </tr>
+    <tr>
+      <td>Var</td>
+      <td>(prefix &quot;v&quot;)</td>
+    </tr>
+    <tr>
+      <td>Flag</td>
+      <td>(prefix &quot;f&quot;)</td>
+    </tr>
+    <tr>
+      <td>Message</td>
+      <td>(prefix &quot;m&quot;)</td>
+    </tr>
+    <tr>
+      <td>Object</td>
+      <td>(prefix &quot;o&quot;)</td>
+    </tr>
+    <tr>
+      <td>Inventory Item</td>
+      <td>(prefix &quot;i&quot;)</td>
+    </tr>
+    <tr>
+      <td>String</td>
+      <td>(prefix &quot;s&quot;)</td>
+    </tr>
+    <tr>
+      <td>Word</td>
+      <td>(prefix &quot;w&quot;)</td>
+    </tr>
+    <tr>
+      <td>Controller</td>
+      <td>(prefix &quot;c&quot;)</td>
+    </tr>
+  </tbody>
+</table>
+<p>The said test command uses it's own special arguments which will be described later.</p>
+<p>Each of these types of arguments is given by the prefix and then a number from 0-255, e.g. v5, f6, m27, o2.</p>
+<p>The word type is words that the player has typed in, not words that are stored in the WORDS.TOK file. Strings are the temporary string variables stored in memory, not to be confused 
+  with messages (that are stored in the logic resources). Controllers are menu items and keys.</p>
+<p>Compilers can enforce type checking, so that the programmer must use the correct prefix for an argument so that they know they are using the right type. Decoders should display 
+  arguments with the right type.</p>
+<pre>move.obj(so4,80,120,2,f66);
+
+if (obj.in.box(so2,30,60,120,40)) { .....
+</pre>
+<p>A complete list of the commands and their argument types is available as part of AGI Specs.</p>
+<p>Messages and inventory items may be given in either numerical text format:</p>
+<pre>print(&quot;He's not here.&quot;);
+
+print(m12);
+
+if (has(&quot;Jetpack&quot;)) { .....
+
+if (has(io9)) { .....
+</pre>
+<p>Messages can also be split over multiple lines:</p>
+<pre>print(&quot;This message is split &quot;
+      &quot;over multiple lines.&quot;);
+</pre>
+<p>Quote marks must be used around messages and object names. This is important because some messages or object names may contain brackets or commas, which could confuse the compiler. 
+  This is also the case for the said command which will be described shortly.</p>
+<pre>if (has(&quot;Buckazoid(s)&quot;)) { .....        // no ambiguity here about where
+                                        // the argument ends
+</pre>
+<p>If quote marks are part of the message or inventory object, a \ should be placed in front of these. To use a \, \\ should be used. \n can also be used for a new line.</p>
+<p>The said test command uses different parameters to all the other commands. Where as the others use 8 bit arguments (0-255), said takes 16 bit arguments (0-65535). Also, the number 
+  of arguments in a said command can vary. The numbers given in the arguments are the word group numbers from the WORDS.TOK file.</p>
+<pre>if (said(4,80)) { .....
+</pre>
+<p>Words can also be given in place of the numbers:</p>
+<pre>if (said(&quot;look&quot;)) { .....
+
+if (said(&quot;open&quot;,&quot;door&quot;)) { .....
+</pre>
+<p>Quote marks must also be used around the words.</p>
+<h3><i>Labels and the goto command</i></h3>
+<p>Labels are given like this:</p>
+<pre>Label1:
+</pre>
+<p>The label name can contain letters, numbers, and the characters &quot;_&quot; and &quot;.&quot;. No spaces are allowed.</p>
+<p>The goto command takes one parameter, the name of a label.</p>
+<pre>goto(Label1);
+</pre>
+<h3><i>Comments</i></h3>
+<p>There are three ways that comments can be used.</p>
+<p>// - rest of line is ignored<br />
+  [ - rest of line is ignored<br />
+  /* Text between these are ignored */</p>
+<p>The /*...*/ can be nested:</p>
+<pre>/* comment start
+  print(&quot;Hello&quot;);    // won't be run
+  /*                 // a new comment start (will be ignored!)
+    v32 = 15;        // won't be run
+  */                 // uncomments the most inner comment
+  print(&quot;Hey!&quot;);     // won't be run, still inside comments
+*/                   // uncomments
+</pre>
+<h3><i>Defines</i></h3>
+<p>To give vars, flags etc. proper names the #define command is used. The name of the define is given followed by the define value:</p>
+<pre>#define ego o0
+#define room_descr &quot;This is a large hall with tall pillars down each side.&quot;
+</pre>
+<p>Then the define name can be used in place of the define value:</p>
+<pre>draw(ego);
+print(room_descr);
+</pre>
+<p>Define names can only be used in arguments of commands (including gotos and the <tt>v0 == 3</tt> type syntax), although some compilers may allow you to use them anywhere.</p>
+<p>Defines must be defined in the file before they are used.</p>
+<p>The define name can contain letters, numbers, and the characters &quot;_&quot; and &quot;.&quot;. No spaces are allowed.</p>
+<h3><i>Including files</i></h3>
+<p>You can include another file in your logic source code by using the #include command:</p>
+<pre>#include &quot;file.txt&quot;
+</pre>
+<p>When the compiler encounters the above line, it will replace it with the contents of file.txt.</p>
+<p>It is a good idea to have all the defines that you need for multiple logics in an #include file, so if you need to change the define value you only have to do it once (although 
+  you will need to recompile all logics that use that define).</p>
+<h3><i>More on messages</i></h3>
+<p>In some cases you may want to assign a specific number to a message so you can refer to it in other places. This is done by using the #message command, followed by the number 
+  of the message then the message itself:</p>
+<pre>#message 4 &quot;You can't do that now.&quot;
+</pre>
+<p>Then you can give the message number as the parameter in commands:</p>
+<pre>print(m4);
+</pre>
+<p>Or embed the message in commands as normal and the number you assigned to it before will be used:</p>
+<pre>print(&quot;You can't do that now.&quot;);
+</pre>
+<p>#message can be used anywhere in the file, so you do not have to set the message before you use it.</p>
+<h3><i>The return command</i></h3>
+<p>The return command is just a normal action command (number 0), with no arguments. This must be the last command in every logic.</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>
