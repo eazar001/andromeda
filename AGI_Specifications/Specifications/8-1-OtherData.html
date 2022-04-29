@@ -1,0 +1,76 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 8.1 OBJECT File Format - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">8.1 OBJECT File Format</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 31 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<p>The OBJECT file stores two bits of information about the inventory items used in an AGI game. The starting room location and the name of the inventory item. It also has a byte 
+  that determines the maximum number of animated objects.</p>
+<h3><i>The file encryption</i></h3>
+<p>The first obstacle to overcome is the fact that most OBJECT files are encrypted. I say most because some of the earlier AGI games were not, in which case you can skip to the 
+  next section. Those that are encrypted are done so with the string &quot;Avis Durgan&quot;. The process of unencrypting the file is to simply taken every eleven bytes from the file and 
+  XOR each element of those eleven bytes with the corresponding element in the string &quot;Avis Durgan&quot;. This sort of encryption is very easy to crack if you know what you are doing 
+  and is simply meant to act as a shield so as not to encourage cheating. In some games, however, the object names are clearly visible in the saved game files even when the OBJECT 
+  file is encrypted, so it's not a very effective shield.</p>
+<h3><i>The first three bytes</i></h3>
+<table border="1" class="Outlined" cellspacing="0" align="center" width="465">
+  <tbody> 
+  <tr>
+      <th>Byte</th>
+      <th>Purpose</th>
+    </tr>
+    <tr>
+      <td>0-1</td>
+      <td>Offset of the start of inventory item names.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Maximum number of animated objects.</td>
+    </tr>
+  </tbody>
+</table>
+<p>Following the first three bytes as a section containing a three byte entry for each inventory item all of which conform to the following format:</p>
+<table border="1" class="Outlined" cellspacing="0" align="center" width="465">
+  <tbody> 
+  <tr>
+      
+    <th width="37">Byte</th>
+      
+    <th width="422">Purpose</th>
+    </tr>
+    <tr>
+      
+    <td width="37">0-1</td>
+      
+    <td width="422">Offset of inventory item name i.</td>
+    </tr>
+    <tr>
+      
+    <td width="37">2</td>
+      
+    <td width="422">Starting room number for inventory item i or 255 carried. </td>
+    </tr>
+  </tbody>
+</table>
+<p>where i is the entry number starting at 0. All offsets are taken from the start of entry for inventory item 0 (not the start of the file).</p>
+<h3><i>The inventory name section</i></h3>
+<p>Then comes the textual names themselves. This is simply a list of NULL terminated strings. The offsets mentioned in the above section point to the first character in the string 
+  and the last character is the one before the 0x00.</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

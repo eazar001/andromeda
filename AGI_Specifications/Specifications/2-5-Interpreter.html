@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 2.5 Game IDs &amp; Loaders - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">2.5 Game IDs &amp; Loaders</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing</a>, with additions/modifications by <a href="mailto:ptrkelly@ozemail.com.au">Peter Kelly</a> and <a href="mailto:anders.m.olsson@abc.se">Anders 
+  M Olsson</a><br />
+Last updated: 3 March 1998</div>
+&nbsp;
+<p>Since the data formats for the different AGI interpreter versions are mostly identical or easily convertible to each other, we should expect to be able to run one games data 
+  with anothers interpreter. This sounds like a reasonable assumption but when you try it, the interpreter rejects the new data. The reason behind this is GAME ID'S.</p>
+<p>Every interpreter has got a game ID coded into it and it expects to be given data for that game. Somewhere in the initialization code for each game is a set.game.id. When this 
+  command is encountered, the interpreter checks the given game ID and compares it with it's own. If they are not the same, it quits immediately. Presumably the reason for this 
+  was to stop people running games with the wrong interpter version, which can cause problems (unless you know what you're doing).</p>
+<h3><i>HOW DO WE GET AROUND IT?</i></h3>
+<p><strong>Method 1: The hard way</strong></p>
+<p>Well, basically we have to find the game ID signature in the AGI interpreter<br />
+  file and change it to the ID of the game whose data we wish to be executed.</p>
+<p>Here are a few examples of some game ID's and the data following them:</p>
+<p>Police Quest:</p>
+<table border="1">
+  <tbody>
+    <tr>
+      <td>&quot;P&quot;</td>
+      <td>&quot;Q&quot;</td>
+      <td>00h</td>
+      <td>&quot;e&quot;</td>
+      <td>&quot;I&quot;</td>
+      <td>&quot;D&quot;</td>
+      <td>&quot;X&quot;</td>
+    </tr>
+  </tbody>
+</table>
+<p>Mother Goose:</p>
+<table border="1">
+  <tbody>
+    <tr>
+      <td>&quot;M&quot;</td>
+      <td>&quot;G&quot;</td>
+      <td>00h</td>
+      <td>&quot;e&quot;</td>
+      <td>&quot;I&quot;</td>
+      <td>&quot;D&quot;</td>
+      <td>&quot;X&quot;</td>
+    </tr>
+  </tbody>
+</table>
+<p>Manhunter 2:</p>
+<table border="1">
+  <tbody>
+    <tr>
+      <td>&quot;M&quot;</td>
+      <td>&quot;H&quot;</td>
+      <td>&quot;2&quot;</td>
+      <td>00h</td>
+      <td>&quot;I&quot;</td>
+      <td>&quot;D&quot;</td>
+      <td>&quot;X&quot;</td>
+    </tr>
+  </tbody>
+</table>
+<p>XMAS Demo</p>
+<table border="1">
+  <tbody>
+    <tr>
+      <td>&quot;X&quot;</td>
+      <td>&quot;M&quot;</td>
+      <td>&quot;A&quot;</td>
+      <td>&quot;S&quot;</td>
+      <td>00h</td>
+      <td>&quot;D&quot;</td>
+      <td>&quot;X&quot;</td>
+    </tr>
+  </tbody>
+</table>
+<p>Leisure Suit Larry:</p>
+<table border="1">
+  <tbody>
+    <tr>
+      <td>&quot;L&quot;</td>
+      <td>&quot;L&quot;</td>
+      <td>&quot;L&quot;</td>
+      <td>&quot;L&quot;</td>
+      <td>&quot;L&quot;</td>
+      <td>00h</td>
+      <td>&quot;X&quot;</td>
+    </tr>
+  </tbody>
+</table>
+<p>The game ID itself is the null terminated string that ends at the 00h. The text that follows it is of no significance, it is simply to fill in the gap although it is useful when 
+  searching for the game ID because, as you can see, this text is always &quot;eIDX&quot; or a suffix of it (ie. &quot;IDX&quot;, &quot;DX&quot;, or &quot;X&quot;). For most games, the game ID is two or three characters 
+  which means that you will be able to rely on the &quot;IDX&quot; string being there for these games.</p>
+<p><strong>Method 2: The easy way</strong></p>
+<p>Using the above method will allow you to run a different game with an interpreter, but you will still only be able to run the game that has the specified game ID. There is another 
+  way around this, which involves finding where the set.game.id command is used by the game. This is quiteeasy now that we have programs to edit the logics (such as AGI Studio). 
+  What you can usually do is look at the top part of logic 0 and find out what the initialization logic is (usually around 90-100 - you might have to look at a few logics before 
+  you find it). Then simply go to that logic, find the set.game.id command, remove it, and recompile the logic. Since the command is not used, the interpreter will not try and compare 
+  it with it's own ID, and it won't quit.</p>
+<p>The only drawback to using this method is that the saved games no longer have the game ID in their name (so, for example, a savegame would be called SG.1 instead of KQ2SG.1), 
+  but this is not a major hassle.</p>
+<h3><i>WHY CAN'T I FIND THE GAME ID?</i></h3>
+<p>This is because a lot of the AGI files themselves are encrypted. This was probably to give some protection to their product which was quite unique at the time. You can tell the 
+  difference between an encrypted AGI file and a non-encrypted AGI file by the first two characters. If they are &quot;MZ&quot; (the EXE file header), then it not encrypted.</p>
+<p>The AGI file is decrypted by the loader program. This is usually called SIERRA.COM but can also be named after the game (eg. KQ1.COM). In AGI version 1, the loader was called 
+  LOAD. If an AGI game doesn't have a loader, then it shouldn't be encrypted. If an AGI game does have a loader, it does not necessarily mean that the AGI file is encrypted.</p>
+<p>The decryption key was not originally embedded in the loader file. If you find a game where the key is embedded in the loader, it is because that game has had copy protection 
+  removed. There are several utilities to do that. Anders M Olsson's &quot;SUP&quot; is one of them. The CD re-releases have been unprotected by Sierra in exactly the same fashion.</p>
+<p>The loader would read the decryption key from track 6 of the disk, load the executable file, decrypt and run it. Track 6 had a special format that was supposedly impossible to 
+  exactly reproduce by a standard PC floppy disk controller.</p>
+<p>An interesting note is that when a copy-protected Sierra game asked for the original disk one, you could insert disk one from *any* protected Sierra game. The contents of track 
+  6 were always the same.</p>
+<p>But even though track 6 was the same, all games didn't use exactly the same encryption key. The two bytes in the loader, immediately following the string &quot;keyOfs&quot;, gave an offset 
+  on track 6 from where the key would be loaded.</p>
+<p>So, if the decryption string consists of 128 &quot;k&quot; characters, it can actually mean one of two things: Either the AGI file is not encrypted, or the game is still copy-protected.</p>
+<h3><i>HOW DOES THE ENCRYPTION WORK?</i></h3>
+<p>The LOADER contains a 128 byte string called the decryption key. Here's the process of decryption:</p>
+<ol>
+  <li>The carry bit is zeroed.</li>
+  <li>The first 128 bytes of the AGI file are XORed with the decryption key.</li>
+  <li>The whole key string is rotated one bit to the right, including the carry-bit. (Bit 7 of the first byte is loaded from the carry. Bit 0 of the last byte is placed in the carry, 
+    where it will remain until the next rotation.)</li>
+  <li>The bit that was bit 0 of the last byte (now in carry) is ORed into bit 7 of the first byte.</li>
+  <li>The next 128 bytes of the AGI file are XORed with the new key. If the end of the AGI file has not been reached, then go back to 3.</li>
+</ol>
+<h3><i>WHERE IN THE LOADER IS THE DECRYPTION KEY?</i></h3>
+<p>The start of a loader will look something like this:</p>
+<p>LOADER v3.0 (c) Copyright Sierra On-Line, Inc. 1987 keyOfs</p>
+<p>There are two bytes in between the &quot;keyOfs&quot; string and the start of the description string. If the decryption key consists of 128 &quot;k&quot; characters, then the AGI file is not encrypted 
+  (or the game is still copy-protected). If it consists of a whole lot of random looking characters, then it is encrypted.</p>
+<p>As an aside, the decryption string is followed immediately by the stack and is usually marked with a whole string of &quot;s&quot; characters. Thus we have &quot;k&quot; for key and &quot;s&quot; for stack. 
+  The stack is usually 256 bytes long.</p>
+<h3><i>DECRYPTING THE AGI FILE</i></h3>
+<p>Decrypting the AGI file is simply a matter of writing a program to read the loader to get the decryption string, and then applying the process mentioned above to the AGI file. 
+  Once this has been done, the game ID can be located.</p>
+<h3><i>POSSIBILITIES</i></h3>
+<p>What this means is that with a few useful AGI utility programs, it is possible to run any set of game data with a compatible AGI interpreter. For example, games that use AGI 
+  versions 2.915, 2.917, and 2.936 should be able to be converted into AGIv3 format and run with an AGIv3 interpreter.</p>
+<p>'Compatible' as it is used above refers not only to the data differences but also to some AGI command descrepencies. There are about four AGI commands that have changed the number 
+  of arguments passed to them as the interpreter developed. This sort of thing is the only real obstacle to running data on another interpreter.</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

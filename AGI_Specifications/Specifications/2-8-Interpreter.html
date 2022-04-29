@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 2.8 Interpreter Version Differences - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">2.8 Interpreter Version Differences</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 27 January 1998<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<p>There are a number of different versions of the AGI interpeter but generally the data formats are the same or can easy be converted between each other. The following table is 
+  a list of AGI interpreter versions that I know of:</p>
+<table border="0" width="100%">
+  <tbody>
+    <tr>
+      <th>AGI<br />
+        Version</th>
+      <th>Interpreter<br />
+        File Size</th>
+      <th>AGIDATA.OVL<br />
+        Size</th>
+      <th>Number of<br />
+        Commands</th>
+      <th>OBJECT File<br />
+        Encrypted</th>
+      <th>LZW Used In<br />
+        VOL Files</th>
+    </tr>
+    <tr>
+      <td>2.089</td>
+      <td>34305</td>
+      <td>6656</td>
+      <td>155</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>2.272</td>
+      <td>34816</td>
+      <td>6656</td>
+      <td>161</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>2.411</td>
+      <td>38400</td>
+      <td>7680</td>
+      <td>169</td>
+      <td>Yes</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>2.435</td>
+      <td>38400</td>
+      <td>7680</td>
+      <td>169</td>
+      <td>Yes</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>2.439</td>
+      <td>38400</td>
+      <td>7680</td>
+      <td>169</td>
+      <td>Yes</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>2.440</td>
+      <td>38400</td>
+      <td>7680</td>
+      <td>169</td>
+      <td>Yes</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>2.915</td>
+      <td>39424</td>
+      <td>8192</td>
+      <td>173</td>
+      <td>Yes</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>2.917</td>
+      <td>39424</td>
+      <td>8192</td>
+      <td>173</td>
+      <td>Yes</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>2.936</td>
+      <td>39424</td>
+      <td>8192</td>
+      <td>175</td>
+      <td>Yes</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>3.002.086</td>
+      <td>40866</td>
+      <td>8064</td>
+      <td>177</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>3.002.098</td>
+      <td>40898</td>
+      <td>8080</td>
+      <td>181</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>3.002.102</td>
+      <td>40898</td>
+      <td>8080</td>
+      <td>181</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>3.002.107</td>
+      <td>40962</td>
+      <td>8080</td>
+      <td>181</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>3.002.149</td>
+      <td>40520</td>
+      <td>7488</td>
+      <td>181</td>
+      <td>Yes</td>
+      <td>Yes</td>
+    </tr>
+  </tbody>
+</table>
+<p>This table illustrates a number of things.</p>
+<ul>
+  <li>Firstly, as the interpreter version increased, the number of AGI commands supported increased with it. The last eleven we do not know the names of.</li>
+  <li>There are two main AGI versions: AGI v2 and AGI v3.</li>
+  <li>The early AGI v2 games did not encrypt the OBJECT file with the &quot;Avis Durgan&quot; string.</li>
+  <li>AGI v3 games use adaptive LZW to compress their LOGIC, VIEW, and SOUND files.</li>
+</ul>
+<h3><i>COMMAND ARGUMENT NUMBER DESCREPENCIES</i></h3>
+<p>There are four commands that have changed the number of arguments that are passed to them. All this information is based on observations made of the above interpreter versions.</p>
+<ul>
+  <li>(i) The quit command had no arguments for version 2.089 whereas all the others above have one argument.</li>
+  <li>(ii) The print.at and print.at.v commands had only three arguments for versions 2.089 - 2.400 and four for the other versions.</li>
+  <li>(iii) Unknown command number 176 had one argument for version 3.002.086 but later versions had no arguments for this command.</li>
+</ul>
+<h3><i>AGI VERSION THREE</i></h3>
+<p>There are a number of other differences between AGI v3 and AGI v2.</p>
+<ul>
+  <li>The LOGIC files do not encrypt the text messages with &quot;Avis Durgan&quot; since there is no need to do this because it is compressed anyway.</li>
+  <li>The PICTURE file format is slightly different for picture codes 0xF0 and 0xF2, i.e. the codes that change the visual colour and priority colour. The difference is that only 
+    4-bits are used to store the colour as opposed to 8-bits in AGI v2.</li>
+</ul>
+<h3><i>NUMBER OF STRINGS</i></h3>
+<p>There may be some differences in the number of strings supported by some interpreters as well. All interpreters have at least 12 strings. Most interpreters have space for 24 
+  strings but I don't know if the extra space is used for strings or not.</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

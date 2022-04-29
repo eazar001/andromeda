@@ -1,0 +1,621 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 4.1 LOGIC Resource Format - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">4.1 LOGIC Resource Format</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 20 August 1997 </div>
+<div align="center"><i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<h3><i>INTRODUCTION</i></h3>
+<p>At the heart of Sierra's Adventure Game Interpreter is the LOGIC file. These files contain the code that makes up the game. Each room has a logic script that goes with it. This 
+  logic script governs what can take place in that room. Here is an example of what the programmer writes when a game is being created.</p>
+<p>Example 0: KQ4. Room 7.</p>
+<pre>    if (said( open, door))       [ must be close enough
+    {
+       if (posn( ego, 86, 120, 106, 133))
+       {
+          if (!night)
+          {
+             if ( door.open)
+             {
+                print(&quot;The door is already open&quot;);
+             }
+             else
+             {
+                set( game.control);
+                set.priority( ego, 11);
+                start.update( door);
+                end.of.loop( door, door.done);
+             }
+          }
+          else
+          {
+             print(&quot;You can't -- it's locked&quot;);
+          }
+       }
+       else
+       {
+          set( notCloseEnough);
+       }
+    }</pre>
+<p>The logic script is not stored like this in the game files though. Instead each AGI command is stored as a code and the resulting data doesn't look much like the above example 
+  at all. This document will try to explain each component of a logic script the way it is stored in the actual game data.</p>
+<p>&nbsp;</p>
+<h3><i>THE HEADER</i></h3>
+<p>The header of each logic script is seven bytes in length for games before 1988. After this date compression seems to have been introduced and the header was subsequently altered. 
+  This compression will be discussed at a later stage.</p>
+<p>BYTE(S) MEANING</p>
+<p>00 - 01 $1234 : signature for the start of a file in the VOL block.<br />
+  02 VOL file number.<br />
+  03 - 04 Length of the logic script.<br />
+  05 - 06 Offset of logic code end and text begin.</p>
+<p>All text that can be printed to the screen from within a logic script is stored in an encrypted form at the end of the logic script.</p>
+<p>Example 1: KQ1. Room 2.</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>12 34</td>
+      <td>Signature</td>
+    </tr>
+    <tr>
+      <td>01</td>
+      <td>VOL.1</td>
+    </tr>
+    <tr>
+      <td>5F 06</td>
+      <td>Length = $065F </td>
+    </tr>
+    <tr>
+      <td>BA 02</td>
+      <td>Text Start = $02BA</td>
+    </tr>
+  </tbody>
+</table>
+<p>&nbsp;</p>
+<h3><i>THE LOGIC CODES</i></h3>
+<p>The logic code section starts immediately after the header and continues until the start of the text section has been reached. There are three sets of codes used in a logic script. 
+  Most codes will have between one and seven arguments inclusive. This is discussed later on. The first set of codes is the AGI commands themselves and they have the following range:</p>
+<p>$00 - $B5 AGI commands. (eg. animate.obj)</p>
+<p>The value 181 ($B5) may well be different for each game. Sierra will have added more commands to their set as they went along. The value above is for Manhunter 2 which is one 
+  of the last AGI games made. The second set of codes is as follows:</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>$FF</td>
+      <td>if</td>
+    </tr>
+    <tr>
+      <td>$FE</td>
+      <td>else (or goto)</td>
+    </tr>
+    <tr>
+      <td>$FD</td>
+      <td>not (!)</td>
+    </tr>
+    <tr>
+      <td>$FC</td>
+      <td>or (||)</td>
+    </tr>
+  </tbody>
+</table>
+<p>At present these are the only high value codes encountered. The 'if' and 'or' codes are more like brackets, ie. the code will be at the start and the end of the section of codes 
+  that it refers to. The following example will illustrate this:</p>
+<p>Example 2: KQ1. Room 2.</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>FF</td>
+      <td>'if' conditions start.</td>
+    </tr>
+    <tr>
+      <td>07 07</td>
+      <td>= isset</td>
+    </tr>
+    <tr>
+      <td>05 05</td>
+      <td>= flag 5</td>
+    </tr>
+    <tr>
+      <td>FF</td>
+      <td>'if' conditions close. </td>
+    </tr>
+  </tbody>
+</table>
+<p>The above translates to:</p>
+<p>if (isset(5))</p>
+<p>which tests whether flag number 5 is set. The $FF effectively switches the interpreter into a condition checking mode which leads us to the next set of codes which I call the 
+  condition codes:</p>
+<p>$00 - $12 Condition codes.</p>
+<p>The 'isset' condition code was introduced in example 2 above. When the interpreter encounters a $FF it will then interpret the following code values as being in the condition 
+  code range until it encounters the next $FF which switches it back into normal AGI command mode. The two bytes immediately following the second $FF determine how many bytes this 
+  'if' statement lasts for before the 'if' is ended. When the second $FF is encountered the interpreter, be it us or the machine, does three things:</p>
+<p>1. Reads in the following two bytes.<br />
+  2. Opens a bracket.<br />
+  3. Switches to AGI command mode.</p>
+<p>Example 3: KQ1. Room 2.</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>FF 07 05 FF</td>
+      <td>if (isset(5)) </td>
+    </tr>
+    <tr>
+      <td>84 00</td>
+      <td>{ [ For $0084 bytes.</td>
+    </tr>
+    <tr>
+      <td>18 00</td>
+      <td>load.pic(0);</td>
+    </tr>
+    <tr>
+      <td>19 00</td>
+      <td>draw.pic(0);</td>
+    </tr>
+    <tr>
+      <td>1B 00</td>
+      <td>discard.pic(0);</td>
+    </tr>
+    <tr>
+      <td>... ...</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>} [ Closed. $0084 bytes counted. </td>
+    </tr>
+  </tbody>
+</table>
+<p>Ofcourse, the code inside the brackets is only executed if the 'if' condition is met.</p>
+<p>&nbsp;</p>
+<h3><i>THE ELSE COMMAND AND MORE ON BRACKETS</i></h3>
+<p>The else statement will always continue after an 'if' bracket block. This next feature is important and has caused a number of hassles in the past. When an 'else' statement follows 
+  an 'if', then the bracket distance given after the 'if' statement WILL BE THREE BYTES LONGER (this is a consequence of the way the interpreter handles if and else codes which 
+  is discussed later).</p>
+<p>Here's an example:</p>
+<pre> if (isset(231)) {                        FF 07 E7 FF 05 00
+   printf(&quot;The door is already open.&quot;);   65 0F
+ }
+ else {                                   FE 11 00
+   set(36);                               0C 24
+   prevent.input();                       77
+   start.update(5);                       3B 05
+   assignn(152, 3);                       03 98 03
+   cycle.time(5, 152);                    4C 05 98
+   end.of.loop(5, 232);                   49 05 E8
+   sound(70, 154);                        63 46 9A
+ }</pre>
+<p>Usually you would expect the bracket distance to be 0x0002 but in the above case it is clearly 0x0005 which illustrates the difference between a straight 'if' statement and an 
+  'if..else' structure. The situation is the same for nested 'if..else' structures.</p>
+<p>The 'else' statements themselves are a lot like 'if' statements except that they're test condition is given after the 0xFE code but is instead the inverse of the condition given 
+  by the above 'if' statement. Only the bracket distance is given after the 0xFE code and then the AGI command clock that the 'else' statement encompasses.</p>
+<p>&nbsp;</p>
+<h3><i>TEST CONDITIONS</i></h3>
+<p>Conditions can be one of the following types:</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>FF 07 05 FF</td>
+      <td>One condition tested, ie. isset(5)</td>
+    </tr>
+    <tr>
+      <td>FF FD 07 05 FF</td>
+      <td>One condition NOTed, ie. !isset(5)</td>
+    </tr>
+    <tr>
+      <td>FF 07 05 07 06 FF</td>
+      <td>Multiple conditions, ANDed.</td>
+    </tr>
+    <tr>
+      <td>FF FC 07 05 07 06 FC FF</td>
+      <td>Multiple conditions ORed.</td>
+    </tr>
+    <tr>
+      <td>FF FC 07 06 07 06 FC FD 07 08 FF</td>
+      <td>Combination </td>
+    </tr>
+  </tbody>
+</table>
+<p>These conditions translate to:</p>
+<p>if (isset(5))<br />
+  if (!isset(5))<br />
+  if (isset(5) &amp;&amp; isset(6))<br />
+  if (isset(5) || isset(6))<br />
+  if ((isset(5) || isset(6)) &amp;&amp; !isset(7))</p>
+<p>If multiple boolean expressions are grouped together, then there respective values are ANDed together. If multiple boolean expressions are grouped together and then surrounded 
+  by a pair of $FC codes, then their values are ORed together.</p>
+<p>The $FD code only applies to the following condition code whose boolean<br />
+  value it inverts.</p>
+<h3><i>ARGUMENTS</i></h3>
+<p>You may well be asking how the interpreter knows how many arguments each code has and what type of argument each argument is. This information is stored in a file called AGIDATA.OVL 
+  (PC version). Inside this file there is a table which contains four bytes for each AGI command and condition code. These four bytes are interpreted as follows:</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>00 - 01</td>
+      <td>Pointer to the machine code implementation contained in the file AGI.</td>
+    </tr>
+    <tr>
+      <td>02</td>
+      <td>Number of arguments.</td>
+    </tr>
+    <tr>
+      <td>03</td>
+      <td>The type of arguments. </td>
+    </tr>
+  </tbody>
+</table>
+<p>The type of arguments value is interpreted as follows:</p>
+<table border="1">
+  <tbody>
+    <tr>
+      <td>BIT</td>
+      <td>7</td>
+      <td>6</td>
+      <td>5</td>
+      <td>4</td>
+      <td>3</td>
+      <td>2</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>command(</td>
+      <td>arg1,</td>
+      <td>arg2,</td>
+      <td>arg3,</td>
+      <td>arg4,</td>
+      <td>arg5,</td>
+      <td>arg6,</td>
+      <td>arg7);</td>
+      <td>(unknown)</td>
+    </tr>
+  </tbody>
+</table>
+<p>bit = 0 argument is interpreted as a number.<br />
+  bit = 1 argument is interpreted as a variable.</p>
+<p>It is unknown what bit 0 does since no AGI command or AGI condition code<br />
+  has more than seven arguments.</p>
+<p>Examples:</p>
+<p>$80 Says that the commands first argument is a variable.<br />
+  $60 Says that the second and third arguments are variable numbers.</p>
+<p>&nbsp;</p>
+<h3><i>VARIABLES</i></h3>
+<p>AGI games appear to have 255 variables. The first twenty or so variables will probably have a set meaning. For example, variable zero usually contains the current room number 
+  no matter what game is being played.</p>
+<p>&nbsp;</p>
+<h3><i>FLAGS</i></h3>
+<p>AGI games also have 255 flags. These flags can have either a true or false value. They are usually used to store whether something has taken place or not. For example, in KQ4 
+  the flag 'night' is used to say whether night has arrived yet.</p>
+<p>&nbsp;</p>
+<h3><i>THE TEXT SECTION</i></h3>
+<p>The text section of a logic script contains all the strings that can be displayed by that logic script. These strings are encrypted by xoring every eleven bytes with the string 
+  &quot;Avis Durgan&quot;.</p>
+<p>Example 4: KQ1. Room 2.</p>
+<pre>    if (said(look, alligators))
+    {
+       print(&quot;The alligators are swimming in the moat.&quot;);
+    }</pre>
+<p>In the above example, the print statement is represented as:</p>
+<p>65 08</p>
+<p>The $08 is the number given to the string and corresponds to its position in the list of strings at the end of the logic script.</p>
+<p>The format of the text section is as follows:</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>00</td>
+      <td>Number&nbsp;of&nbsp;messages </td>
+    </tr>
+    <tr>
+      <td>01&nbsp;-&nbsp;02</td>
+      <td>Pointer to end of messages </td>
+    </tr>
+    <tr>
+      <td>03&nbsp;-&nbsp;04</td>
+      <td>A list of offsets which point to each of the messages. The first offset naturally enough points to the start of the textual data.</td>
+    </tr>
+    <tr>
+      <td>...</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>??</td>
+      <td>Start of the text data. From this point the messages are<br />
+        encrypted with Avis Durgan. In their unencrypted form, each<br />
+        message is separated by a 0x00 or null value.</td>
+    </tr>
+  </tbody>
+</table>
+<p>&nbsp;</p>
+<h3><i>MACHINE CODE IMPLEMENTATION</i></h3>
+<p>The machine code for each AGI statement is found in the AGI file. This is the AGI interpreter itself. The data in the AGIDATA.OVL file is used to find the start of the implementation 
+  for an AGI statement. Below are a couple of examples:</p>
+<p>Example 5: MH2. equaln.</p>
+<pre>    ;equaln   (eg.   if (work = 3)   )
+    0D71 AC            LODSB                       ;get variable number
+    0D72 32FF          XOR     BH,BH
+    0D74 8AD8          MOV     BL,AL
+    0D76 AC            LODSB                       ;get test number
+    0D77 3A870900      CMP     AL,[BX+0009]        ;test if var = number
+    0D7B B000          MOV     AL,00               ;return 0 if not equal
+    0D7D 7502          JNZ     0D81
+    0D7F FEC0          INC     AL                  ;return 1 if equal
+    0D81 C3            RET</pre>
+<p>Example 6: MH2. equalv.</p>
+<pre>    ;equalv  (eg.   if (work = maxwork)   )
+    0D82 AC            LODSB                       ;get first var number
+    0D83 32FF          XOR     BH,BH               ;clear bh
+    0D85 8AD8          MOV     BL,AL               ;BX = variable number
+    0D87 8AA70900      MOV     AH,[BX+0009]        ;get first var value
+    0D8B AC            LODSB                       ;get second var number
+    0D8C 8AD8          MOV     BL,AL
+    0D8E 32C0          XOR     AL,AL               ;return 0 if not equal
+    0D90 3AA70900      CMP     AH,[BX+0009]        ;compare variables
+    0D94 7502          JNZ     0D98
+    0D96 FEC0          INC     AL                  ;return 1 if equal
+    0D98 C3            RET</pre>
+<p>These two examples show the difference between how numbers and variables are dealt with. In the case of a variable, the variables number is used as an index into the table of 
+  variable values to get the value which is being tested. It appears that the variable table is at offset $0009 in the data segment.</p>
+<p>&nbsp;</p>
+<h3><i>HOW THE INTERPRETER HANDLES LOGIC CODE</i></h3>
+<p>Now that you know a bit about what the actual code looks like once it has been converted into the LOGIC game data, we will now look at how these codes are interpreted by the 
+  interpreter. The following ASM code is the actual code from MANHUNTER:SAN FRANCISCO. There are some calls to routines which aren't displayed. Take my word for it that they do 
+  what the comment says. For those of you who can't follow whats going on, I'll explain the interpretation in steps after the code block.</p>
+<pre>;Decoding a LOGIC file. 
+1E6C:2EF2 56            PUSH	SI
+1E6C:2EF3 57            PUSH	DI                                 
+1E6C:2EF4 55            PUSH	BP                                 
+1E6C:2EF5 8BEC          MOV	BP,SP                              
+1E6C:2EF7 83EC02        SUB	SP,+02                             
+1E6C:2EFA 8B7608        MOV   SI,[BP+08]    ;SI -&gt; start of LOGIC script.
+1E6C:2EFD 8B7406        MOV   SI,[SI+06]    ;Skip first 6 bytes (header).
+1E6C:2F00 AC            LODSB               ;Get next byte in LOGIC file.
+1E6C:2F01 84C0          TEST  AL,AL         ;Is code a zero?
+1E6C:2F03 7414          JZ 2F19             ;If so, jump to exit.
+1E6C:2F05 3CFF          CMP   AL,FF         ;If an opening 'if' code is found
+1E6C:2F07 7419          JZ 2F22             ;jump to 'if' handler.
+1E6C:2F09 3CFE          CMP   AL,FE         ;If an 'else' has not been found
+1E6C:2F0B 7505          JNZ   2F12          ;jump over else/branch.
+1E6C:2F0D AD            LODSW               ;Get word (bracket distance)
+1E6C:2F0E 03F0          ADD   SI,AX         ;Add to SI. Skip else code.
+1E6C:2F10 EBEE          JMP   2F00          ;Go back to get next byte.
+1E6C:2F12 E8A8D6        CALL  05BD          ;Execute AGI command.
+1E6C:2F15 85F6          TEST  SI,SI         ;
+1E6C:2F17 75E8          JNZ   2F01          ;Jump back to top.
+1E6C:2F19 8BC6          MOV	AX,SI                              
+1E6C:2F1B 83C402        ADD	SP,+02                             
+1E6C:2F1E 5D            POP	BP                                 
+1E6C:2F1F 5F            POP	DI                                 
+1E6C:2F20 5E            POP	SI                                 
+1E6C:2F21 C3            RET
+
+;Handler for 'if' statement.
+;BH determines if its in an OR bracket (BH=1 means OR).
+;BL determines the nature of the evalutation (BL=1 means NOT)
+1E6C:2F22 33DB          XOR	BX,BX                              
+1E6C:2F24 AC            LODSB               ;Get next byte
+1E6C:2F25 3CFC          CMP   AL,FC         ;If less than 0xFC, then
+1E6C:2F27 721C          JB 2F45             ;jump to normal processing.
+1E6C:2F29 7508          JNZ   2F33          ;If greater, jump to 'if' close.
+1E6C:2F2B 84FF          TEST  BH,BH         ;(Could BH be the evaluation reg?
+1E6C:2F2D 7551          JNZ   2F80          ;or whether its the second FC?
+1E6C:2F2F FEC7          INC   BH            ;
+1E6C:2F31 EBF1          JMP   2F24          ;Go back to get next byte.                     
+1E6C:2F33 3CFF          CMP   AL,FF         ;Is the code for an 'if' close?
+1E6C:2F35 7505          JNZ   2F3C          ;If not, jump to 'not' test.
+1E6C:2F37 83C602        ADD   SI,+02        ;
+1E6C:2F3A EBC4          JMP   2F00          ;
+1E6C:2F3C 3CFD          CMP   AL,FD         ;Is the code for a 'not'?
+1E6C:2F3E 7505          JNZ   2F45          ;If not, jump to test command.
+1E6C:2F40 80F301        XOR   BL,01         ;
+1E6C:2F43 EBDF          JMP   2F24          ;Go back to get next byte.
+1E6C:2F45 53            PUSH  BX            ;BX = test conditions?? 
+1E6C:2F46 E8E8DD        CALL  0D31          ;Evaluate separate test command.
+1E6C:2F49 5B            POP   BX            ;
+1E6C:2F4A 32C3          XOR   AL,BL         ;Toggle the result for NOT.
+1E6C:2F4C B300          MOV   BL,00         ;
+1E6C:2F4E 7506          JNZ   2F56          ;If true jump to 2F56.
+1E6C:2F50 84FF          TEST  BH,BH         ;If BH=0 then not in OR and
+1E6C:2F52 742C          JZ 2F80             ;test is truely false.
+1E6C:2F54 EBCE          JMP   2F24          ;Otherwise evaluate next OR.
+1E6C:2F56 84FF          TEST  BH,BH         ;Are we in OR mode?
+1E6C:2F58 7424          JZ 2F7E             ;If not, continue with testing.
+1E6C:2F5A 32FF          XOR   BH,BH         ;If so, then we will skip the
+1E6C:2F5C 32E4          XOR   AH,AH         ;rest of the tests in the OR
+1E6C:2F5E AC            LODSB               ;bracket since the first is true.
+1E6C:2F5F 3CFC          CMP   AL,FC         ;OR: Waiting for closing OR.
+1E6C:2F61 741B          JZ 2F7E             ;If OR found, then continue testing.
+1E6C:2F63 77F9          JA 2F5E             ;
+1E6C:2F65 3C0E          CMP   AL,0E         ;If 'said' then goto said handler
+1E6C:2F67 7507          JNZ   2F70          ;else goto normal handler
+1E6C:2F69 AC            LODSB               ;Work out number of words in said
+1E6C:2F6A D1E0          SHL   AX,1          ;and jump over them.
+1E6C:2F6C 03F0          ADD   SI,AX         ;
+1E6C:2F6E EBEE          JMP   2F5E          ;
+1E6C:2F70 8BF8          MOV   DI,AX         ;Jumps over arguments.
+1E6C:2F72 D1E7          SHL   DI,1          ;
+1E6C:2F74 D1E7          SHL   DI,1          ;
+1E6C:2F76 8A856407      MOV   AL,[DI+0764]  ;Load up the number of arguments
+1E6C:2F7A 03F0          ADD   SI,AX         ;Add to the execution pointer
+1E6C:2F7C EBE0          JMP   2F5E          ;
+1E6C:2F7E EBA4          JMP	2F24
+
+;Test is false.
+;This routine basically skips over the rest of the codes until it finds the
+;closing 0xFF at which point it will load the following two bytes and add
+;them to the execution pointer SI.
+1E6C:2F80 32FF          XOR   BH,BH         
+1E6C:2F82 32E4          XOR	AH,AH                              
+1E6C:2F84 AC            LODSB               ;
+1E6C:2F85 3CFF          CMP   AL,FF         ;If the closing 0XFF is found,
+1E6C:2F87 741D          JZ 2FA6             ;jump 2FA6.
+1E6C:2F89 3CFC          CMP   AL,FC         ;If greater than FC,
+1E6C:2F8B 73F7          JNB   2F84          ;get next byte.
+1E6C:2F8D 3C0E          CMP   AL,0E         ;If 'said' then goto said handler
+1E6C:2F8F 7507          JNZ   2F98          ;else goto normal handler.
+1E6C:2F91 AC            LODSB               ;Work out number of words in said
+1E6C:2F92 D1E0          SHL   AX,1          ;and jump over them.
+1E6C:2F94 03F0          ADD	SI,AX                              
+1E6C:2F96 EBEC          JMP	2F84                               
+1E6C:2F98 8AD8          MOV   BL,AL         ;Jump over arguments.
+1E6C:2F9A D1E3          SHL	BX,1                               
+1E6C:2F9C D1E3          SHL	BX,1                               
+1E6C:2F9E 8A876407      MOV   AL,[BX+0764]  ;Load up the number of arguments.
+1E6C:2FA2 03F0          ADD   SI,AX         ;Add to the execution pointer.
+1E6C:2FA4 EBDE          JMP	2F84                               
+1E6C:2FA6 AD            LODSW	                                   
+1E6C:2FA7 03F0          ADD   SI,AX         ;Skip over if (includes 3 else bytes)
+1E6C:2FA9 E954FF        JMP	2F00</pre>
+<p>SITUATION 1: Okay, every LOGIC file starts in normal AGI command execution mode. In this routine, if the code is below 0xFC, then it is presumed to be an AGI command. It will 
+  then call the main command execution routine which will jump to the relevant routine for the specific command using the jump table stored in AGIDATA.OVL. The command is performed 
+  and it returns to the main execution routine where it loops back to the top and deals with the next code in the LOGIC file.</p>
+<p>SITUATION 2: If the code is an 0xFF code, then if jumps to the 'if' statement handler. In this routine is basically assesses whether the whole test condition evaluates to true 
+  or to false. It does this by treating each test separately and calling the relevant test command routines using the jump table in the AGIDATA.OVL file. Each test command routine 
+  will return a value in AL which says whether it is true or not (AL=1 is true, AL=0 is false). Depending on the NOTs and ORs, the whole expression is evaluated. If at any stage 
+  during the evaluation the routine decides that the expression will be false, it exits to another routine which skips the rest of the 'if' statement and<br />
+  then adds the two byte word following the closing 0xFF code to the execution pointer. This usually has the affect of jumping over the 'if' block of code. If the 'if' handler gets 
+  to the ending 0xFF then it knows the expression is true simply because it hasn't exited out of the routine yet. At this stage it jumps over the two bytes following the closing 
+  0xFF and then goes back to executing straight AGI commands.</p>
+<p>SITUATION 3: If in the normal execution of AGI commands, the code 0xFE is encountered, a very simple action takes place. The two bytes which follow form a 16-bit twos complement 
+  value which is added to execution pointer. This is all it does. Previously we said that the 0xFE code stood for the 'else' statement which is in actual fact correct for over 90% 
+  of the time, but the small number of other occurrences are best described as 'goto' statements. If you're confused by this, the following example will probably explain things.</p>
+<p>&nbsp;</p>
+<p>Example:</p>
+<pre> if (said( open, door)) {
+    [ first block of AGI statements
+ }
+ else {
+    [ second block of AGI statements
+ }</pre>
+<p>The above example is how the original coder would have written the AGI code. If we now look at the following example, it is not hard to see that it would achieve the same ting.</p>
+<pre> if (!said( open, door)) goto label1;
+    [ first block of AGI statements
+    goto label2:
+
+ label1:
+    [ second block of AGI statements
+
+ label2:</pre>
+<p>This is exactly how all if's and else's are implemented in the LOGIC code. The 'if' statement is a conditional branch where the branch is taken if the condition is not met, while 
+  the 'else' statement is a nonconditional jump. If a 0xFE code appears in the middle of some AGI code and wasn't actually originally coded as an 'else', then it was most likely 
+  a 'goto' statement.</p>
+<p>&nbsp;</p>
+<h3><i>THE 'SAID' TEST COMMAND</i></h3>
+<p>The above ASM code does raise a very important point. The 'said' command can have a variable number of arguments. Its code is 0x0E, and the byte following this byte gives the 
+  number of two byte words that follow as parameters.</p>
+<p>Examples:</p>
+<p>if (said( marble)) FF 0E 01 1E 01 FF<br />
+  if (said( open, door)) FF 0E 02 37 02 73 00 FF</p>
+<p>In the above examples, the values 0x011E, 0x0237, and 0x0073 are just random word numbers that could stand for the words given.</p>
+<p>&nbsp;</p>
+<h3><i>INNER LOOPS</i></h3>
+<p>At first I almost totally discarded the existence of loops in the AGI code because it seemed to me that execution of the LOGIC file continually looped. Loop code like 'while', 
+  'do..while', and 'for' statements wouldn't be needed because you could just use a variable to increment with each pass and an 'if' statement to test the value of the variable 
+  and take action if it was withing<br />
+  the desired range.</p>
+<p>Example:</p>
+<pre>  if (greatern(30, 45) &amp;&amp; lessn(30, 55)) {
+     print(&quot;You're in the hot zone!);
+     increment(30);
+  }</pre>
+<p>I have found evidence of this sort of thing taking place which means that they must loop over continuously. I don't know whether this is something that the interpreter does itself 
+  or whether it is part of the AGI code, eg. at the end of one LOGIC file it calls another which then calls the first one again. With the existence of the conditional branching 
+  and unconditional branching nature of the 'if' and 'else' statement, it is easy to see that some of the structures such as 'do..while' can infact be coded into LOGIC code.</p>
+<p>Example:</p>
+<p>FF FD 0D FF 03 00 FE F7 FF</p>
+<pre>  do {
+  } while (!havekey);</pre>
+<p>The above translation is a simple one which is taken from SQ2. The value 0xFFF7 is the twos complement notation for -9 which is the exact branching value to take the execution 
+  back to the start of the 'if' statement. If the above example had AGI code between the 0x00 and the 0xFE, then there would be code within the brackets of the 'do..while' structure. 
+  I don't know whether the original AGI coders used these statements or used 'goto' statements to achieve the same result.</p>
+<p>&nbsp;</p>
+<h3><i>NEW INFORMATION ON LOGIC INTERPRETATION</i></h3>
+<p>It has now come to light that LOGIC.0 is run over and over again with each interpretation cycle. The other LOGICs that have been loaded will only get executed if LOGIC.0 calls 
+  them directly or indirectly (i.e. LOGICs called from LOGIC.0 can call other LOGICs and so on).</p>
+<p>I have also become aware that code 0x00 can basically be throught of as the command &quot;return&quot;. If LOGIC.0 calls another logic, the execution will return to LOGIC.0 when the 0x00 
+  code is encountered.</p>
+<p>It is also possible to set the entry point for a LOGIC file. The set.scan.start() command makes the entry point of the LOGIC file being executed equal to the position of the 
+  command following set.scan.start(). This means that the next time the LOGIC file is executed, execution begins at that point. The reset.scan.start() command sets the entry point 
+  back to the start of the LOGIC.</p>
+<p>&nbsp;</p>
+<h3><i>THE AGI LANGUAGE</i></h3>
+<p>The following is a little bit about what we know of commands and how they function. The commands can be grouped together depending on what they deal with. For example,</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>load.view</td>
+      <td>Load a VIEW from a VOL file into memory.</td>
+    </tr>
+    <tr>
+      <td>load.view.v</td>
+      <td>Load the VIEW number contained in the given variable.</td>
+    </tr>
+    <tr>
+      <td>discard.view</td>
+      <td>Discard a VIEWs data from memory.</td>
+    </tr>
+    <tr>
+      <td>set.view</td>
+      <td>Assign a view to an internal view number.</td>
+    </tr>
+    <tr>
+      <td>set.view.v</td>
+      <td>Same but the variable contains the number. </td>
+    </tr>
+  </tbody>
+</table>
+<p>Clearly all of these commands deal with VIEWs. Likewise there are groups of PICTURE commands, SOUND commands, and LOGIC commands. A large group of commands deal with animating 
+  the VIEWs.</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>set.loop</td>
+      <td>Set which loop (or sequence within the VIEW) to use.</td>
+    </tr>
+    <tr>
+      <td>set.cel</td>
+      <td>Set which cel (or individual frame) to display.</td>
+    </tr>
+    <tr>
+      <td>animate.obj</td>
+      <td>Animates a view (or object) as opposed to just showing it (show.obj).</td>
+    </tr>
+    <tr>
+      <td>step.time</td>
+      <td>Determine the speed of the animation.</td>
+    </tr>
+    <tr>
+      <td>cycle.time</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>draw</td>
+      <td>Actually draws the VIEW with the setting it was given.</td>
+    </tr>
+    <tr>
+      <td>start.update</td>
+      <td>Starts the animation of a previously inanimate object.</td>
+    </tr>
+    <tr>
+      <td>end.of.loop</td>
+      <td>Waits for the loop of animation to complete.</td>
+    </tr>
+  </tbody>
+</table>
+<p>You can now get read a description of how all the AGI commands function thanks to a group of Russian people who have been working on a similar project to ours. The English translation 
+  of this document should be available where you found this document.</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

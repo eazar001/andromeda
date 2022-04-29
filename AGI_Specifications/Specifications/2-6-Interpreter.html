@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 2.6 Processing Parsing the Player Input - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">2.6 Processing Parsing the Player Input</h1>
+<div align="center">from AGDS docs*<br />
+  Last updated: 31 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp; 
+<blockquote>
+  <p>* This is from the manual of AGDS (Adventure Game Development Toolkit) which contains a good deal of information about the AGI interpreter and its data formats. Translated from Russian by Vassili 
+    Bykov, <a href="mailto:vbykov@cam.org">vbykov@cam.org</a></p>
+  <p>NOTE: This is taken from the description of the said command from <a href="4-3-Logic.html">section 4.3</a></p>
+</blockquote>
+<p>Here is how the input is matched. After the player types a message and presses Enter, the input line is processed by the interpreter.</p>
+<ol>
+  <li>Interpreter removes all punctuation marks.</li>
+  <li>All characters are converted to lowercase.</li>
+  <li>All sequences of more than one space are replaced with a single space.</li>
+  <li>Starting with the first word of the input, the interpreter looks up the vocabulary, trying to find the longest character sequence matching the entered.</li>
+</ol>
+<p>If the search is unsuccessful, Var(9) is assigned the number of<br />
+  the word in the message that failed to match and the processing<br />
+  ends. If all the words have been assigned some codes:</p>
+<ul>
+  <li>The Interpreter removes from the sequence of codes all zeros (that means all vocabulary words with zero codes are ignored).</li>
+  <li>Flag(2) (the user has entered an input line) is set to 1</li>
+  <li>Flag(4) (`said' command accepted the user input) is set to 0.</li>
+</ul>
+<p>If the sequence of code produced by the interpreter is</p>
+<p>V(1), V(2),...V(m).</p>
+<p>The test is performed as follows:</p>
+<p>If Flag(2) = 0 or Flag(4) = 1, return FALSE.</p>
+<p>Compare parameters W(i) and codes V(i) as follows:</p>
+<ul>
+  <li>if W(i) = 1, it matches any V(i);</li>
+  <li>if W(i) = 9999, it matches the whole remaining input i.e. the codes V(i), V(i+1),...V(m).</li>
+</ul>
+<p>Otherwise W(i) should be equal to V(i).</p>
+<p>If all elements match, Flag(4) (`said' accepted the user input) is set to<br />
+  1 and the command returns TRUE. Otherwise, FALSE is returned.</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

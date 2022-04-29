@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 3.2 VOL File Format - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">3.2 VOL File Format (version 2)</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 31 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<p>VOL files are the main data files for AGI games. They contain four types of data: LOGIC, PICTURE, VIEW, and SOUND data. A VOL file is a collection of a large number of these 
+  &quot;resource&quot; files which can be in any order. The directory files determine the start of each resource.</p>
+<p>The start of every resource file has a five byte header.</p>
+<table border="1" align="center">
+  <tbody> 
+  <tr align="center"> 
+    <td>0</td>
+      
+    <td>1</td>
+      
+    <td>2</td>
+      
+    <td>3</td>
+      
+    <td>4</td>
+    </tr>
+    <tr>
+      <td colspan="2">Signature</td>
+      <td>Vol</td>
+      <td colspan="2">Length</td>
+    </tr>
+  </tbody>
+</table>
+<p>Signature: is always equal to 0x12 : 0x34<br />
+  Vol: gives the VOL number that the resource is contained in.<br />
+  Length: is the length of the resource taken from after the header.</p>
+<p>The data after the header depends on the type of resource file. These formats are documented elsewhere.<br />
+</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

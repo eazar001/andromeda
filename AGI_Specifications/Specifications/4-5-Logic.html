@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 4.5 Sample LOGIC Code from KQ4 - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">4.5 Discussion of Sample LOGIC Code from KQ4</h1>
+<div align="center">Last updated: 31 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<h3><i>Kings Quest IV: Room 7</i></h3>
+<blockquote>
+  <p>Some of you may know that &quot;The Official Book of King's Quest&quot; included three small fragments of AGI code for ROOM 7 in the AGI version of KQ4. These fragments are given below along with 
+    the same fragments taken from the game itself. There are a few differences which is to be expected but generally the code is very similar. These examples show how the coder wrote the code and what 
+    it now looks like in the final product. I've included a few comments where some interesting observations can be seen.</p>
+</blockquote>
+<hr />
+<h3><i>Animating the smoke</i></h3>
+<p>FROM THE BOOK</p>
+<pre> animate.obj( smoke);
+ ignore.horizon( smoke);
+ set.view( smoke, v.fish.cabin);
+ set.loop( smoke, 1);
+ ignore.blocks( smoke);
+ position( smoke, 95, 16);
+ work = 3;
+ step.time( smoke, work);
+ cycle.time( smoke, work);
+ draw( smoke);</pre>
+<p>FROM THE GAME</p>
+<pre> animate.obj(7);
+ ignore.horizon(7);
+ set.view(7, 114);
+ set.loop(7, 1);
+ ignore.objs(7);                [ These two lines have been added.
+ set.priority(7, 5);            [
+ ignore.blocks(7);
+ position(7, 95, 16);
+ assignn(152, 3);               [ Equivalent to 'work = 3;'
+ step.time(7, 152);
+ cycle.time(7, 152);
+ draw(7);</pre>
+<p>COMMENTS</p>
+<hr />
+<h3><i>Opening the door</i></h3>
+<p>FROM THE BOOK</p>
+<pre>if (said( open, door)) {     [ must be close enough
+  if (posn( ego, 86, 120, 106, 133)) {
+    if (!night) {
+      if ( door.open) {
+        print(&quot;The door is already open. . .
+      }
+      else {
+        set( game.control);
+        set.priority( ego, 11);
+        start.update( door);
+        end.of.loop( door, door.done);
+      }
+    }
+    else {
+      print(&quot;You can't -- it's locked...
+    }
+  }
+  else {
+    set( notCloseEnough);
+  }
+}</pre>
+<p>FROM THE GAME</p>
+<pre>if (said(OPEN, DOOR||DOORS||DOORWAY||DOORWAYS)) { 
+  if (posn(0, 86, 120, 106, 133)) { 
+    if (!isset(38)) { 
+      if (isset(231)) { 
+        print(&quot;The door is already open.&quot;);  
+      }
+      else { 
+        set(36);
+        prevent.input();
+        start.update(5);
+        assignn(152, 3);
+        cycle.time(5, 152);
+        end.of.loop(5, 232);
+        sound(70, 154);
+      }
+    }           
+    else { 
+      print(&quot;You can't.  It's locked and you 
+             don't have the key.&quot;);
+    }
+  }
+  else { 
+    set(113);
+  }
+}</pre>
+<hr />
+<h3><i>Unlocking the door</i></h3>
+<p>FROM THE BOOK</p>
+<pre> if (said( unlock, door)) {     [must be close enough
+   if (posn( ego, 86, 120, 106, 133)) {
+     if (!night) {
+       print(&quot;The door is already unlocked. . .
+     }
+     else {
+       printf(&quot;You can't, it's locked. . .
+     }
+   }
+   else {
+     set( notCloseEnough);
+   }
+ }</pre>
+<p>FROM THE GAME</p>
+<pre> if (said(UNLATCH||UNLOCK, DOOR||DOORS||DOORWAY||DOORWAYS)) { 
+   if (posn(0, 86, 120, 106, 133)) { 
+     if (!isset(38)) { 
+       print(&quot;The door is already unlocked.&quot;);
+     }
+     else { 
+       print(&quot;You can't.  It's locked and you 
+              don't have the key.&quot;);
+     }
+   }
+   else { 
+     set(113);
+   }
+ }</pre>
+<hr />
+<h3><i>Knocking on the door</i></h3>
+<p>FROM THE BOOK</p>
+<pre> if ((said( knock, at, door) || said( knock) ||
+      said( knock, on, door) || said( knock, door)) {
+   if (posn( ego, 86, 120, 106, 133)) {
+     if (!night) {
+       print(&quot;You knock on the door. . .
+              a woman says. . .
+     }
+     else {
+       printf(&quot;You knock on the. . .
+               a man calls out. . .
+     }
+   }
+   else {
+     set( notCloseEnough);
+   }
+ }
+</pre>
+<p>FROM THE BOOK</p>
+<pre> if (said(BANG||KNOCK||RAP||TAP) ||
+     said(BANG||KNOCK||RAP||TAP, DOOR||DOORS||DOORWAY||DOORWAYS)) { 
+   if (posn(0, 86, 120, 106, 133)) { 
+     if (!isset(38)) { 
+       print(&quot;You assertively knock on the shanty 
+              door.  A woman's voice answers, &quot;Jest come on in!&quot;&quot;);
+     }
+     else { 
+       print(&quot;You assertively knock on the shanty 
+              door.  From inside, a man's voice calls out, &quot;D'ya know 
+              what TIME it is?!  GO AWAY!!&quot;&quot;);
+     }
+   }
+   else { 
+     set(113);
+   }
+ }
+</pre>
+<hr />
+<h3><i>Fall rocks</i></h3>
+<p>FROM THE BOOK</p>
+<pre> if (hit.special) {
+   if ((rf2 || rf3 || rf4)) {
+     reset(hit.special);
+     get.posn(ego, priorx, priory);
+     position.f(dude, priorx, priory);
+     ignore.blocks(dude);
+     set( game.control);
+     set.view( dude, v.ego.land);
+     if ((ego.dir == 3 || ego.dir == 4)) {
+       set.loop( dude, 2);
+     }
+     else {
+       set.loop( dude, 3);
+     }
+     fix.loop(dude);
+     work = 3;
+     step.size( dude, work);
+     work = 3;
+     cycle.time( dude, work);
+     start.cycling(dude);
+     erase(ego);
+     draw(dude);
+     if (rf3) {
+       work6 = 0;
+       move.obj.f( dude, tempx, tempy, work6, fall.done);
+     }
+     if (rf4) {
+       work6 = 0;
+       move.obj.f( dude, tempx, tempy, work6, fall.done);
+     }
+     if (rf2) {
+       if (priory &lt; 125) {
+         set.priority( dude, 9);
+         tempy=132;
+         work6=0;
+         move.obj.f( dude, ego,x, tempy, work6, fall.done);
+       }
+       else {
+         set.priority(dude, 15);
+         tempy = 156;
+         work6 = 0;
+         move.obj.f( dude, ego.x, tempy, work6, fall.done);
+       }
+     }
+   }
+ }
+</pre>
+<p>FROM THE GAME</p>
+<pre> if (isset(3)) {     [ hit.special
+   if (isset(222) || isset(223) || isset(224)) {     [ rf2, rf3, rf4
+     reset(3);
+     sound(51, 154);
+     get.posn(0, 134, 135);
+     position.v(12, 134, 135);
+     ignore.blocks(12);
+     set(36);
+     prevent.input();
+     set.view(12, 11);
+     if (equaln(6, 3) || equaln(6, 4)) { 
+       set.loop(12, 2);
+     }
+     else { 
+       set.loop(12, 3);
+     }  
+     fix.loop(12);
+     assignn(152, 3);
+     step.size(12, 152);
+     assignn(152, 3);
+     cycle.time(12, 152);
+     start.cycling(12);
+     erase(0);
+     draw(12);
+     if (isset(223)) { 
+       assignn(158, 0);
+       move.obj.v(12, 107, 108, 158, 226);
+     }
+     if (isset(224)) {
+       assignn(158, 0);
+       move.obj.v(12, 107, 108, 158, 226);
+       set.priority(12, 14);
+     }
+     if (isset(222)) { 
+       if (lessn(135, 125)) { 
+         set.priority(12, 9);
+         assignn(108, 132);
+         assignn(158, 0);
+         move.obj.v(12, 33, 108, 158, 226);
+       }
+       else { 
+         set.priority(12, 14);
+         assignn(108, 158);
+         assignn(158, 0);
+         move.obj.v(12, 33, 108, 158, 226);
+       }
+     }
+   }
+ }
+</pre>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

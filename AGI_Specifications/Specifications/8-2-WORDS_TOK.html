@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 8.2 WORDS.TOK Format - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">8.2 WORDS.TOK Format</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 31 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<p>The WORDS.TOK file is used to store the games vocabulary, i.e. the dictionary of words that the interpreter understands. These words are stored along with a word number which 
+  is used by the 'said' test commands as argument values for that command. Many words can have the same word number which basically means that these words are synonyms for each 
+  other as far as the game is concerned.</p>
+<p>The file itself is both packed and encrypted. Words are stored in alphabetic order which is required for the compression method to work.</p>
+<h3><i>THE FIRST SECTION</i></h3>
+<p>At the start of the file is a section that is always 26x2 bytes long. This section contains a two byte entry for every letter of the alphabet. It is essentially an index which 
+  gives the starting location of the words beginning with the corresponding letter.</p>
+<table border="1" class="Outlined" cellspacing="0" align="center" width="565">
+  <tbody> 
+  <tr>
+      <th>Byte</th>
+      <th>Purpose</th>
+    </tr>
+    <tr>
+      <td>0-1</td>
+      <td>Hi and then Lo byte for 'A' offset.</td>
+    </tr>
+    <tr>
+      <td>.....</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td>50-51</td>
+      <td>Hi and then Lo byte for 'Z' offset.</td>
+    </tr>
+    <tr>
+      <td>52-</td>
+      <td>Words section.</td>
+    </tr>
+  </tbody>
+</table>
+<p>The important thing to note from the above is that the normal Lo-Hi byte order convention used everywhere else in the AGI system is not used here. For example, 0x00 and 0x24 
+  means 0x0024, not 0x2400. This method is used later on for word numbers as well.</p>
+<p>All offsets are taken from the beginning of the file. If no words start with a particular letter, then the offset in that field will be 0x0000.</p>
+<h3><i>THE WORDS SECTION</i></h3>
+<p>Words are stored in a compressed way in which each word will use part of the previous word as a starting point for itself. For example, &quot;forearm&quot; and &quot;forest&quot; both have the prefix 
+  &quot;fore&quot;. If &quot;forest&quot; comes immediately after &quot;forearm&quot;, then the data for &quot;forest&quot; will specify that it will start with the first four characters of the previous word. Whether 
+  this method is used for further confusion for would be cheaters or whether it is to help in the searching process, I don't yet know, but it most certainly isn't purely for compression 
+  since the WORDS.TOK file is usally quite small and no attempt is made to compress any of the larger files (before AGI version 3 that is).</p>
+<table border="1" align="center" width="565" cellspacing="0">
+  <tbody> 
+  <tr>
+      <td>Prefix</td>
+      <td>Char.1</td>
+      <td>Char.2</td>
+      <td>......</td>
+      <td>Last Char</td>
+      <td>WordNum Hi</td>
+      <td>WordNum Lo</td>
+    </tr>
+  </tbody>
+</table>
+<p>Prefix - Number of characters to include from start of prevous word.<br />
+  Char.n - 0x7F xor Char.n gives the ASCII code for the character.<br />
+  Last Char - 0x7F xor (Char.n &amp; 0x7F) gives ASCII code. Top bit is set to indicate end of word.<br />
+  WordNum Hi - Hi byte of word number.<br />
+  WordNum Lo - Lo byte of word number.</p>
+<p>If a word does not use any part of the previous word, then the prefix field is equal to zero. This will always be the case for the first word starting with a new letter. There 
+  is nothing to indicate where the words starting with one letter finish and the next set starts, infact the words section is just one continuous chain of words conforming to the 
+  above format. The index section mentioned earlier is not needed to read the words in which suggests that the whole WORDS.TOK format is organised to find words quickly.</p>
+<h3><i>A NOTE ABOUT WORD NUMBERS</i></h3>
+<p>Some word numbers have special meaning. They are listed below:</p>
+<table border="1" cellspacing="0" align="center" class="Outlined" width="565">
+  <tbody> 
+  <tr>
+      
+    <th width="55">Word&nbsp;#</th>
+      
+    <th>Meaning</th>
+    </tr>
+    <tr>
+      
+    <td valign="top" width="55">0</td>
+      
+    <td valign="top">Words are ignored (e.g. the, at).</td>
+    </tr>
+    <tr>
+      
+    <td valign="top" width="55">1</td>
+      
+    <td valign="top">Anyword.<br />
+        e.g.<br />
+        <br />
+        
+      <pre>  if (said(take, anyword))
+    print(&quot;You can't - Blackbeard has chopped both
+      your arms off.&quot;);
+  }</pre>
+    </td>
+    </tr>
+    <tr>
+      
+    <td valign="top" width="55">9999</td>
+      
+    <td valign="top">ROL (Rest Of Line). It does matter what the rest of the input list is.</td>
+    </tr>
+  </tbody>
+</table>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

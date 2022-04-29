@@ -1,0 +1,210 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+  <meta http-equiv="content-Type" content="text/html; charset=utf-8" />
+  <title>AGI Specifications: 2.1 The AGI Interpreter Overview - The Sierra Help Pages</title>
+  <meta name="keywords" content="agi studio, peter kelly, utils, utilities, chat, irc, demo, download, agi, games, fan, further, dev, development, sierra" />
+  <meta name="description" content="Futher development of AGI Studio" />
+  <link rel="stylesheet" href="../Assets/Common.css" type="text/css" />
+
+</head>
+<body onunload="closePopWin()">
+<a name="Top" id="Top"></a>&nbsp;
+<h1 align="center">2.1 General AGI Interpreter Overview</h1>
+<div align="center">by <a href="mailto:be@ihug.co.nz">Lance Ewing &lt;be@ihug.co.nz&gt;</a><br />
+  Last updated: 20 August 1997<br />
+  <i>Retrived from the Internet Archive</i></div>
+&nbsp;
+<h3><i>What is AGI?</i></h3>
+<p>AGI stands for Adventure Game Interpreter. It is the old version of Sierra on-lines 3D adventure interpreter.</p>
+<h3><i>What games used the AGI interpreter?</i></h3>
+<p>Kings Quest 1-3<br />
+  Kings Quest 4 (256K version)<br />
+  Space Quest 1, 2<br />
+  Police Quest<br />
+  Leisure Suit Larry<br />
+  Black Cauldron<br />
+  Mixed Up Mother Goose<br />
+  Gold Rush<br />
+  Manhunter 1, 2</p>
+<p>There were also a number of demos that were written in AGI.</p>
+<p>XMAS animated christmas card<br />
+  KQ4 demo<br />
+  PQ1, THEXDER, HELICOPTER SIMULATOR, SQ2, LSL1, and MUMG one program demo</p>
+<p>I have been told that a game called Donald Duck's Playground used an early version of AGIv2 as well (v2.001 to be exact).</p>
+<h3><i>How many versions of the AGI interpreter were there?</i></h3>
+<p>There were three main version of the AGI interpreter. The first version was the one used with KQ1 and KQ2 when they were originally released. The graphics were in CGA but apart 
+  from that the games looked very much like the later EGA remakes. The second version is the one we are most familiar with and was used for the majority of the above games. It added 
+  support for the 16 colour EGA card but<br />
+  still kept the old 160x200 resolution that the original games had. The third and final version of the AGI interpreter came out for only a short while before the SCI interpreter 
+  hit the scene. There were five games that I know of which used this version. Sierra obvious noticed the increased size of the games and therefore added data compression to this 
+  version. There are a few differences in the way the data is stored other than the compression as well, but the data itself still contains exactly the same information. It is<br />
+  therefore possible to convert a version 3 game into the version 2 format and vice versa.</p>
+<h3><i>What files make up an AGI game and what do these files contain?</i></h3>
+<p><strong>AGI:</strong> This is the main interpreter file. It contains all the routines for the various AGI commands.</p>
+<p><strong>AGIDATA.OVL:</strong> This file contains various bits of data for the AGI interpreter such as interpreter error messages and jump tables for the AGI commands inside the 
+  AGI file.</p>
+<p><strong>SIERRA.COM:</strong> This is the loader which loads the interpreter file. In some games this will be combined with the AGI file to give one executable often called SIERRA.EXE 
+  or maybe the initials of the game.</p>
+<p><strong>LOGDIR, VIEWDIR, PICDIR, SNDDIR:</strong> These files are basically like an index into the VOL files. They give the location of each of LOGIC, PICTURE, VIEW, and SOUND 
+  data within the VOL files. They are therefore called directory files. In version 3 of the interpreter, these files are combined into one file with a header which gives the offset 
+  of each part. The name of this single directory file is *DIR where the * is the initials of the game (eg. KQ4DIR, MH2DIR, GRDIR, BCDIR, MH1DIR).</p>
+<p><strong>VOL.*:</strong> These files contain the main game data. Whereas the AGI interpreter may not change between games, the VOL files will always be different. They look very 
+  much like a virtual device which contain many individual files whose positions are given by the directory files. In version 3 games, the VOL files are named *VOL where the * is 
+  the initials of the game. (eg. KQ4VOL.0, GRVOL.10, MH2VOL.5).</p>
+<p><strong>WORDS.TOK:</strong> This file contains a list of all the words that the user may type in during the game. The words are partly compressed and encrypted as well, so you 
+  won't be able to see the words if you display the file as you normally would.</p>
+<p><strong>OBJECT:</strong> This file contains a list of all the inventory items that the user can find in the game. This file is also encrypted but in a different way using the 
+  phrase &quot;Avis Durgan&quot;. Each object also has associated with it a number that gives the starting room for that object.</p>
+<p><strong>*.OVL:</strong> Apart from the AGIDATA overlay file which was mentioned above, most of these files are the device drivers for the various display adapters that are supported. 
+  They are overlay files which are only brought in depending on which display adapter has been selected. IBM_OBJS.OVL and HGC_OBJS.OVL seem to be more to do with the VIEWs (sprites) 
+  though.</p>
+<h3><i>What are the LOGIC, PICTURE, SOUND, and VIEW data files?</i></h3>
+<p><strong>LOGIC:</strong> This data contains the logic scripts that contain the AGI commands which the interpreter runs. All rooms have a single LOGIC script that governs what 
+  happens within that room. At the end of a LOGIC file is a text section which contains all the messages that are specific to the functioning of that particular LOGIC script. These 
+  are encrypted with the &quot;Avis Durgan&quot; string in the case of version 2 games.</p>
+<p><strong>PICTURE:</strong> These files contain the picture codes which are used to draw the full screen pictures that you see for each room. The codes are vector based and draw 
+  a screen in the manner that the artist originally did. There are two screens store in each PICTURE file: the visual screen and the priority screen. The priority screen contains 
+  priority bands and control lines. In version 3 games, this file is not compressed with adaptive LZW as the VIEW, LOGIC, and SOUND files are. The format is also slightly different 
+  for codes 0xF0 and 0xF2 in order to slighly compress the data.</p>
+<p><strong>VIEW:</strong> These files contain all the still props (like objects), actors (like ogres and labion terror beasts), and animated props (like flags blowing in the breeze). 
+  All inventory item pictures are a specialized type of VIEW which has a text description tagged to the end of the file. Views are made up of many loops (animation cycles) that 
+  are in turn made up of many cels (a single frame of animation).</p>
+<p><strong>SOUNDS:</strong> These files contain all the musical scores and sound effects which on most machines are one voice over the PC speaker but on some machines, like the 
+  PCjr, will be in three voices.</p>
+<h3><i>What are the AGI commands?</i></h3>
+<p>The AGI commands are what makes up the AGI programming language if you like. Everyones had a muck around with BASIC which is almost always an interpreted language. Well, the 
+  AGI commands are like the BASIC statements in BASIC, or like the procedures and functions in Pascal. In both of these languages there are two types of command, those that return 
+  a value and those that don't. AGI is much the same in that it has one group of commands that return boolean values and one group which returns nothing. It also has a small subset 
+  of keywords (if, else, not, else, or, and, goto, return) which aren't AGI commands as such. At the last count, there were about 181 procedure type commands and about 18 boolean 
+  returning function commands (test commands). We only know the names of 169 of the procedure type commands because this is all Sierra has included in their command list used in 
+  debug tracing.</p>
+<p>Example LOGIC code (from the AGI version of KQ4):</p>
+<pre> animate.obj( smoke);
+ ignore.horizon( smoke);
+ set.view( smoke, v.fish.cabin);
+ set.loop( smoke, 1);
+ ignore.blocks( smoke);
+ position( smoke, 95, 16);
+ work = 3;
+ step.time( smoke, work);
+ cycle.time( smoke, work);
+ draw( smoke);</pre>
+<h3><i>What are the debug modes?</i></h3>
+<p>Testers often need some way to achieve certain things quickly so that they can test a certain part of the game. Most AGI games still have the debug code that these testers used 
+  when the games were being developed. Of the thirteen AGI games mentioned above, there are only three which I havn't discovered the debug mode in. Most of the games activate their 
+  debug modes by pushing the ALT-D key combination. The other games used a magic phrase to enter the debug mode.</p>
+<p>Gold Rush: type &quot;bird man&quot;.<br />
+  Kings Quest 3: type &quot;rats ass&quot; (in some versions ALT-D works instead).<br />
+  Police Quest: type &quot;stink bug&quot;.<br />
+  Space Quest 2: type &quot;backstage&quot; or &quot;dbg&quot;.<br />
+  type &quot;tester&quot; to bring up Rogers screen coordinates.</p>
+<p>The following are standard debug mode commands:</p>
+<table border="0">
+  <tbody>
+    <tr>
+      <td>TP</td>
+      <td>Teleport to another room.</td>
+    </tr>
+    <tr>
+      <td>SHOW PRIORITY</td>
+      <td>Show the current rooms priority bands and control lines.</td>
+    </tr>
+    <tr>
+      <td>GET OBJECT</td>
+      <td>Get any inventory item.</td>
+    </tr>
+    <tr>
+      <td>GIMME GIMME</td>
+      <td>Get all inventory items.</td>
+    </tr>
+    <tr>
+      <td>SHOW FLAG</td>
+      <td>Show one of the 256 flags.</td>
+    </tr>
+    <tr>
+      <td>SET FLAG</td>
+      <td>Set one of the 256 flags.</td>
+    </tr>
+    <tr>
+      <td>RESET FLAG</td>
+      <td>Clear one of the 256 flags.</td>
+    </tr>
+    <tr>
+      <td>SHOW VAR</td>
+      <td>Show one of the 256 variables.</td>
+    </tr>
+    <tr>
+      <td>SET VAR</td>
+      <td>Change the value of one of the 256 variables.</td>
+    </tr>
+    <tr>
+      <td>POSITION</td>
+      <td>Change egos position.</td>
+    </tr>
+    <tr>
+      <td>SHOW POSITION</td>
+      <td>Show egos current screen coordinates.</td>
+    </tr>
+    <tr>
+      <td>OBJECT NUMBER</td>
+      <td>Gives a list of all the objects and their object numbers.</td>
+    </tr>
+    <tr>
+      <td>OBJECT ROOM</td>
+      <td>Says which room an object is found in.</td>
+    </tr>
+    <tr>
+      <td>ROOM</td>
+      <td>Says what room number ego is currently in.</td>
+    </tr>
+    <tr>
+      <td>SET PRIORITY</td>
+      <td>Set the priority of ego.</td>
+    </tr>
+    <tr>
+      <td>RELEASE PRIORITY</td>
+      <td>Release the last priority that ego was set to.</td>
+    </tr>
+  </tbody>
+</table>
+<p>Of all the AGI games, it is unknown whether MH1, MH2 and Mixed Up Mother Goose have a debug mode or not. MUMG probably doesn't even though its words.tok file has all the debug 
+  words contained in it. Manhunter 2 has some kind of debug mode which allows you to teleport and change variable values because there are text messages in the first LOGIC file 
+  along these lines. Manhunter:New York probably has the same debug mode.</p>
+<p>Initially we didn't know whether the AGI version of KQ4 had a debug mode or not but we now know that it does have one and it is activated with the ALT-D key combination as is 
+  the common practice.</p>
+<p>You may be lucky to find a game which allows command tracing. Almost all games have this facility taken out. It is possible to get it to work on some games if you add certain 
+  things to the data. What this mode does is to respond to the Scroll-Lock key by displaying a window box which you can step through the test commands that are being executed.</p>
+<p>- Most keys step forward one test command.<br />
+  - The + key steps to the start of the next LOGIC file.</p>
+<p>Example:</p>
+<pre>     =============================
+     0: greatern (17, 0)
+                 (0, 0)         :F</pre>
+<p>The line of = characters shows the start of an AGI cycle. The number at the start of a line gives the LOGIC number that is currently being executed. In the case above, the (0, 
+  0) is the numeric value of the two parameters above it, i.e. the 17 in the above line refers to variable 17, and the 0 below it is the current value of variable 17. The 'F' and 
+  'T' characters at the end of a line tell us whether the expression evaluated to be false or true.</p>
+<p>Notice that when you reach the start of LOGIC.0 again, all the controlled VIEW objects on the screen are updated. Using this tracing mode is a good way to get a feel for what 
+  happens which each cycle of interpretation.</p>
+<h3><i>What are the priority bands and control lines?</i></h3>
+<p>Okay, you've probably all seen those strange screens that you can activate by typing &quot;SHOW PRIORITY&quot; in the debug modes discussed above. Here's an explanation of what this screen 
+  is used for.</p>
+<p>PRIORITY BANDS: The screen has about eleven even sized invisible bands across the screen called priority bands. When ego walks up and down the screen, he or she will move from 
+  one priority band into the next priority band. The current priority band that ego is in, along with the priority screen that you see when you type &quot;SHOW PRIORITY&quot;, is used to 
+  determine which parts of ego to draw and which parts not to draw. This is used to give the affect of ego moving behind trees and rocks etc. Everything on the screen has a priority 
+  associated with it which is given by its colour on the priority screen. The higher the priority colour, the more priority it has to be drawn.</p>
+<p>CONTROL LINES: These are the black, blue, green, and cyan lines that you see drawn on the priority screen. They control what happens to ego when he or she walks past these lines. 
+  They might trigger a falling script for the edge of a cliff or a drowning script for the edge of a lake. According to what I've been told, the black control line is a unconditional 
+  obstacle, the blue is a conditional obstacle, the green is an alarm line, and the cyan is typically used for water (or something that a VIEW can be confined to being on). The 
+  cyan control line will often be a whole filled area. A VIEW object such as a crocodile can be given the object.on.water command and then told to wander. The interpreter will only 
+  allow the crocodile to wander over the area that has a control colour of cyan.</p>
+<h3><i>What is ego?</i></h3>
+<p>Ego is the name given to the main character (eg. Rosella, Roger, Graham). This seems to be the case in all Sierra games. The AGI games have commands which actually use the name 
+  ego in the command itself (eg. follow.ego). The later SCI games retain this name.</p>
+<!-- End Content -->
+<p>&nbsp;</p>
+<a href="#Top" class="TOP">Top</a> 
+&nbsp;
+</body>
+</html>

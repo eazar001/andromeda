@@ -1,0 +1,8 @@
+venv/
+.venv/
+test_games/
+*.stackdump
+__pycache__/
+*.py[cod]
+andromeda-wiki/.obsidian/
+.claude/settings.local.json
