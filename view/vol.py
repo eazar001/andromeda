@@ -14,7 +14,7 @@ def get_view_loops(vol_file, view_offset):
 
         while i < num_loops:
             ls, ms = f.read(2)
-            loop_offsets.append((ms << 8) + ls)
+            loop_offsets.append(int.from_bytes(ms << 8, 'big') + int.from_bytes(ls))
             i += 1
 
         return desc_offset, loop_offsets
@@ -30,7 +30,7 @@ def get_view_cels(vol_file, loop_offsets):
 
             while i < num_cells:
                 ls, ms = f.read(2)
-                cel_offsets.append((ms << 8) + ls)
+                cel_offsets.append(int.from_bytes(ms << 8, 'big') + int.from_bytes(ls))
                 i += 1
 
     return list(zip(loop_offsets, cel_offsets))
