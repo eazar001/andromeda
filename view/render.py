@@ -12,6 +12,8 @@ palette = [
 
 
 def draw_cel_data(renderer, x, y, pixels, alpha):
+    # using the width and height information from the cel header, we can stop here when y = n - 1,
+    # or when number of pixels drawn = x * y
     for color, num_pixels in pixels:
         if color == 0 == num_pixels:
             x, y = 0, y + 1
