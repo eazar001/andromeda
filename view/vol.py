@@ -21,19 +21,20 @@ def get_view_loops(vol_file, view_offset):
 
 
 def get_view_cels(vol_file, loop_offsets):
-    cel_offsets = []
+    offset_pairs = []
 
     with open(vol_file, mode='rb') as f:
         for loop_offset in loop_offsets:
             f.seek(loop_offset)
             i, num_cells = 0, int.from_bytes(f.read(1), 'big')
+            print(num_cells)
 
             while i < num_cells:
                 ls, ms = f.read(2)
-                cel_offsets.append((ms << 8) + ls)
+                offset_pairs.append((loop_offset, (ms << 8) + ls))
                 i += 1
 
-    return list(zip(loop_offsets, cel_offsets))
+    return offset_pairs
 
 
 def get_cel_data(vol_file, offset_pairs):
@@ -46,7 +47,9 @@ def get_cel_data(vol_file, offset_pairs):
 
             # make sure to call draw_cel_data and enforce that we only pass in the cel data as long as the number of
             # 0x00's is < height
-            width, height, alpha_mirroring = f.read(3)
+            cel_header = f.read(3)
+            print(cel_header)
+            width, height, alpha_mirroring = cel_header
             print(width, height, alpha_mirroring)
             width, mirror, alpha = width * 2, nibble(alpha_mirroring, 'lo'), nibble(alpha_mirroring, 'hi')
             cels.append((width, height, mirror, alpha))
