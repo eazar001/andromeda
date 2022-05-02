@@ -10,11 +10,11 @@ def get_view_loops(vol_file, view_offset):
 
         i, num_loops, desc_bytes, loop_offsets = 0, int.from_bytes(f.read(1), 'big'), f.read(2), []
         desc_ls, desc_ms = desc_bytes
-        desc_offset = (int.from_bytes(desc_ms, 'big') << 8) + int.from_bytes(desc_ls, 'big')
+        desc_offset = (desc_ms << 8) + desc_ls
 
         while i < num_loops:
             ls, ms = f.read(2)
-            loop_offsets.append(int.from_bytes(ms << 8, 'big') + int.from_bytes(ls, 'big'))
+            loop_offsets.append((ms << 8) + ls)
             i += 1
 
         return desc_offset, loop_offsets
@@ -25,12 +25,12 @@ def get_view_cels(vol_file, loop_offsets):
 
     with open(vol_file, mode='rb') as f:
         for loop_offset in loop_offsets:
-            f.seek(loop_offset, 0)
+            f.seek(loop_offset)
             i, num_cells = 0, int.from_bytes(f.read(1), 'big')
 
             while i < num_cells:
                 ls, ms = f.read(2)
-                cel_offsets.append(int.from_bytes(ms << 8, 'big') + int.from_bytes(ls, 'big'))
+                cel_offsets.append((ms << 8) + ls)
                 i += 1
 
     return list(zip(loop_offsets, cel_offsets))
@@ -41,12 +41,12 @@ def get_cel_data(vol_file, offset_pairs):
 
     with open(vol_file, mode='rb') as f:
         for loop_offset, cel_offset in offset_pairs:
-            f.seek(cel_offset, loop_offset)
+            print(loop_offset, cel_offset)
+            f.seek(loop_offset + cel_offset)
 
             # make sure to call draw_cel_data and enforce that we only pass in the cel data as long as the number of
             # 0x00's is < height
             width, height, alpha_mirroring = f.read(3)
-            width, height = int.from_bytes(width, 'big'), int.from_bytes(height, 'big')
-            alpha_mirroring = int.from_bytes(alpha_mirroring, 'big')
+            print(width, height, alpha_mirroring)
             width, mirror, alpha = width * 2, nibble(alpha_mirroring, 'lo'), nibble(alpha_mirroring, 'hi')
             cels.append((width, height, mirror, alpha))
