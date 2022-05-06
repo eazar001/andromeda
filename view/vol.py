@@ -2,7 +2,7 @@ from util.byte import nibble
 
 
 # offset here is expected as the value provided by read_view_dir
-def get_view_loops(vol_file_path, view_offset):
+def get_view_data(vol_file_path, view_offset):
     with open(vol_file_path, mode='rb') as f:
         # seek past the offset and 5 additional bytes from the header and two additional unused bytes from the view
         # header
@@ -19,7 +19,7 @@ def get_view_loops(vol_file_path, view_offset):
 
         cels = get_cel_data(f, get_view_cels(f, loop_offsets))
 
-        return desc_offset, loop_offsets, cels
+    return desc_offset, cels
 
 
 def get_view_cels(vol_file, loop_offsets):
@@ -38,15 +38,24 @@ def get_view_cels(vol_file, loop_offsets):
 
 
 def get_cel_data(vol_file, cel_offsets):
-    cels = []
+    cels, cel_data = [], []
 
     for cel_offset in cel_offsets:
         vol_file.seek(cel_offset)
 
-        # make sure to call draw_cel_data and enforce that we only pass in the cel data as long as the number of
-        # 0x00's <= height
         width, height, alpha_mirroring = vol_file.read(3)
         width, mirror, alpha = width * 2, nibble(alpha_mirroring, 'lo'), nibble(alpha_mirroring, 'hi')
-        cels.append((width, height, mirror, alpha))
+
+        i = 0
+
+        while i < height:
+            b = vol_file.read(1)
+
+            if int.from_bytes(b, 'big') == 0x00:
+                i += 1
+
+            cel_data.append(b)
+
+        cels.append((width, height, mirror, alpha, cel_data))
 
     return cels
