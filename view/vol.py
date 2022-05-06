@@ -49,12 +49,12 @@ def get_cel_data(vol_file, cel_offsets):
         i = 0
 
         while i < height:
-            b = vol_file.read(1)
+            b = vol_file.read(1)[0]
 
-            if int.from_bytes(b, 'big') == 0x00:
+            if b == 0x00:
                 i += 1
 
-            cel_data += b
+            cel_data.append(b)
 
         cels.append((width, height, mirror, alpha, cel_data))
 
