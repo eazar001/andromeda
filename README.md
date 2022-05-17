@@ -6,7 +6,7 @@ Andromeda Sierra AGI game engine emulator
 * [x] Decrypt OBJECT resource
 * [x] Decode and extract objects from OBJECT resource
 * [x] Decode VIEWDIR (sprites & animations offsets for VOL)
-* [ ] Decode VIEW (sprites & animations data in VOL)
+* [x] Decode VIEW (sprites & animations data in VOL)
 * [ ] Decode LOGDIR (code offsets for VOL)
 * [ ] Decode LOG (code in VOL)
 * [ ] Decode PICDIR (background offsets for VOL)
