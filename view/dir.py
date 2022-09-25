@@ -3,16 +3,20 @@ from util.byte import nibble
 
 def read_view_dir(file):
     with open(file, mode='rb') as f:
-        store, bs = [], []
+        store, bs, count, limit = [], [], 0, 256
 
         for i, b in enumerate(f.read(), start=1):
+            if count >= limit:
+                break
+
             if i % 3 == 0:
                 store.append(b)
                 vol, offset = read_view_byte_triplet(tuple(store))
 
-                if (vol, offset) != (15, 1048575):
+                if (vol, offset) != (0xF, 0xFFFFF):
                     bs.append((vol, offset))
                 store.clear()
+                count += 1
             else:
                 store.append(b)
 
