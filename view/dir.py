@@ -1,7 +1,6 @@
 from util.byte import nibble
 
 
-#FIXME: Properly count these if bytes are 0xFFFFFF, and make sure to leave out non-counts too
 def read_view_dir(file):
     with open(file, mode='rb') as f:
         store, bs, count, limit = [], [], 0, 256
@@ -16,8 +15,9 @@ def read_view_dir(file):
 
                 if (vol, offset) != (0xF, 0xFFFFF):
                     bs.append((vol, offset))
+                    count += 1
+
                 store.clear()
-                count += 1
             else:
                 store.append(b)
 
