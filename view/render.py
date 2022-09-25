@@ -20,7 +20,7 @@ def draw_cel_data(renderer, x, y, pixels, alpha):
             continue
 
         (r, g, b), n = palette[color], x + 2 * num_pixels
-        renderer.color = Color(r, g, b, alpha)
+        renderer.color = Color(r, g, b, 0xFF) if color != alpha else Color(r, g, b, 0x00)
         renderer.draw_point(points=[(x0, y) for x0 in range(x, n)])
         x = n
 
