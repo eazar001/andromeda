@@ -1,5 +1,7 @@
 import ctypes
 from view.render import draw_cel_data, read_cel_data
+from view.dir import read_view_dir
+from view.vol import get_view_data
 from sdl2 import SDL_PollEvent, SDL_Event
 from sdl2.ext.renderer import Renderer
 from sdl2.ext.window import Window
@@ -29,11 +31,11 @@ test_image = bytearray([
 ])
 
 
-def render_test():
+def render_test(width, height, mirror, alpha, cel_data):
     SDL_Init(SDL_INIT_VIDEO)
     window = Window(
         "Render test",
-        (640, 480),
+        (1280, 1024),
         (SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED),
         SDL_WINDOW_SHOWN
     )
@@ -43,7 +45,7 @@ def render_test():
     renderer.color = Color(0xFF, 0xFF, 0xFF, 0xFF)
     renderer.clear()
 
-    draw_cel_data(renderer, 0, 0, read_cel_data(test_image), 0xFF)
+    draw_cel_data(renderer, width, height, read_cel_data(cel_data), alpha)
     renderer.present()
 
     running, event = True, SDL_Event()
@@ -59,8 +61,13 @@ def render_test():
 
 
 def main():
-    render_test()
+    for vol, view_offset in read_view_dir('test_games/sq1/VIEWDIR'):
+        if vol == 0:
+            desc_offset, cels = get_view_data('test_games/sq1/VOL.0', view_offset)
+
+            for width, height, mirror, alpha, cel_data in cels:
+                render_test(width, height, mirror, alpha, cel_data)
 
 
 if __name__ == '__main__':
-    render_test()
+    main()
