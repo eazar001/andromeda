@@ -10,7 +10,7 @@ def get_view_data(vol_file_path, view_offset):
 
         i, num_loops, desc_bytes, loop_offsets = 0, int.from_bytes(f.read(1), 'big'), f.read(2), []
         desc_ls, desc_ms = desc_bytes
-        desc_offset = (desc_ms << 8) + desc_ls
+        desc_offset = (desc_ms << 8) + desc_ls + view_offset + 5
 
         while i < num_loops:
             ls, ms = f.read(2)
