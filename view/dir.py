@@ -1,7 +1,7 @@
 from util.byte import nibble
 
 
-def read_view_dir(file):
+def read_dir(file):
     with open(file, mode='rb') as f:
         store, bs, count, limit = [], [], 0, 256
 
@@ -11,7 +11,7 @@ def read_view_dir(file):
 
             if i % 3 == 0:
                 store.append(b)
-                vol, offset = read_view_byte_triplet(tuple(store))
+                vol, offset = read_byte_triplet(tuple(store))
 
                 if (vol, offset) != (0xF, 0xFFFFF):
                     bs.append((vol, offset))
@@ -24,7 +24,7 @@ def read_view_dir(file):
     return bs
 
 
-def read_view_byte_triplet(triplet):
+def read_byte_triplet(triplet):
     first, second, third = triplet
     vol = nibble(first, 'hi')
     offset = (nibble(first, 'lo') << 16) | ((second << 8) | third)

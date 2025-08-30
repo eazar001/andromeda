@@ -1,6 +1,6 @@
 import ctypes
 from view.render import draw_cel_data, read_cel_data
-from view.dir import read_view_dir
+from view.dir import read_dir
 from view.vol import get_view_data
 from sdl2 import SDL_PollEvent, SDL_Event
 from sdl2.ext.renderer import Renderer
@@ -61,12 +61,24 @@ def render_test(width, height, mirror, alpha, cel_data):
 
 
 def main():
-    for vol, view_offset in read_view_dir('test_games/sq1/VIEWDIR'):
-        if vol == 0:
-            desc_offset, cels = get_view_data('test_games/sq1/VOL.0', view_offset)
+    # for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
+    #     if vol == 0:
+    #         desc_offset, cels = get_view_data('test_games/sq1/VOL.0', view_offset)
+    #
+    #         for width, height, mirror, alpha, cel_data in cels:
+    #             render_test(width, height, mirror, alpha, cel_data)
 
-            for width, height, mirror, alpha, cel_data in cels:
-                render_test(width, height, mirror, alpha, cel_data)
+    for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
+        print(vol, view_offset)
+
+    for vol, logic_offset in read_dir('test_games/sq1/LOGDIR'):
+        print(vol, logic_offset)
+
+    for vol, pic_offset in read_dir('test_games/sq1/PICDIR'):
+        print(vol, pic_offset)
+
+    for vol, sound_offset in read_dir('test_games/sq1/SNDDIR'):
+        print(vol, sound_offset)
 
 
 if __name__ == '__main__':
