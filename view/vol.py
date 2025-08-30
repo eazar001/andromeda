@@ -1,7 +1,7 @@
 from util.byte import nibble
 
 
-# offset here is expected as the value provided by read_view_dir
+# offset here is expected as the value provided by read_dir
 def get_view_data(vol_file_path, view_offset):
     with open(vol_file_path, mode='rb') as f:
         # seek past the offset and 5 additional bytes from the header and two additional unused bytes from the view
