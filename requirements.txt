@@ -1,1 +1,2 @@
-PySDL2==0.9.17
+pysdl2-dll
+PySDL2
