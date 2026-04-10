@@ -1,5 +1,5 @@
 import ctypes
-from view.render import draw_cel_data, read_cel_data
+from view.render import draw_cel_data
 from view.vol import get_view_data
 from util.dir import read_dir
 from sdl2 import SDL_PollEvent, SDL_Event
@@ -45,7 +45,7 @@ def render_test(width, height, mirror, alpha, cel_data):
     renderer.color = Color(0xFF, 0xFF, 0xFF, 0xFF)
     renderer.clear()
 
-    draw_cel_data(renderer, width, height, read_cel_data(cel_data), alpha)
+    draw_cel_data(renderer, width, height, cel_data, alpha)
     renderer.present()
 
     running, event = True, SDL_Event()

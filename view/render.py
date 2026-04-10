@@ -26,8 +26,3 @@ def draw_cel_data(renderer, width, height, pixels, alpha):
         renderer.draw_point(points=[(x0, y) for x0 in range(x, n)])
         # because we drew all the way to n, we need to set x to n here
         x = n
-
-
-def read_cel_data(image):
-    # returns a list of pairs of nibbles such that (color, num_pixels) is contained in each pair
-    return map(lambda byte: (nibble(byte, 'hi'), nibble(byte, 'lo')), image)

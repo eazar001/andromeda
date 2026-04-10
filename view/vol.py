@@ -56,6 +56,7 @@ def get_cel_data(vol_file, cel_offsets):
 
             cel_data.append(b)
 
-        cels.append((width, height, mirror, alpha, cel_data))
+        color_pixel_pairs = map(lambda byte: (nibble(byte, 'hi'), nibble(byte, 'lo')), cel_data)
+        cels.append((width, height, mirror, alpha, color_pixel_pairs))
 
     return cels
