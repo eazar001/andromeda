@@ -38,7 +38,7 @@ def get_view_cels(vol_file, loop_offsets):
 
 
 def get_cel_data(vol_file, cel_offsets):
-    cels, cel_data = [], bytearray([])
+    cels, cel_data = [], []
 
     for cel_offset in cel_offsets:
         vol_file.seek(cel_offset)
@@ -54,9 +54,8 @@ def get_cel_data(vol_file, cel_offsets):
             if b == 0x00:
                 i += 1
 
-            cel_data.append(b)
+            cel_data.append((nibble(b, 'hi'), nibble(b, 'lo')))
 
-        color_pixel_pairs = map(lambda byte: (nibble(byte, 'hi'), nibble(byte, 'lo')), cel_data)
-        cels.append((width, height, mirror, alpha, color_pixel_pairs))
+        cels.append((width, height, mirror, alpha, cel_data))
 
     return cels
