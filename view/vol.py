@@ -38,13 +38,14 @@ def get_view_cels(vol_file, loop_offsets):
 
 
 def get_cel_data(vol_file, cel_offsets):
-    cels, cel_data = [], []
+    cels = []
 
     for cel_offset in cel_offsets:
         vol_file.seek(cel_offset)
 
         width, height, alpha_mirroring = vol_file.read(3)
         width, mirror, alpha = width * 2, nibble(alpha_mirroring, 'lo'), nibble(alpha_mirroring, 'hi')
+        cel_data = []
 
         i = 0
 
