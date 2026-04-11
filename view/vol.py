@@ -1,15 +1,23 @@
 from util.byte import nibble
 
 
-# offset here is expected as the value provided by read_dir
+# view_offset is the value returned by read_dir: the byte offset of this resource within its VOL file.
+#
+# Layout at view_offset:
+#   +0..+4   VOL chunk header (5 bytes: signature, vol number, resource length) -- skipped
+#   +5..+6   VIEW header bytes 0-1 (format version markers, always 1 or 2, then 1) -- skipped
+#   +7       VIEW header byte 2: number of loops
+#   +8..+9   VIEW header bytes 3-4: description offset (relative to view_offset + 5)
+#   +10..    VIEW header bytes 5+: loop offsets, 2 bytes each (also relative to view_offset + 5)
 def get_view_data(vol_file_path, view_offset):
     with open(vol_file_path, mode='rb') as f:
-        # seek past the offset and 5 additional bytes from the header and two additional unused bytes from the view
-        # header
+        # Skip VOL chunk header (5 bytes) + VIEW version bytes (2 bytes) to land on num_loops.
         f.seek(view_offset + 7)
 
         i, num_loops, desc_bytes, loop_offsets = 0, int.from_bytes(f.read(1), 'big'), f.read(2), []
         desc_ls, desc_ms = desc_bytes
+        # Offsets in the VIEW header are relative to the start of the VIEW payload,
+        # which begins after the 5-byte VOL chunk header -- hence + view_offset + 5.
         desc_offset = (desc_ms << 8) + desc_ls + view_offset + 5
 
         while i < num_loops:
@@ -50,7 +58,12 @@ def get_cel_data(vol_file, cel_offsets):
         i = 0
 
         while i < height:
-            b = vol_file.read(1)[0]
+            b = vol_file.read(1)
+
+            if not b:
+                raise ValueError(f"Truncated cel data at {cel_offset}")
+
+            b = b[0]
 
             if b == 0x00:
                 i += 1
