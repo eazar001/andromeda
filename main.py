@@ -2,7 +2,7 @@ import ctypes
 from view.render import draw_cel_data
 from view.vol import get_view_data
 from util.dir import read_dir
-from sdl2 import SDL_PollEvent, SDL_Event
+from sdl2 import SDL_PollEvent, SDL_Event, SDL_RenderSetScale, SDL_Delay
 from sdl2.ext.renderer import Renderer
 from sdl2.ext.window import Window
 from sdl2.ext.color import Color
@@ -42,6 +42,7 @@ def render_test(width, height, mirror, alpha, cel_data):
 
     renderer = Renderer(window)
     renderer.blendmode = SDL_BLENDMODE_BLEND
+    SDL_RenderSetScale(renderer.sdlrenderer, 8.0, 8.0)
     renderer.color = Color(0xFF, 0xFF, 0xFF, 0xFF)
     renderer.clear()
 
@@ -60,13 +61,60 @@ def render_test(width, height, mirror, alpha, cel_data):
     SDL_Quit()
 
 
+def animate_cels(cels, frame_delay_ms=120):
+    """Open one window and cycle through `cels` indefinitely. Close the window to exit."""
+    SDL_Init(SDL_INIT_VIDEO)
+    window = Window(
+        "Walk cycle",
+        (1280, 1024),
+        (SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED),
+        SDL_WINDOW_SHOWN
+    )
+
+    renderer = Renderer(window)
+    renderer.blendmode = SDL_BLENDMODE_BLEND
+    SDL_RenderSetScale(renderer.sdlrenderer, 8.0, 8.0)
+
+    running, event = True, SDL_Event()
+    cel_idx = 0
+
+    while running:
+        renderer.color = Color(0x00, 0x00, 0x00, 0x00)
+        renderer.clear()
+
+        width, height, mirror, alpha, cel_data = cels[cel_idx]
+        draw_cel_data(renderer, width, height, cel_data, alpha)
+        renderer.present()
+
+        SDL_Delay(frame_delay_ms)
+
+        while SDL_PollEvent(ctypes.byref(event)) != 0:
+            if event.type == 0x100:
+                running = False
+                break
+
+        cel_idx = (cel_idx + 1) % len(cels)
+
+    window.close()
+    SDL_Quit()
+
+
 def main():
     # for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
     #     if vol == 0:
     #         desc_offset, cels = get_view_data('test_games/sq1/VOL.0', view_offset)
     #
-    #         for width, height, mirror, alpha, cel_data in cels:
+    #         for idx, (width, height, mirror, alpha, cel_data) in enumerate(cels):
+    #             print(f"cel {idx}: w={width} h={height} mirror={mirror} alpha={alpha} "
+    #                   f"first_chunks={cel_data[:6]}")
     #             render_test(width, height, mirror, alpha, cel_data)
+
+    # Infinite walk-cycle preview: cycle through view 0's cels in a single window forever.
+    for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
+        if vol == 0:
+            _, cels = get_view_data('test_games/sq1/VOL.0', view_offset)
+            animate_cels(cels)
+            break
 
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
         print(vol, view_offset)

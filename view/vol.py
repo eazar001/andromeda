@@ -52,7 +52,13 @@ def get_cel_data(vol_file, cel_offsets):
         vol_file.seek(cel_offset)
 
         width, height, alpha_mirroring = vol_file.read(3)
-        width, mirror, alpha = width * 2, nibble(alpha_mirroring, 'lo'), nibble(alpha_mirroring, 'hi')
+        # Cel header byte 2 layout (verified empirically against AGI Studio for SQ1):
+        #   high nibble (bits 4-7) = mirror info
+        #   low nibble  (bits 0-3) = transparent color index
+        # Note: this is the OPPOSITE of what agidev's AGI spec page states. The empirical
+        # behavior matches AGI Studio's renderer, so the spec page appears to be wrong
+        # (or uses non-standard bit numbering).
+        width, mirror, alpha = width * 2, nibble(alpha_mirroring, 'hi'), nibble(alpha_mirroring, 'lo')
         cel_data = []
 
         i = 0
