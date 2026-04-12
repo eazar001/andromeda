@@ -61,15 +61,8 @@ def render_test(width, height, mirror, alpha, cel_data):
     SDL_Quit()
 
 
-def animate_cels(cels, frame_delay_ms=120):
-    """Open one window and cycle through `cels` indefinitely. Close the window to exit."""
-    SDL_Init(SDL_INIT_VIDEO)
-    window = Window(
-        "Walk cycle",
-        (1280, 1024),
-        (SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED),
-        SDL_WINDOW_SHOWN
-    )
+def animate_cels(cels, window, frame_delay_ms=120, infinite=False):
+
 
     renderer = Renderer(window)
     renderer.blendmode = SDL_BLENDMODE_BLEND
@@ -78,7 +71,7 @@ def animate_cels(cels, frame_delay_ms=120):
     running, event = True, SDL_Event()
     cel_idx = 0
 
-    while running:
+    while running and cel_idx < len(cels):
         renderer.color = Color(0x00, 0x00, 0x00, 0x00)
         renderer.clear()
 
@@ -93,28 +86,28 @@ def animate_cels(cels, frame_delay_ms=120):
                 running = False
                 break
 
-        cel_idx = (cel_idx + 1) % len(cels)
-
-    window.close()
-    SDL_Quit()
+        cel_idx = (cel_idx + 1) % len(cels) if infinite else cel_idx + 1
 
 
 def main():
-    # for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
-    #     if vol == 0:
-    #         desc_offset, cels = get_view_data('test_games/sq1/VOL.0', view_offset)
-    #
-    #         for idx, (width, height, mirror, alpha, cel_data) in enumerate(cels):
-    #             print(f"cel {idx}: w={width} h={height} mirror={mirror} alpha={alpha} "
-    #                   f"first_chunks={cel_data[:6]}")
-    #             render_test(width, height, mirror, alpha, cel_data)
+    """Open one window and cycle through all `cels`. Close the window to exit."""
+    SDL_Init(SDL_INIT_VIDEO)
+    window = Window(
+        "Walk cycle",
+        (1280, 1024),
+        (SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED),
+        SDL_WINDOW_SHOWN
+    )
 
     # Infinite walk-cycle preview: cycle through view 0's cels in a single window forever.
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
-        if vol == 0:
-            _, cels = get_view_data('test_games/sq1/VOL.0', view_offset)
-            animate_cels(cels)
-            break
+        # if vol == 0:
+        print(vol, view_offset)
+        _, cels = get_view_data(f'test_games/sq1/VOL.{vol}', view_offset)
+        animate_cels(cels, window)
+
+    window.close()
+    SDL_Quit()
 
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
         print(vol, view_offset)
