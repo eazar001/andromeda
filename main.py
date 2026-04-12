@@ -99,10 +99,7 @@ def main():
         SDL_WINDOW_SHOWN
     )
 
-    # Infinite walk-cycle preview: cycle through view 0's cels in a single window forever.
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
-        # if vol == 0:
-        print(vol, view_offset)
         _, cels = get_view_data(f'test_games/sq1/VOL.{vol}', view_offset)
         animate_cels(cels, window)
 
