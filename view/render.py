@@ -12,13 +12,14 @@ palette = [
 
 
 def draw_cel_data(renderer, width, height, pixels, alpha):
-    x, y = width, height
-    # using the width and height information from the cel header, we can stop here when y = n - 1,
-    # or when number of pixels drawn = x * y
+    x, y, end = 0, height, height * 2
+
     for color, num_pixels in pixels:
+        if y >= end:
+            break
         if color == 0 == num_pixels:
             # we've finished a line, so reset x to the beginning and move y down
-            x, y = width, y + 1
+            x, y = 0, y + 1
             continue
 
         (r, g, b), n = palette[color], x + 2 * num_pixels
