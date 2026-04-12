@@ -30,10 +30,10 @@ What exists today (April 2026):
 |---|---|---|
 | `util/dir.py` | ✅ Working | Parses `*DIR` files to `(vol, offset)` pairs. Caps at 256 entries, skips `(0xF, 0xFFFFF)` sentinels. |
 | `util/byte.py` | ✅ Working | `nibble(byte, 'hi'/'lo')` helper. |
-| `view/vol.py` | ⚠️ Partial | Reads VIEW loop/cel offsets from a VOL. Skips 5-byte resource header + 2-byte VIEW header. Cel RLE decoder reads bytes row-by-row but the `cel_data` it returns is *raw bytes*, not decoded `(color, count)` pairs. |
-| `view/render.py` | ✅ Working | `read_cel_data` nibble-pairs the raw bytes; `draw_cel_data` rasterizes to SDL2 with the hardcoded 16-color EGA palette, alpha-aware. |
+| `view/vol.py` | ✅ Working | Reads VIEW loop/cel offsets from a VOL. `get_cel_data` decodes RLE inline and returns `(color, count)` nibble-pair tuples directly in `cel_data` — raw bytes are no longer surfaced to callers. |
+| `view/render.py` | ✅ Working | `draw_cel_data` rasterizes pre-decoded `(color, count)` pairs to SDL2 with the hardcoded 16-color EGA palette, alpha-aware. `read_cel_data` has been removed — its logic was absorbed into `view/vol.py`. |
 | `object/Object.py` | ✅ Working | Decrypts `OBJECT` file with XOR key `"Avis Durgan"`, extracts inventory triplets `(index, name, room)`. |
-| `main.py` | 🔧 Sketch | Iterates all four DIRs and prints pairs. Commented-out SDL2 render harness for a single VIEW cel exists. |
+| `main.py` | ✅ Working | `animate_cels(cels, window, frame_delay_ms, infinite)` steps through a cel list in an SDL2 window. `main()` opens one window, iterates every VIEW resource from `VIEWDIR`, and animates its cels sequentially. `render_test()` remains as a single-cel test helper. |
 
 **Confirmed facts from the existing code worth preserving:**
 
@@ -43,9 +43,8 @@ What exists today (April 2026):
 
 **Gaps to be aware of before writing new code:**
 
-- The `cel_data` returned by `view/vol.py:get_cel_data` is raw bytes, and `render.py:read_cel_data` then maps them to `(color, count)` pairs. This works but blurs the layer boundary — the VOL reader should probably hand back decoded cels, not raw bytes. Minor cleanup, not urgent.
 - No resource manager exists. Each subsystem currently opens the VOL file fresh. For a real game loop you'll want a `VolumeReader` that keeps file handles open and a `ResourceCache` that honors sticky (game-global) vs. per-room lifetimes (see §3).
-- The VIEW loader does not currently parse the VIEW's `num_loops`, description, or mirror flags into a structured object. That's needed for the animation system.
+- The VIEW loader parses `num_loops` and per-cel `mirror`/`alpha` internally, but does not return a structured `View(loops=[Loop(cels=[Cel(...)])])` dataclass — it returns a flat `(desc_offset, cels)` tuple with cels from all loops concatenated. A structured object is needed for the animation system (loop selection, mirror logic).
 
 ---
 
