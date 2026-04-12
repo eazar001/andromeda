@@ -86,6 +86,8 @@ def animate_cels(cels, window, frame_delay_ms=120, infinite=False):
 
         cel_idx = (cel_idx + 1) % len(cels) if infinite else cel_idx + 1
 
+    return running
+
 
 def main():
     """Open one window and cycle through all `cels`. Close the window to exit."""
@@ -99,7 +101,8 @@ def main():
 
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
         _, cels = get_view_data(f'test_games/sq1/VOL.{vol}', view_offset)
-        animate_cels(cels, window)
+        if not animate_cels(cels, window):
+            break
 
     window.close()
     SDL_Quit()
