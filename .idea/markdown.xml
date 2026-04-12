@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="MarkdownSettings">
+    <option name="customStylesheetText" value="body {&#10;    max-width: 980px;      /* The standard GitHub container width */&#10;    margin: 0 auto !important;&#10;    padding: 45px !important; /* GitHub's standard desktop padding */&#10;    line-height: 1.5;      /* GitHub's typical line spacing */&#10;}&#10;&#10;/* Optional: Narrower limit for better text readability */&#10;.markdown-body {&#10;    max-width: 894px; &#10;}&#10;" />
+  </component>
+</project>
