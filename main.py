@@ -62,8 +62,6 @@ def render_test(width, height, mirror, alpha, cel_data):
 
 
 def animate_cels(cels, window, frame_delay_ms=120, infinite=False):
-
-
     renderer = Renderer(window)
     renderer.blendmode = SDL_BLENDMODE_BLEND
     SDL_RenderSetScale(renderer.sdlrenderer, 8.0, 8.0)
