@@ -24,6 +24,7 @@ def draw_cel_data(renderer, width, height, pixels, alpha):
 
         (r, g, b), n = palette[color], x + 2 * num_pixels
         renderer.color = Color(r, g, b, 0xFF) if color != alpha else Color(r, g, b, 0x00)
+        # if mirroring is active width - x0, instead of x0
         renderer.draw_point(points=[(x0, y) for x0 in range(x, n)])
         # because we drew all the way to n, we need to set x to n here
         x = n
