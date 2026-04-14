@@ -32,6 +32,7 @@ def get_view_data(vol_file_path, view_offset):
 
 def get_view_cels(vol_file, loop_offsets):
     cel_offsets = []
+    loop_idx = 0
 
     for loop_offset in loop_offsets:
         vol_file.seek(loop_offset)
@@ -39,8 +40,10 @@ def get_view_cels(vol_file, loop_offsets):
 
         while i < num_cells:
             ls, ms = vol_file.read(2)
-            cel_offsets.append((ms << 8) + ls + loop_offset)
+            cel_offsets.append((loop_idx, (ms << 8) + ls + loop_offset))
             i += 1
+
+        loop_idx += 1
 
     return cel_offsets
 
@@ -48,17 +51,18 @@ def get_view_cels(vol_file, loop_offsets):
 def get_cel_data(vol_file, cel_offsets):
     cels = []
 
-    for cel_offset in cel_offsets:
+    for loop_idx, cel_offset in cel_offsets:
         vol_file.seek(cel_offset)
 
         width, height, alpha_mirroring = vol_file.read(3)
         # Cel header byte 2 layout (verified empirically against AGI Studio for SQ1):
-        #   high nibble (bits 4-7) = mirror info
+        #   high nibble (bits 4-7) = mirror info (bit 0 signals whether mirror exists, bits 1 - 3 is the loop index of the non-mirrored loop)
         #   low nibble  (bits 0-3) = transparent color index
         # Note: this is the OPPOSITE of what agidev's AGI spec page states. The empirical
         # behavior matches AGI Studio's renderer, so the spec page appears to be wrong
         # (or uses non-standard bit numbering).
         width, mirror, alpha = width * 2, nibble(alpha_mirroring, 'hi'), nibble(alpha_mirroring, 'lo')
+        mirror, non_mirror_idx = mirror >> 3, mirror & 7
         cel_data = []
 
         i = 0
@@ -76,6 +80,6 @@ def get_cel_data(vol_file, cel_offsets):
 
             cel_data.append((nibble(b, 'hi'), nibble(b, 'lo')))
 
-        cels.append((width, height, mirror, alpha, cel_data))
+        cels.append((width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data))
 
     return cels

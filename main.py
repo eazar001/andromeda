@@ -73,8 +73,8 @@ def animate_cels(cels, window, frame_delay_ms=120, infinite=False):
         renderer.color = Color(0x00, 0x00, 0x00, 0x00)
         renderer.clear()
 
-        width, height, mirror, alpha, cel_data = cels[cel_idx]
-        draw_cel_data(renderer, width, height, cel_data, alpha)
+        width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data = cels[cel_idx]
+        draw_cel_data(renderer, width, height, mirror and loop_idx != non_mirror_idx, cel_data, alpha)
         renderer.present()
 
         SDL_Delay(frame_delay_ms)
