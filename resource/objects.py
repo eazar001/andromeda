@@ -1,4 +1,4 @@
-from itertools import cycle
+from util.crypto import xor_cycle
 
 
 class Object:
@@ -70,12 +70,7 @@ class Object:
 
 
 def decrypt_object_file(file):
-    return decrypt_file("Avis Durgan", file)
-
-
-def decrypt_file(key_string, file):
-    with open(file, mode='rb') as f:
-        return bytearray(map(lambda t: t[0] ^ t[1], zip(list(f.read()), cycle(map(ord, key_string)))))
+    return xor_cycle("Avis Durgan", file)
 
 
 def decrypt_object_to_file(file, new_file):

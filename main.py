@@ -1,7 +1,7 @@
 import ctypes
-from view.render import draw_cel_data
-from view.vol import get_view_data
-from util.dir import read_dir
+from gfx.render import draw_cel_data
+from resource.view import get_view_data
+from resource.directory import read_dir
 from sdl2 import SDL_PollEvent, SDL_Event, SDL_RenderSetScale, SDL_Delay
 from sdl2.ext.renderer import Renderer
 from sdl2.ext.window import Window
