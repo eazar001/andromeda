@@ -1,3 +1,4 @@
+from resource.header import ResourceHeader
 from util.byte import nibble
 
 

@@ -29,11 +29,12 @@ What exists today (April 2026):
 | Module | Status | Notes |
 |---|---|---|
 | `util/dir.py` | ✅ Working | Parses `*DIR` files to `(vol, offset)` pairs. Caps at 256 entries, skips `(0xF, 0xFFFFF)` sentinels. |
-| `util/byte.py` | ✅ Working | `nibble(byte, 'hi'/'lo')` helper. |
-| `view/vol.py` | ✅ Working | Reads VIEW loop/cel offsets from a VOL. `get_cel_data` decodes RLE inline and returns `(color, count)` nibble-pair tuples directly in `cel_data` — raw bytes are no longer surfaced to callers. |
-| `view/render.py` | ✅ Working | `draw_cel_data` rasterizes pre-decoded `(color, count)` pairs to SDL2 with the hardcoded 16-color EGA palette, alpha-aware. `read_cel_data` has been removed — its logic was absorbed into `view/vol.py`. |
+| `util/byte.py` | ✅ Working | `nibble(byte, 'hi'/'lo')` helper. `cel_mirror()` removed — mirror flag and loop index are now extracted inline in `view/vol.py`. |
+| `resource/header.py` | ✅ Working | `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reads the 5-byte VOL chunk header: 2-byte signature (`0x1234`, big-endian), 1-byte vol number, 2-byte LE resource length. Verified against SQ1 VOL files. |
+| `view/vol.py` | ✅ Working | Reads VIEW loop/cel offsets from a VOL. `get_view_cels` now tags each cel offset with its loop index. `get_cel_data` decomposes the mirror nibble into a flag (`mirror >> 3`) and a source loop index (`mirror & 7`), and returns `(width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data)` tuples. |
+| `view/render.py` | ✅ Working | `draw_cel_data` now accepts a `mirrored` bool and horizontally flips pixel positions (`width - 1 - x0`) when true. Rasterizes pre-decoded `(color, count)` pairs to SDL2 with the hardcoded 16-color EGA palette, alpha-aware. |
 | `object/Object.py` | ✅ Working | Decrypts `OBJECT` file with XOR key `"Avis Durgan"`, extracts inventory triplets `(index, name, room)`. |
-| `main.py` | ✅ Working | `animate_cels(cels, window, frame_delay_ms, infinite)` steps through a cel list in an SDL2 window. `main()` opens one window, iterates every VIEW resource from `VIEWDIR`, and animates its cels sequentially. `render_test()` remains as a single-cel test helper. |
+| `main.py` | ✅ Working | `animate_cels` unpacks the full cel tuple `(width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data)` and passes `mirror and loop_idx != non_mirror_idx` as the `mirrored` flag to `draw_cel_data`. |
 
 **Confirmed facts from the existing code worth preserving:**
 
@@ -44,7 +45,8 @@ What exists today (April 2026):
 **Gaps to be aware of before writing new code:**
 
 - No resource manager exists. Each subsystem currently opens the VOL file fresh. For a real game loop you'll want a `VolumeReader` that keeps file handles open and a `ResourceCache` that honors sticky (game-global) vs. per-room lifetimes (see §3).
-- The VIEW loader parses `num_loops` and per-cel `mirror`/`alpha` internally, but does not return a structured `View(loops=[Loop(cels=[Cel(...)])])` dataclass — it returns a flat `(desc_offset, cels)` tuple with cels from all loops concatenated. A structured object is needed for the animation system (loop selection, mirror logic).
+- The VIEW loader parses `num_loops` and per-cel `mirror`/`alpha` internally, but does not return a structured `View(loops=[Loop(cels=[Cel(...)])])` dataclass — it returns a flat `(desc_offset, cels)` tuple with cels from all loops concatenated. A structured object is needed for the animation system (loop selection, mirror logic). Mirror flag and source loop index are now correctly decoded and passed through; however, mirrored cels still read their own (garbage) pixel data from the file — proper pixel reuse from the source loop requires the structured `View` dataclass (M0).
+- Note: `*.gitignore` should include `*.stackdump` to suppress Cygwin/MSYS2 crash dumps from appearing as untracked files.
 
 ---
 
@@ -64,7 +66,7 @@ The subsystems connect like this:
                        │     VOL files      │
                        └──────────┬─────────┘
                                   │
-                     ┌────────────┴─────────────┐
+                     ┌────────────┴──────────────┐
                      │     ResourceManager       │
                      │  (open vols, cache, LRU,  │
                      │   sticky vs per-room)     │
@@ -164,7 +166,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** Clean resource-layer seams so the rest of the work has a solid base.
 
-- [ ] Extract a `resource/header.py` that parses the 5-byte VOL resource header (signature check, volume number, LE length) and returns `(payload_offset, payload_length)`. Reuse from PIC/LOGIC/SOUND.
+- [x] Extract a `resource/header.py` that parses the 5-byte VOL resource header (signature check, volume number, LE length). Implemented as `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reuse from PIC/LOGIC/SOUND.
 - [ ] Add `resource/volume.py:VolumeReader(path)` that holds an open file handle and exposes `read_resource(offset) -> bytes` (header + payload slice). Avoid re-opening the VOL file on every resource access.
 - [ ] Move `util/dir.py` → `resource/directory.py`; keep the existing API.
 - [ ] Move `object/Object.py` → `resource/objects.py`; clean up `decrypt_file()` into a standalone `util.xor_cycle(data, key)` helper (the same helper will be reused for LOGIC message decryption).
