@@ -172,7 +172,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [x] Add `resource/volume.py:VolumeReader(path)` that holds an open file handle and exposes `read_resource(offset) -> (ResourceHeader, bytes)`. Returns the parsed header and payload separately for clean caller access.
 - [x] Move `util/dir.py` → `resource/directory.py`; kept the existing API.
 - [x] Move `object/Object.py` → `resource/objects.py`; extracted `decrypt_file()` into `util/crypto.py:xor_cycle(key_string, file)`. `objects.py` now imports from there. Same helper will be reused for LOGIC message decryption.
-- [ ] Rework `view/vol.py` → `resource/view.py`: return a structured `View(loops=[Loop(cels=[Cel(width, height, mirror, alpha, rle_pairs)])])` dataclass, not raw bytes. RLE decoding (currently `render.py:read_cel_data`) moves into the decoder. *(File move done; dataclass refactor pending.)*
+- [ ] Rework `view/vol.py` → `resource/view.py`: return a structured `View(loops=[Loop(cels=[Cel(width, height, mirror, alpha, rle_pairs)])])` dataclass, not raw bytes. RLE decoding is already inline in `get_cel_data`. *(File move done; dataclass refactor pending.)*
 - [ ] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). *(File move done; VisualScreen compositing pending.)*
 
 **Exit criteria:** `python main.py` still prints DIR listings and can still render a test VIEW cel via the old harness path, now going through the new module names.
