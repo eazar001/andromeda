@@ -11,8 +11,10 @@ palette = [
 ]
 
 
-def draw_cel_data(renderer, width, height, mirrored, pixels, alpha):
-    x, y, end = 0, height, height * 2
+def draw_cel_data(renderer, loop_idx, cel):
+    x, y, end = 0, cel.height, cel.height * 2
+    mirrored = cel.mirror and loop_idx != cel.non_mirror_idx
+    pixels = cel.cel_data
 
     for color, num_pixels in pixels:
         if y >= end:
@@ -23,8 +25,8 @@ def draw_cel_data(renderer, width, height, mirrored, pixels, alpha):
             continue
 
         (r, g, b), n = palette[color], x + 2 * num_pixels
-        renderer.color = Color(r, g, b, 0xFF) if color != alpha else Color(r, g, b, 0x00)
+        renderer.color = Color(r, g, b, 0xFF) if color != cel.alpha else Color(r, g, b, 0x00)
         # if mirroring is active width - x0, instead of x0
-        renderer.draw_point(points=[(width - 1 - x0 if mirrored else x0, y) for x0 in range(x, n)])
+        renderer.draw_point(points=[(cel.width - 1 - x0 if mirrored else x0, y) for x0 in range(x, n)])
         # because we drew all the way to n, we need to set x to n here
         x = n

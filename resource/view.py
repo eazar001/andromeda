@@ -1,6 +1,29 @@
+from dataclasses import dataclass, field
+
 from resource.volume import VolumeReader
 from util.byte import nibble
 from io import BytesIO
+
+
+@dataclass
+class Cel:
+    width: int
+    height: int
+    mirror: int
+    non_mirror_idx: int
+    alpha: int
+    cel_data: list[tuple] = field(default_factory=list)
+
+@dataclass
+class Loop:
+    loop_idx: int
+    cels: list[Cel] = field(default_factory=list)
+
+@dataclass
+class View:
+    desc_offset: int
+    loops: list[Loop] = field(default_factory=list)
+
 
 # view_offset is the value returned by read_dir: the byte offset of this resource within its VOL file.
 # VolumeReader.read_resource() strips the 5-byte VOL chunk header and returns the VIEW payload as bytes.
@@ -27,9 +50,9 @@ def get_view_data(reader: VolumeReader, view_offset: int):
             loop_offsets.append((ms << 8) + ls)
             i += 1
 
-        cels = get_cel_data(bs, get_view_cels(bs, loop_offsets))
+        loops = get_cel_data(bs, get_view_cels(bs, loop_offsets))
 
-    return desc_offset, cels
+    return View(desc_offset, loops)
 
 
 def get_view_cels(bs, loop_offsets):
@@ -51,7 +74,7 @@ def get_view_cels(bs, loop_offsets):
 
 
 def get_cel_data(bs, cel_offsets):
-    cels = []
+    cels, loops, last_loop_idx = [], [], cel_offsets[0][0]
 
     for loop_idx, cel_offset in cel_offsets:
         bs.seek(cel_offset)
@@ -82,6 +105,14 @@ def get_cel_data(bs, cel_offsets):
 
             cel_data.append((nibble(b, 'hi'), nibble(b, 'lo')))
 
-        cels.append((width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data))
+        if last_loop_idx == loop_idx:
+            cels.append(Cel(width, height, mirror, non_mirror_idx, alpha, cel_data))
+        else:
+            loops.append(Loop(last_loop_idx, cels))
+            cels = [Cel(width, height, mirror, non_mirror_idx, alpha, cel_data)]
 
-    return cels
+        last_loop_idx = loop_idx
+
+    loops.append(Loop(last_loop_idx, cels))
+
+    return loops

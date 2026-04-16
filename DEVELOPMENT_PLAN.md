@@ -32,7 +32,7 @@ What exists today (April 2026):
 | `resource/volume.py` | ✅ Working | `VolumeReader(path)` holds an open file handle. `read_resource(offset)` returns `(ResourceHeader, payload_bytes)` without re-opening the VOL file. |
 | `util/byte.py` | ✅ Working | `nibble(byte, 'hi'/'lo')` helper. `cel_mirror()` removed — mirror flag and loop index are now extracted inline in `view/vol.py`. |
 | `resource/header.py` | ✅ Working | `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reads the 5-byte VOL chunk header: 2-byte signature (`0x1234`, big-endian), 1-byte vol number, 2-byte LE resource length. Verified against SQ1 VOL files. |
-| `resource/view.py` | ✅ Working | Moved from `view/vol.py`. Imports `ResourceHeader`. `get_view_cels` tags each cel offset with its loop index. `get_cel_data` decomposes the mirror nibble into a flag (`mirror >> 3`) and a source loop index (`mirror & 7`), returning `(width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data)` tuples. |
+| `resource/view.py` | ✅ Working | Moved from `view/vol.py`. `get_view_data(reader, offset)` takes a `VolumeReader`, parses via `BytesIO`, and returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(...)])])` dataclass. Mirror flag and source loop index decoded from cel header nibble. |
 | `gfx/render.py` | ✅ Working | Moved from `view/render.py`. `draw_cel_data` accepts a `mirrored` bool and horizontally flips pixel positions (`width - 1 - x0`) when true. Rasterizes pre-decoded `(color, count)` pairs to SDL2 with the hardcoded 16-color EGA palette, alpha-aware. |
 | `resource/objects.py` | ✅ Working | Moved from `object/Object.py`. Decrypts `OBJECT` file via `util/crypto.py:xor_cycle`, extracts inventory triplets `(index, name, room)`. |
 | `util/crypto.py` | ✅ Working | `xor_cycle(key_string, file)` — standalone XOR decryption helper. Used by `objects.py`; will also be reused for LOGIC message decryption. |
@@ -172,7 +172,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [x] Add `resource/volume.py:VolumeReader(path)` that holds an open file handle and exposes `read_resource(offset) -> (ResourceHeader, bytes)`. Returns the parsed header and payload separately for clean caller access.
 - [x] Move `util/dir.py` → `resource/directory.py`; kept the existing API.
 - [x] Move `object/Object.py` → `resource/objects.py`; extracted `decrypt_file()` into `util/crypto.py:xor_cycle(key_string, file)`. `objects.py` now imports from there. Same helper will be reused for LOGIC message decryption.
-- [ ] Rework `view/vol.py` → `resource/view.py`: return a structured `View(loops=[Loop(cels=[Cel(width, height, mirror, alpha, rle_pairs)])])` dataclass, not raw bytes. RLE decoding is already inline in `get_cel_data`. *(File move done; dataclass refactor pending.)*
+- [x] Rework `view/vol.py` → `resource/view.py`: returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(width, height, mirror, non_mirror_idx, alpha, cel_data)])])` dataclass. RLE decoding inline in `get_cel_data`.
 - [ ] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). *(File move done; VisualScreen compositing pending.)*
 
 **Exit criteria:** `python main.py` still prints DIR listings and can still render a test VIEW cel via the old harness path, now going through the new module names.

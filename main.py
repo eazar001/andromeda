@@ -1,6 +1,6 @@
 import ctypes
 from gfx.render import draw_cel_data
-from resource.view import get_view_data
+from resource.view import get_view_data, Loop
 from resource.directory import read_dir
 from sdl2 import SDL_PollEvent, SDL_Event, SDL_RenderSetScale, SDL_Delay
 from sdl2.ext.renderer import Renderer
@@ -12,7 +12,7 @@ from sdl2 import SDL_BLENDMODE_BLEND, SDL_Quit
 from resource.volume import VolumeReader
 
 
-def animate_cels(cels, window, frame_delay_ms=120, infinite=False):
+def animate_cels(loop_idx, cels, window, frame_delay_ms=120, infinite=False):
     renderer = Renderer(window)
     renderer.blendmode = SDL_BLENDMODE_BLEND
     SDL_RenderSetScale(renderer.sdlrenderer, 8.0, 8.0)
@@ -23,9 +23,7 @@ def animate_cels(cels, window, frame_delay_ms=120, infinite=False):
     while running and cel_idx < len(cels):
         renderer.color = Color(0x00, 0x00, 0x00, 0x00)
         renderer.clear()
-
-        width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data = cels[cel_idx]
-        draw_cel_data(renderer, width, height, mirror and loop_idx != non_mirror_idx, cel_data, alpha)
+        draw_cel_data(renderer, loop_idx, cels[cel_idx])
         renderer.present()
 
         SDL_Delay(frame_delay_ms)
@@ -51,9 +49,11 @@ def main():
     )
 
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
-        _, cels = get_view_data(VolumeReader(f'test_games/sq1/VOL.{vol}'), view_offset)
-        if not animate_cels(cels, window):
-            break
+        view = get_view_data(VolumeReader(f'test_games/sq1/VOL.{vol}'), view_offset)
+
+        for loop in view.loops:
+            if not animate_cels(loop.loop_idx, loop.cels, window):
+                break
 
     window.close()
     SDL_Quit()
