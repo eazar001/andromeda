@@ -1,5 +1,5 @@
 import ctypes
-from gfx.render import draw_cel_data
+from gfx.view_render import draw_cel_data
 from resource.view import get_view_data, Loop
 from resource.directory import read_dir
 from sdl2 import SDL_PollEvent, SDL_Event, SDL_RenderSetScale, SDL_Delay
