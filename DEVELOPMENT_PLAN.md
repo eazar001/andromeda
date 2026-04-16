@@ -72,10 +72,10 @@ The subsystems connect like this:
                      │     ResourceManager       │
                      │  (open vols, cache, LRU,  │
                      │   sticky vs per-room)     │
-                     └─┬────┬────┬─────┬─────────┘
-                       │    │    │     │
-               ┌───────┘    │    │     └────────┐
-               ▼            ▼    ▼              ▼
+                     └─┬────┬───────────┬───┬────┘
+                       │    │           │   │
+               ┌───────┘    │           │   └──────────┐
+               ▼            ▼           ▼              ▼
            PicDecoder   ViewDecoder  LogicDecoder  SoundDecoder
                │            │            │              │
                ▼            ▼            ▼              ▼
