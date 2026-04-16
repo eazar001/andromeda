@@ -9,6 +9,8 @@ from sdl2.ext.color import Color
 from sdl2 import SDL_Init, SDL_INIT_VIDEO, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_SHOWN
 from sdl2 import SDL_BLENDMODE_BLEND, SDL_Quit
 
+from resource.volume import VolumeReader
+
 
 def animate_cels(cels, window, frame_delay_ms=120, infinite=False):
     renderer = Renderer(window)
@@ -49,7 +51,7 @@ def main():
     )
 
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
-        _, cels = get_view_data(f'test_games/sq1/VOL.{vol}', view_offset)
+        _, cels = get_view_data(VolumeReader(f'test_games/sq1/VOL.{vol}'), view_offset)
         if not animate_cels(cels, window):
             break
 

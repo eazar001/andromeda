@@ -1,46 +1,47 @@
-from resource.header import ResourceHeader
+from resource.volume import VolumeReader
 from util.byte import nibble
-
+from io import BytesIO
 
 # view_offset is the value returned by read_dir: the byte offset of this resource within its VOL file.
+# VolumeReader.read_resource() strips the 5-byte VOL chunk header and returns the VIEW payload as bytes.
 #
-# Layout at view_offset:
-#   +0..+4   VOL chunk header (5 bytes: signature, vol number, resource length) -- skipped
-#   +5..+6   VIEW header bytes 0-1 (format version markers, always 1 or 2, then 1) -- skipped
-#   +7       VIEW header byte 2: number of loops
-#   +8..+9   VIEW header bytes 3-4: description offset (relative to view_offset + 5)
-#   +10..    VIEW header bytes 5+: loop offsets, 2 bytes each (also relative to view_offset + 5)
-def get_view_data(vol_file_path, view_offset):
-    with open(vol_file_path, mode='rb') as f:
-        # Skip VOL chunk header (5 bytes) + VIEW version bytes (2 bytes) to land on num_loops.
-        f.seek(view_offset + 7)
+# Layout of the VIEW payload (BytesIO position 0 = start of payload):
+#   +0..+1   VIEW version markers (always 0x01/0x02 then 0x01) -- skipped
+#   +2       number of loops
+#   +3..+4   description offset (LE, relative to payload start)
+#   +5..     loop offsets, 2 bytes each (LE, relative to payload start)
+def get_view_data(reader: VolumeReader, view_offset: int):
+    _header, view_bytes = reader.read_resource(view_offset)
 
-        i, num_loops, desc_bytes, loop_offsets = 0, int.from_bytes(f.read(1), 'big'), f.read(2), []
+    with BytesIO(view_bytes) as bs:
+        # Skip VIEW version bytes (2 bytes) to land on num_loops.
+        bs.seek(2)
+
+        i, num_loops, desc_bytes, loop_offsets = 0, int.from_bytes(bs.read(1), 'big'), bs.read(2), []
         desc_ls, desc_ms = desc_bytes
-        # Offsets in the VIEW header are relative to the start of the VIEW payload,
-        # which begins after the 5-byte VOL chunk header -- hence + view_offset + 5.
-        desc_offset = (desc_ms << 8) + desc_ls + view_offset + 5
+        # Offsets are relative to payload start (BytesIO position 0).
+        desc_offset = (desc_ms << 8) + desc_ls
 
         while i < num_loops:
-            ls, ms = f.read(2)
-            loop_offsets.append((ms << 8) + ls + view_offset + 5)
+            ls, ms = bs.read(2)
+            loop_offsets.append((ms << 8) + ls)
             i += 1
 
-        cels = get_cel_data(f, get_view_cels(f, loop_offsets))
+        cels = get_cel_data(bs, get_view_cels(bs, loop_offsets))
 
     return desc_offset, cels
 
 
-def get_view_cels(vol_file, loop_offsets):
+def get_view_cels(bs, loop_offsets):
     cel_offsets = []
     loop_idx = 0
 
     for loop_offset in loop_offsets:
-        vol_file.seek(loop_offset)
-        i, num_cells = 0, int.from_bytes(vol_file.read(1), 'big')
+        bs.seek(loop_offset)
+        i, num_cells = 0, int.from_bytes(bs.read(1), 'big')
 
         while i < num_cells:
-            ls, ms = vol_file.read(2)
+            ls, ms = bs.read(2)
             cel_offsets.append((loop_idx, (ms << 8) + ls + loop_offset))
             i += 1
 
@@ -49,13 +50,13 @@ def get_view_cels(vol_file, loop_offsets):
     return cel_offsets
 
 
-def get_cel_data(vol_file, cel_offsets):
+def get_cel_data(bs, cel_offsets):
     cels = []
 
     for loop_idx, cel_offset in cel_offsets:
-        vol_file.seek(cel_offset)
+        bs.seek(cel_offset)
 
-        width, height, alpha_mirroring = vol_file.read(3)
+        width, height, alpha_mirroring = bs.read(3)
         # Cel header byte 2 layout (verified empirically against AGI Studio for SQ1):
         #   high nibble (bits 4-7) = mirror info (bit 0 signals whether mirror exists, bits 1 - 3 is the loop index of the non-mirrored loop)
         #   low nibble  (bits 0-3) = transparent color index
@@ -69,7 +70,7 @@ def get_cel_data(vol_file, cel_offsets):
         i = 0
 
         while i < height:
-            b = vol_file.read(1)
+            b = bs.read(1)
 
             if not b:
                 raise ValueError(f"Truncated cel data at {cel_offset}")
