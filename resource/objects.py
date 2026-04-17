@@ -27,7 +27,7 @@ class Object:
     @staticmethod
     def extract_object_header_data(bs):
         header = bs[:3]
-        inventory_offset = header[0] + header[1]
+        inventory_offset = int.from_bytes(header[:2], 'little')
         inventory_start = inventory_offset + 5
         inventory_metadata = bs[3:inventory_offset + 3]
         inventory_data = bs[inventory_start:]
