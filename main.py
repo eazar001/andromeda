@@ -48,6 +48,8 @@ def main():
         SDL_WINDOW_SHOWN
     )
 
+    stop = False
+
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
         vol_reader = VolumeReader(f'test_games/sq1/VOL.{vol}')
         view = get_view_data(vol_reader, view_offset)
@@ -55,7 +57,10 @@ def main():
 
         for loop in view.loops:
             if not animate_cels(loop.loop_idx, loop.cels, window):
-                break
+                stop = True
+
+        if stop:
+            break
 
     window.close()
     SDL_Quit()
