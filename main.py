@@ -1,6 +1,6 @@
 import ctypes
 from gfx.view_render import draw_cel_data
-from resource.view import get_view_data, Loop
+from resource.view import get_view_data
 from resource.directory import read_dir
 from sdl2 import SDL_PollEvent, SDL_Event, SDL_RenderSetScale, SDL_Delay
 from sdl2.ext.renderer import Renderer
@@ -49,7 +49,9 @@ def main():
     )
 
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
-        view = get_view_data(VolumeReader(f'test_games/sq1/VOL.{vol}'), view_offset)
+        vol_reader = VolumeReader(f'test_games/sq1/VOL.{vol}')
+        view = get_view_data(vol_reader, view_offset)
+        vol_reader.close()
 
         for loop in view.loops:
             if not animate_cels(loop.loop_idx, loop.cels, window):

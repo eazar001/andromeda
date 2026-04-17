@@ -12,7 +12,7 @@ palette = [
 
 
 def draw_cel_data(renderer, loop_idx, cel):
-    x, y, end = 0, cel.height, cel.height * 2
+    x, y, end = 0, 0, cel.height
     mirrored = cel.mirror and loop_idx != cel.non_mirror_idx
     pixels = cel.cel_data
 
