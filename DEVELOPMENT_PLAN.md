@@ -28,15 +28,15 @@ What exists today (April 2026):
 
 | Module | Status | Notes |
 |---|---|---|
-| `resource/directory.py` | ✅ Working | Moved from `util/dir.py`. Parses `*DIR` files to `(vol, offset)` pairs. Caps at 256 entries, skips `(0xF, 0xFFFFF)` sentinels. |
-| `resource/volume.py` | ✅ Working | `VolumeReader(path)` holds an open file handle. `read_resource(offset)` returns `(ResourceHeader, payload_bytes)` without re-opening the VOL file. |
-| `util/byte.py` | ✅ Working | `nibble(byte, 'hi'/'lo')` helper. `cel_mirror()` removed — mirror flag and loop index are now extracted inline in `view/vol.py`. |
-| `resource/header.py` | ✅ Working | `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reads the 5-byte VOL chunk header: 2-byte signature (`0x1234`, big-endian), 1-byte vol number, 2-byte LE resource length. Verified against SQ1 VOL files. |
-| `resource/view.py` | ✅ Working | Moved from `view/vol.py`. `get_view_data(reader, offset)` takes a `VolumeReader`, parses via `BytesIO`, and returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(...)])])` dataclass. Mirror flag and source loop index decoded from cel header nibble. |
-| `gfx/render.py` | ✅ Working | Moved from `view/render.py`. `draw_cel_data` accepts a `mirrored` bool and horizontally flips pixel positions (`width - 1 - x0`) when true. Rasterizes pre-decoded `(color, count)` pairs to SDL2 with the hardcoded 16-color EGA palette, alpha-aware. |
-| `resource/objects.py` | ✅ Working | Moved from `object/Object.py`. Decrypts `OBJECT` file via `util/crypto.py:xor_cycle`, extracts inventory triplets `(index, name, room)`. |
-| `util/crypto.py` | ✅ Working | `xor_cycle(key_string, file)` — standalone XOR decryption helper. Used by `objects.py`; will also be reused for LOGIC message decryption. |
-| `main.py` | ✅ Working | `animate_cels` unpacks the full cel tuple `(width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data)` and passes `mirror and loop_idx != non_mirror_idx` as the `mirrored` flag to `draw_cel_data`. |
+| `src/resource/directory.py` | ✅ Working | Moved from `util/dir.py`. Parses `*DIR` files to `(vol, offset)` pairs. Caps at 256 entries, skips `(0xF, 0xFFFFF)` sentinels. |
+| `src/resource/volume.py` | ✅ Working | `VolumeReader(path)` holds an open file handle. `read_resource(offset)` returns `(ResourceHeader, payload_bytes)` without re-opening the VOL file. |
+| `src/util/byte.py` | ✅ Working | `nibble(byte, 'hi'/'lo')` helper. `cel_mirror()` removed — mirror flag and loop index are now extracted inline in `src/resource/view.py`. |
+| `src/resource/header.py` | ✅ Working | `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reads the 5-byte VOL chunk header: 2-byte signature (`0x1234`, big-endian), 1-byte vol number, 2-byte LE resource length. Verified against SQ1 VOL files. |
+| `src/resource/view.py` | ✅ Working | Moved from `view/vol.py`. `get_view_data(reader, offset)` takes a `VolumeReader`, parses via `BytesIO`, and returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(...)])])` dataclass. Mirror flag and source loop index decoded from cel header nibble. |
+| `src/gfx/view_render.py` | ✅ Working | Moved from `view/render.py`. `draw_cel_data` accepts a `mirrored` bool and horizontally flips pixel positions (`width - 1 - x0`) when true. Rasterizes pre-decoded `(color, count)` pairs to SDL2 with the hardcoded 16-color EGA palette, alpha-aware. |
+| `src/resource/objects.py` | ✅ Working | Moved from `object/Object.py`. Decrypts `OBJECT` file via `src/util/crypto.py:xor_cycle`, extracts inventory triplets `(index, name, room)`. |
+| `src/util/crypto.py` | ✅ Working | `xor_cycle(key_string, file)` — standalone XOR decryption helper. Used by `objects.py`; will also be reused for LOGIC message decryption. |
+| `src/main.py` | ✅ Working | `animate_cels` unpacks the full cel tuple `(width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data)` and passes `mirror and loop_idx != non_mirror_idx` as the `mirrored` flag to `draw_cel_data`. |
 
 **Confirmed facts from the existing code worth preserving:**
 
@@ -115,47 +115,52 @@ One reasonable expansion of the current tree (not prescriptive — adapt as you 
 
 ```
 andromeda/
-├── main.py
-├── resource/
-│   ├── __init__.py
-│   ├── header.py          # 5-byte VOL resource header parsing
-│   ├── directory.py       # (move util/dir.py here)
-│   ├── volume.py          # VolumeReader: opens VOL.n, random-access
-│   ├── manager.py         # ResourceManager: sticky/per-room lifetimes
-│   ├── pic.py             # PIC opcode stream decoder
-│   ├── view.py            # VIEW loop/cel decoder (rework from view/vol.py)
-│   ├── logic.py           # LOGIC bytecode + message section decoder
-│   ├── sound.py           # SOUND channel-stream decoder
-│   ├── words.py           # WORDS.TOK decoder
-│   └── objects.py         # OBJECT file decoder (move object/Object.py here)
-├── runtime/
-│   ├── __init__.py
-│   ├── state.py           # GameState: flags[256], vars[256], strings[12]
-│   ├── reserved.py        # constants for reserved vars/flags
-│   ├── interp.py          # LOGIC bytecode interpreter (decoder + executor)
-│   ├── commands.py        # agi command table + test command table
-│   ├── sprites.py         # ScreenObject table + mover + cycler
-│   ├── parser.py          # longest-match tokenizer + said() state
-│   ├── cycle.py           # main game loop + new-room handling
-│   └── errors.py          # NewRoomException, InterpreterError, ...
-├── gfx/
-│   ├── __init__.py
-│   ├── screens.py         # visual (160x168x4bit) + priority (same)
-│   ├── pic_render.py      # executes PIC ops into screens
-│   ├── view_render.py     # composites cels into visual screen
-│   ├── text_overlay.py    # 40x25 text layer, windows, status line, input line
-│   ├── palette.py         # 16-color EGA palette
-│   └── blit.py            # SDL2 output: 2x X-double, palette convert, present
-├── audio/
-│   ├── __init__.py
-│   ├── sn76489.py         # square + noise synth, attenuation table
-│   └── player.py          # 4-channel mixer + SDL2 audio callback
-├── io/
-│   ├── __init__.py
-│   ├── input.py           # SDL2 key → input line + controllers + v19
-│   └── save.py            # save/restore serialization
-└── util/
-    └── byte.py            # keep as-is
+├── src/
+│   ├── main.py
+│   ├── resource/
+│   │   ├── __init__.py
+│   │   ├── header.py          # 5-byte VOL resource header parsing
+│   │   ├── directory.py       # (moved from util/dir.py)
+│   │   ├── volume.py          # VolumeReader: opens VOL.n, random-access
+│   │   ├── manager.py         # ResourceManager: sticky/per-room lifetimes
+│   │   ├── pic.py             # PIC opcode stream decoder
+│   │   ├── view.py            # VIEW loop/cel decoder (rework from view/vol.py)
+│   │   ├── logic.py           # LOGIC bytecode + message section decoder
+│   │   ├── sound.py           # SOUND channel-stream decoder
+│   │   ├── words.py           # WORDS.TOK decoder
+│   │   └── objects.py         # OBJECT file decoder (moved from object/Object.py)
+│   ├── runtime/
+│   │   ├── __init__.py
+│   │   ├── state.py           # GameState: flags[256], vars[256], strings[12]
+│   │   ├── reserved.py        # constants for reserved vars/flags
+│   │   ├── interp.py          # LOGIC bytecode interpreter (decoder + executor)
+│   │   ├── commands.py        # agi command table + test command table
+│   │   ├── sprites.py         # ScreenObject table + mover + cycler
+│   │   ├── parser.py          # longest-match tokenizer + said() state
+│   │   ├── cycle.py           # main game loop + new-room handling
+│   │   └── errors.py          # NewRoomException, InterpreterError, ...
+│   ├── gfx/
+│   │   ├── __init__.py
+│   │   ├── screens.py         # visual (160x168x4bit) + priority (same)
+│   │   ├── pic_render.py      # executes PIC ops into screens
+│   │   ├── view_render.py     # composites cels into visual screen
+│   │   ├── text_overlay.py    # 40x25 text layer, windows, status line, input line
+│   │   ├── palette.py         # 16-color EGA palette
+│   │   └── blit.py            # SDL2 output: 2x X-double, palette convert, present
+│   ├── audio/
+│   │   ├── __init__.py
+│   │   ├── sn76489.py         # square + noise synth, attenuation table
+│   │   └── player.py          # 4-channel mixer + SDL2 audio callback
+│   ├── io/
+│   │   ├── __init__.py
+│   │   ├── input.py           # SDL2 key → input line + controllers + v19
+│   │   └── save.py            # save/restore serialization
+│   └── util/
+│       └── byte.py            # keep as-is
+├── CLAUDE.md
+├── DEVELOPMENT_PLAN.md
+├── README.md
+└── requirements.txt
 ```
 
 Migrate incrementally — don't do a big-bang rename. Each milestone below mentions which files change.
@@ -172,18 +177,18 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [x] Add `resource/volume.py:VolumeReader(path)` that holds an open file handle and exposes `read_resource(offset) -> (ResourceHeader, bytes)`. Returns the parsed header and payload separately for clean caller access.
 - [x] Move `util/dir.py` → `resource/directory.py`; kept the existing API.
 - [x] Move `object/Object.py` → `resource/objects.py`; extracted `decrypt_file()` into `util/crypto.py:xor_cycle(key_string, file)`. `objects.py` now imports from there. Same helper will be reused for LOGIC message decryption.
-- [x] Rework `view/vol.py` → `resource/view.py`: returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(width, height, mirror, non_mirror_idx, alpha, cel_data)])])` dataclass. RLE decoding inline in `get_cel_data`.
-- [x] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). `composite_cel(screen, loop_idx, cel)` writes color indices into `VisualScreen`; EGA palette extracted to `gfx/palette.py`. `draw_cel_data` retained temporarily for `main.py` compatibility.
+- [x] Rework `view/vol.py` → `src/resource/view.py`: returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(width, height, mirror, non_mirror_idx, alpha, cel_data)])])` dataclass. RLE decoding inline in `get_cel_data`.
+- [x] Keep `view/render.py` → `src/gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). `composite_cel(screen, loop_idx, cel)` writes color indices into `VisualScreen`; EGA palette extracted to `src/gfx/palette.py`. `draw_cel_data` retained temporarily for `src/main.py` compatibility.
 
-**Exit criteria:** `python main.py` still prints DIR listings and can still render a test VIEW cel via the old harness path, now going through the new module names.
+**Exit criteria:** `python -m src.main` still prints DIR listings and can still render a test VIEW cel via the old harness path, now going through the new module names.
 
 ### M1 — PIC decoder and dual-screen compositor
 
 **Goal:** Load and render a real room background (both visual and priority screens).
 
-- [x] `gfx/screens.py`: `VisualScreen` (160×168, uint8 color index) and `PriorityScreen` (160×168, uint8 priority/control value). Clear visual to **15** (white) and priority to **4** (lowest valid band) on reset — this is critical for flood fill to work.
-- [ ] `gfx/palette.py`: the 16-color EGA palette (already in `view/render.py`). Add a helper that converts a `VisualScreen` buffer to a 320×200 RGBA SDL texture with horizontal doubling.
-- [ ] `resource/pic.py`: `decode_pic(payload: bytes) -> list[PicOp]`. PIC is a stream of opcodes `0xF0`–`0xFF` each followed by a variable parameter run that ends at the next byte `>= 0xF0`. Opcodes to implement:
+- [x] `src/gfx/screens.py`: `VisualScreen` (160×168, uint8 color index) and `PriorityScreen` (160×168, uint8 priority/control value). Clear visual to **15** (white) and priority to **4** (lowest valid band) on reset — this is critical for flood fill to work.
+- [ ] `src/gfx/palette.py`: the 16-color EGA palette (already in `src/gfx/view_render.py`). Add a helper that converts a `VisualScreen` buffer to a 320×200 RGBA SDL texture with horizontal doubling.
+- [ ] `src/resource/pic.py`: `decode_pic(payload: bytes) -> list[PicOp]`. PIC is a stream of opcodes `0xF0`–`0xFF` each followed by a variable parameter run that ends at the next byte `>= 0xF0`. Opcodes to implement:
   - `0xF0` set picture color + enable visual, `0xF1` disable visual
   - `0xF2` set priority color + enable priority, `0xF3` disable priority
   - `0xF4` Y-corner (alternating vert/horiz), `0xF5` X-corner
@@ -193,7 +198,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
   - `0xF9` set pen (bit 5 shape 0=circle/1=square, bit 4 texture 0=solid/1=splatter, bits 0-2 size 0-7)
   - `0xFA` plot pen (solid: `(x,y)` per point; splatter: `(pattern, x, y)` per point)
   - `0xFF` end of picture
-- [ ] `gfx/pic_render.py`: executes a decoded PIC op list into a `VisualScreen` + `PriorityScreen` pair. Implement:
+- [ ] `src/gfx/pic_render.py`: executes a decoded PIC op list into a `VisualScreen` + `PriorityScreen` pair. Implement:
   - Bresenham line drawing — use the Kelly-spec pseudocode for rounding, not the textbook version, or you'll get one-pixel gaps that let floods leak. Verify against Kelly Chapter 7.
   - Flood fill: **iterative** (stack-based), not recursive. Fill rules:
     - Visual enabled only: fill pixels currently == 15 (white).
@@ -215,15 +220,15 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** Given a LOGIC resource body, produce a structured IR (bytecode instructions + decrypted messages) without running it.
 
-- [ ] `resource/logic.py`: `decode_logic(payload: bytes) -> Logic`:
+- [ ] `src/resource/logic.py`: `decode_logic(payload: bytes) -> Logic`:
   - Header: `messages_offset = u16 LE` at byte 0. Bytecode is `payload[2 : 2 + messages_offset]`; message section starts at `2 + messages_offset`.
   - Message section: `num_messages (u8)`, `end_offset (u16 LE)`, then `num_messages` u16 LE pointers to strings. String bodies are null-terminated and XOR-encrypted with `"Avis Durgan"`. Offset 0 in the pointer table = missing message. Messages are 1-indexed.
   - XOR key range is **only** the string body area (from the first string onward up to `end_offset`), not the pointer table. Getting this bound off by one scrambles every message.
-- [ ] `runtime/commands.py`: the **opcode arity table**. This is the single most important piece of data in the whole project — one wrong arity and every instruction after it is garbage. Sources:
+- [ ] `src/runtime/commands.py`: the **opcode arity table**. This is the single most important piece of data in the whole project — one wrong arity and every instruction after it is garbage. Sources:
   - Kelly spec Chapter 8 (AGI Commands) + Chapter 9 (Test Commands).
   - Cross-verify against agiwiki.sierrahelp.com tables.
   - Store as a `dict[int, CommandSpec]` where `CommandSpec` is `(name, num_args, arg_kinds)`. `arg_kinds` is metadata like `"var" | "flag" | "obj" | "msg" | "num" | "str"` for prettier disassembly later.
-- [ ] `runtime/interp.py:disassemble(logic: Logic) -> str`: walk the bytecode, emit human-readable assembly. Handles the three special control bytes:
+- [ ] `src/runtime/interp.py:disassemble(logic: Logic) -> str`: walk the bytecode, emit human-readable assembly. Handles the three special control bytes:
   - `0x00` = return
   - `0xFF` = `if (` ... `)` — inside, AND is implicit, `0xFC` opens/closes an OR group, `0xFD` is unary NOT on the next test term. After the closing `0xFF` comes a **signed int16 LE** displacement (jump-if-false).
   - `0xFE` = unconditional goto / else — followed by signed int16 LE displacement.
@@ -236,16 +241,16 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** Actually run LOGIC code, one logic at a time, with mocked subsystems where needed.
 
-- [ ] `runtime/state.py:GameState`:
+- [ ] `src/runtime/state.py:GameState`:
   - `flags: bytearray` (256 bits, store as `bytearray(256)` 1 byte each for simplicity)
   - `vars: bytearray` (256 uint8)
   - `strings: list[str]` (start with 24 empty slots)
   - Setter hooks: writes to reserved indices (e.g., `v16` = ego view, `v10` = cycle delay) should route through property setters so side effects fire. Don't scatter side-effect checks at call sites.
-- [ ] `runtime/reserved.py`: constants for the reserved vars/flags. Build the table from Kelly Chapter 3; don't hardcode raw indices in command handlers. Minimum set to start with:
+- [ ] `src/runtime/reserved.py`: constants for the reserved vars/flags. Build the table from Kelly Chapter 3; don't hardcode raw indices in command handlers. Minimum set to start with:
   - `V_CUR_ROOM = 0, V_PREV_ROOM = 1, V_EGO_BORDER = 2, V_SCORE = 3, V_OBJ_BORDER = 5, V_EGO_DIR = 6, V_MAX_SCORE = 7, V_UNKNOWN_WORD = 9, V_CYCLE_DELAY = 10, V_SECONDS = 11, V_MINUTES = 12, V_HOURS = 13, V_DAYS = 14, V_EGO_VIEW = 16, V_LAST_KEY = 19, V_WINDOW_TIMER = 21, V_MAX_INPUT_LEN = 24`
   - `F_ON_WATER = 0, F_EGO_INVISIBLE = 1, F_HAS_INPUT = 2, F_EGO_SIGNAL = 3, F_SAID_MATCHED = 4, F_NEW_ROOM = 5, F_RESTART = 6, F_BUF_OVERFLOW = 7, F_SCRIPT_WROTE = 8, F_LOGIC0_RAN = 9, F_RESTORE = 10, F_ENTER_PRESSED = 11, F_SOUND_ON = 11, F_MENU_ENABLED = 14, F_PRINT_MODE = 15`
   - **Verify these numeric assignments against Kelly §3 before depending on any of them.** Several cross-references disagree by ±1; the research report flagged this.
-- [ ] `runtime/interp.py:Interpreter`:
+- [ ] `src/runtime/interp.py:Interpreter`:
   - `run_logic(logic_num: int)` — loads logic from cache, sets up a PC at `bytecode_start`, executes opcodes via a dispatch dict `{opcode_byte: handler}`.
   - The `if` / `else` / `goto` parser is the trickiest piece. Structure:
     ```
@@ -276,7 +281,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** Draw ego on screen and make it move when the arrow keys are pressed.
 
-- [ ] `runtime/sprites.py:ScreenObject` dataclass with: `x, y, prev_x, prev_y, view_num, loop, cel, direction, step_size, step_time, step_count, cycle_time, cycle_count, motion_type, cycle_type, priority, flags` (drawn/update/animate/ignore_blocks/ignore_horizon/ignore_objs/on_water/on_land/fixed_loop/fixed_priority/cycle/motion).
+- [ ] `src/runtime/sprites.py:ScreenObject` dataclass with: `x, y, prev_x, prev_y, view_num, loop, cel, direction, step_size, step_time, step_count, cycle_time, cycle_count, motion_type, cycle_type, priority, flags` (drawn/update/animate/ignore_blocks/ignore_horizon/ignore_objs/on_water/on_land/fixed_loop/fixed_priority/cycle/motion).
 - [ ] `ScreenObjectTable` — fixed-size array of ~16 slots. Slot 0 is ego.
 - [ ] Mover: per-tick, for each active object, compute a candidate step from `direction × step_size`, check priority/control pixels along the base-line (1 px under the cel) for obstacles, commit or stop.
 - [ ] Auto-cycler: every `cycle_time` ticks, advance `cel` per `cycle_type` (normal.cycle, end.of.loop, reverse.cycle, reverse.loop).
@@ -292,7 +297,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** Close the loop between LOGIC, objects, rendering, and a real game clock.
 
-- [ ] `runtime/cycle.py:GameCycle`:
+- [ ] `src/runtime/cycle.py:GameCycle`:
   ```
   while running:
       poll_sdl_events() → key queue, quit
@@ -329,14 +334,14 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** Typed commands like `look at ship` reach LOGIC as group-id sequences.
 
-- [ ] `resource/words.py:load_words_tok(path) -> dict[str, int]`:
+- [ ] `src/resource/words.py:load_words_tok(path) -> dict[str, int]`:
   - Read 26 big-endian u16 offsets at bytes 0x00–0x32 — one per letter a–z. Zero means "no words for this letter."
   - For each letter block, decode entries using prefix compression. Per-entry:
     - `prefix_len (u8)` — number of leading chars shared with the previous word in this letter block (resets to empty at start of each letter block — do not carry state across letters)
     - then characters: for each byte `b`, `ch = (b & 0x7F) ^ 0x7F`; if `b & 0x80` is set, it's the last char.
     - Then `u16 big-endian` group number.
   - Returns a dict mapping full phrase string → group id. **Phrases can contain spaces** (e.g., `"pick up"` is a single entry, not two words). They're stored with ASCII 0x20 (XOR'd to 0x5F on disk) just like any other char; the end-of-word bit is the only delimiter.
-- [ ] `runtime/parser.py`:
+- [ ] `src/runtime/parser.py`:
   - Normalize: lowercase, collapse whitespace, strip stray punctuation.
   - **Longest-match** tokenization: at each cursor position, try the longest possible remaining prefix against the phrase dict and consume matched tokens. A simple `split()`-per-word approach is wrong because of multi-word entries. A trie keyed on space-separated tokens is the efficient approach; a dict of phrases sorted longest-first works for a prototype.
   - Drop all tokens whose group is **0** (noise/filler).
@@ -358,7 +363,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** The status line, `print` windows, input echo, and F-key / menu controllers.
 
-- [ ] `gfx/text_overlay.py`: 40×25 character grid. Needs a bitmap font (Sierra's 8×8 is most authentic; you can substitute any 8×8 mono font to get going, and swap in the authentic font later).
+- [ ] `src/gfx/text_overlay.py`: 40×25 character grid. Needs a bitmap font (Sierra's 8×8 is most authentic; you can substitute any 8×8 mono font to get going, and swap in the authentic font later).
 - [ ] Status line: row 0 by default, shows score/sound from reserved vars. Commands: `status.line.on/off`, `configure.screen`.
 - [ ] Print windows: pop-up text boxes with a border. Block the cycle until dismissed (or `v21` expires).
 - [ ] Input line: bottom row. Append printable keys to a buffer, handle BACKSPACE, submit on ENTER. Echo via the text overlay, not via SDL_ttf.
@@ -371,7 +376,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** Music and sound effects play back, even if imperfectly.
 
-- [ ] `resource/sound.py:decode_sound(payload: bytes) -> Sound`:
+- [ ] `src/resource/sound.py:decode_sound(payload: bytes) -> Sound`:
   - After the 5-byte VOL header, first 8 bytes are an offset table: 4 × u16 LE, one per channel (3 tone + 1 noise). Offsets are relative to the start of the decoded payload.
   - Each channel is a stream of 5-byte notes:
     - bytes 0-1: duration u16 LE (in 1/60s ticks)
@@ -380,10 +385,10 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
     - byte 4: `0xE0 | (atten & 0x0F)` — volume, 0 = loudest, 0x0F = silent
   - `duration == 0xFFFF` terminates the channel.
   - Channel 3 (noise) reinterprets byte 3: bit 2 = feedback (0=periodic, 1=white), bits 0-1 = shift-rate select (0=/512, 1=/1024, 2=/2048, 3=use channel 2 freq).
-- [ ] `audio/sn76489.py`:
+- [ ] `src/audio/sn76489.py`:
   - Tone voice: phase accumulator at `hz = 111860 / divisor` (111860 = NTSC colorburst / 32). Emit ±amp square wave at 50% duty. `divisor == 0` is silence. `atten == 0x0F` is silence. Atten steps are 2 dB.
   - Noise voice: 15- or 16-bit LFSR at selected shift rate; periodic = single-tap, white = XOR-tap feedback.
-- [ ] `audio/player.py`:
+- [ ] `src/audio/player.py`:
   - 60 Hz tick advances all four channels' note cursors.
   - Per-sample mixing in an SDL2 audio callback. Sum and soft-clip; pre-scale each channel to ~0.25.
   - Simple queue for "play sound N" from the `sound` agi command; honor flag 11 (sound on/off).
@@ -396,7 +401,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** F5/F7 save and load.
 
-- [ ] `io/save.py`:
+- [ ] `src/io/save.py`:
   - Serialize: game ID, interpreter version stamp, all 256 flags + 256 vars, all strings, current room number, the full sprite table, the loaded-resource list, inventory room assignments, script event buffer.
   - **Don't** serialize a PC inside a logic — logics are assumed to run to completion each cycle, so save points are always at cycle boundaries.
   - Deserialize clobbers state, then triggers the same path as `new.room` so the target room re-init runs via f5.
@@ -463,7 +468,7 @@ b3 b4 : uint16 LE length (bytes that follow)
 ```
 
 Then:
-- **VIEW**: 7 bytes into the resource (5-byte header + 2-byte VIEW-specific header), then `num_loops` byte, then 2-byte description offset, then loop offset table. See `view/vol.py` for the current implementation.
+- **VIEW**: 7 bytes into the resource (5-byte header + 2-byte VIEW-specific header), then `num_loops` byte, then 2-byte description offset, then loop offset table. See `src/resource/view.py` for the current implementation.
 - **PIC**: payload is raw opcode stream, terminated by `0xFF`.
 - **LOGIC**: payload starts with `u16 LE messages_offset`; bytecode in `[2, 2+messages_offset)`; message section follows.
 - **SOUND**: payload starts with 4 × `u16 LE` channel offset table.
