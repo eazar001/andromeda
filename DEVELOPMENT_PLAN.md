@@ -513,7 +513,7 @@ Shortest path to a playable SQ1 room 1:
 ```
 M0 foundation cleanup
    ↓
-M1 PIC decoder + dual screens  ──┐
+M1 PIC decoder + dual screens  ───┐
    ↓                              │
 M2 LOGIC decoder                  │
    ↓                              │
