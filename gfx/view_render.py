@@ -1,14 +1,5 @@
-from util.byte import nibble
+from gfx.palette import palette
 from sdl2.ext.color import Color
-
-
-# 4-bit, 16-color EGA palette
-palette = [
-    (0x00, 0x00, 0x00), (0x00, 0x00, 0xAA), (0x00, 0xAA, 0x00), (0x00, 0xAA, 0xAA), (0xAA, 0x00, 0x00),
-    (0xAA, 0x00, 0xAA), (0xAA, 0x55, 0x00), (0xAA, 0xAA, 0xAA), (0x55, 0x55, 0x55), (0x55, 0x55, 0xFF),
-    (0x55, 0xFF, 0x55), (0x55, 0xFF, 0xFF), (0xFF, 0x55, 0x55), (0xFF, 0x55, 0xFF), (0xFF, 0xFF, 0x55),
-    (0xFF, 0xFF, 0xFF)
-]
 
 
 def draw_cel_data(renderer, loop_idx, cel):
@@ -28,5 +19,28 @@ def draw_cel_data(renderer, loop_idx, cel):
         renderer.color = Color(r, g, b, 0xFF) if color != cel.alpha else Color(r, g, b, 0x00)
         # if mirroring is active width - x0, instead of x0
         renderer.draw_point(points=[(cel.width - 1 - x0 if mirrored else x0, y) for x0 in range(x, n)])
+        # because we drew all the way to n, we need to set x to n here
+        x = n
+
+
+def composite_cel(screen, loop_idx, cel):
+    x, y, end = 0, 0, cel.height
+    mirrored = cel.mirror and loop_idx != cel.non_mirror_idx
+    pixels = cel.cel_data
+
+    for color, num_pixels in pixels:
+        if y >= end:
+            break
+        if color == 0 == num_pixels:
+            # we've finished a line, so reset x to the beginning and move y down
+            x, y = 0, y + 1
+            continue
+
+        n = x + 2 * num_pixels
+
+        for x0 in range(x, n):
+            if color != cel.alpha:
+                screen.store(cel.width - 1 - x0 if mirrored else x0, y, color)
+
         # because we drew all the way to n, we need to set x to n here
         x = n

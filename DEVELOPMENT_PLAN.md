@@ -173,7 +173,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [x] Move `util/dir.py` → `resource/directory.py`; kept the existing API.
 - [x] Move `object/Object.py` → `resource/objects.py`; extracted `decrypt_file()` into `util/crypto.py:xor_cycle(key_string, file)`. `objects.py` now imports from there. Same helper will be reused for LOGIC message decryption.
 - [x] Rework `view/vol.py` → `resource/view.py`: returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(width, height, mirror, non_mirror_idx, alpha, cel_data)])])` dataclass. RLE decoding inline in `get_cel_data`.
-- [ ] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). *(File move done; VisualScreen compositing pending.)*
+- [x] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). `composite_cel(screen, loop_idx, cel)` writes color indices into `VisualScreen`; EGA palette extracted to `gfx/palette.py`. `draw_cel_data` retained temporarily for `main.py` compatibility.
 
 **Exit criteria:** `python main.py` still prints DIR listings and can still render a test VIEW cel via the old harness path, now going through the new module names.
 
@@ -181,7 +181,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** Load and render a real room background (both visual and priority screens).
 
-- [ ] `gfx/screens.py`: `VisualScreen` (160×168, uint8 color index) and `PriorityScreen` (160×168, uint8 priority/control value). Clear visual to **15** (white) and priority to **4** (lowest valid band) on reset — this is critical for flood fill to work.
+- [x] `gfx/screens.py`: `VisualScreen` (160×168, uint8 color index) and `PriorityScreen` (160×168, uint8 priority/control value). Clear visual to **15** (white) and priority to **4** (lowest valid band) on reset — this is critical for flood fill to work.
 - [ ] `gfx/palette.py`: the 16-color EGA palette (already in `view/render.py`). Add a helper that converts a `VisualScreen` buffer to a 320×200 RGBA SDL texture with horizontal doubling.
 - [ ] `resource/pic.py`: `decode_pic(payload: bytes) -> list[PicOp]`. PIC is a stream of opcodes `0xF0`–`0xFF` each followed by a variable parameter run that ends at the next byte `>= 0xF0`. Opcodes to implement:
   - `0xF0` set picture color + enable visual, `0xF1` disable visual
