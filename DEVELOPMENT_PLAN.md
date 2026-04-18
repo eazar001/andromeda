@@ -86,19 +86,19 @@ The subsystems connect like this:
             │               │             │             │
             └───────┬───────┴─────┬───────┘             │
                     ▼             ▼                     ▼
-              ┌───────────────────────────┐      ┌──────────┐
-              │      Interpreter          │      │ SDL Audio│
-              │  flags/vars/strings       │      └──────────┘
-              │  LOGIC VM + cmd dispatch  │
-              │  screen object table      │
-              │  main cycle               │
-              └─────────┬─────────────────┘
+              ┌──────────────────────────┐      ┌──────────┐
+              │    Interpreter           │      │SDL Audio │
+              │  flags/vars/strings      │      └──────────┘
+              │ LOGIC VM + cmd dispatch  │
+              │  screen object table     │
+              │     main cycle           │
+              └─────────┬────────────────┘
                         │
                         ▼
-                 ┌─────────────┐     ┌───────────┐
-                 │  Compositor │────▶│ SDL Video │
-                 │  + text ovl │     └───────────┘
-                 └─────────────┘
+                 ┌──────────────┐     ┌────────────┐
+                 │ Compositor   │────▶│ SDL Video  │
+                 │  + text ovl  │     └────────────┘
+                 └──────────────┘
                         ▲
                         │
                  ┌──────┴──────┐
@@ -513,21 +513,21 @@ Shortest path to a playable SQ1 room 1:
 ```
 M0 foundation cleanup
    ↓
-M1 PIC decoder + dual screens   ──┐
-   ↓                               │
-M2 LOGIC decoder                   │
-   ↓                               │
-M3 LOGIC interpreter (stub I/O)    │
-   ↓                               │
-M4 screen objects + animation   ───┤
-   ↓                               │
-M5 main cycle                  ←───┘
+M1 PIC decoder + dual screens  ──┐
+   ↓                              │
+M2 LOGIC decoder                  │
+   ↓                              │
+M3 LOGIC interpreter (stub I/O)   │
+   ↓                              │
+M4 screen objects + animation  ───┤
+   ↓                              │
+M5 main cycle                 ←───┘
    ↓
 M6 parser + WORDS.TOK
    ↓
 M7 text overlay + controllers
    ↓
-M8 sound      M9 save/restore    (parallelizable, either order)
+M8 sound    M9 save/restore   (parallelizable, either order)
 ```
 
 Each milestone has a concrete "exit criteria" you can demo. If you find yourself blocked inside a milestone, the most common cause is a bad opcode arity or a wrong XOR range — re-read the relevant spec section against the actual bytes before assuming your code is wrong.
