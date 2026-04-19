@@ -1,16 +1,43 @@
-Andromeda Sierra AGI game engine emulator
------------------------------------------
+# Andromeda
 
-### Next Steps
+A cleanroom Python re-implementation of Sierra On-Line's AGI (Adventure Game Interpreter) v2, the engine behind *Space Quest 1*, *King's Quest 1/2*, *Leisure Suit Larry 1*, and other early Sierra adventure games. Rendering is prototyped against PySDL2. The first playable milestone targets Space Quest 1, room 1.
 
-* [x] Decrypt OBJECT resource
-* [x] Decode and extract objects from OBJECT resource
-* [x] Decode VIEWDIR (sprites & animations offsets for VOL)
-* [x] Decode VIEW (sprites & animations data in VOL)
-* [x] Decode LOGDIR (code offsets for VOL)
-* [ ] Decode LOG (code in VOL)
-* [x] Decode PICDIR (background offsets for VOL)
-* [ ] Decode PIC (background data in VOL)
-* [x] Decode SNDDIR (sound offsets for VOL)
-* [ ] Decode SND (sound data in VOL)
-* [ ] Implement above steps for AGI versions > 2
+## Status
+
+Pre-alpha. Resource decoders for `OBJECT`, `VIEWDIR`/`VIEW`, `LOGDIR`, `PICDIR`, and `SNDDIR` are working; the LOG bytecode interpreter, PIC renderer, and sound engine are not yet implemented. See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the detailed roadmap and design notes.
+
+## Quick start
+
+```bash
+pip install -r requirements.txt
+```
+
+Place an AGI v2 game's data files under `test_games/<game>/` — for example `test_games/sq1/` containing `VIEWDIR`, `LOGDIR`, `PICDIR`, `SNDDIR`, `OBJECT`, and `VOL.0` (plus any higher-numbered `VOL.*` files). Then run:
+
+```bash
+python -m src.main
+```
+
+## Project layout
+
+```
+src/
+  main.py       # Entry point
+  resource/     # AGI resource decoders (DIR, VOL, VIEW, OBJECT, ...)
+  gfx/          # SDL2-backed rendering
+  util/         # Byte/crypto helpers
+AGI_Specifications/   # Vendored copy of Peter Kelly's AGI spec (reference)
+```
+
+## References
+
+Andromeda is a cleanroom implementation built from public specifications, not from disassembly of Sierra's interpreters.
+
+- Peter Kelly, *AGI Specifications* — primary format reference (vendored in `AGI_Specifications/`)
+- [ScummVM AGI engine](https://github.com/scummvm/scummvm/tree/master/engines/agi) — secondary behavioral cross-check
+- [NAGI](https://github.com/sonneveld/nagi) — Nick Sonneveld's cleanroom AGI reimplementation
+- [AGI Wiki](http://agiwiki.sierrahelp.com/)
+
+## License
+
+MIT — see [LICENSE](LICENSE).
