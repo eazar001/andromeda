@@ -60,7 +60,7 @@ AGI resources follow a two-step access pattern:
 
 ### AGI Specification Reference
 
-A local copy of Peter Kelly's AGI Specifications is included in the repo at `AGI_Specifications/`. The main index page is `AGI_Specifications/AGISpecifications.html` — read it first to navigate to the relevant chapter. Individual chapters are under `AGI_Specifications/Specifications/`. Always consult this local copy when reasoning about byte-level format details rather than relying on training data.
+Peter Kelly's AGI Specifications are vendored at `AGI_Specifications/` (index: `AGISpecifications.html`, chapters: `Specifications/`). **Do not read this by default** — it is ~640K of HTML across 30+ chapters and will bloat context if ingested broadly. Consult it only when you need byte-level format details that aren't covered in this file or clear from the existing decoders in `src/resource/`, and read just the specific chapter section you need (e.g., `6-1-VIEW.html` for VIEW resource layout). If the local spec is ambiguous or seems wrong, cross-check against ScummVM source or AGI Studio rather than trusting agidev.com.
 
 ### Game Data
 
