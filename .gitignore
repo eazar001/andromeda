@@ -1,3 +1,6 @@
 venv/
+.venv/
 test_games/
 *.stackdump
+__pycache__/
+*.py[cod]
