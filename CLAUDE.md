@@ -9,11 +9,11 @@ Andromeda is a Sierra AGI game engine emulator written in Python. It decodes and
 ## Commands
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (creates .venv automatically)
+uv sync
 
 # Run the main entry point
-python -m src.main
+uv run python -m src.main
 ```
 
 There are no tests or lint configurations currently.
