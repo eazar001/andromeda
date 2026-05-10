@@ -111,7 +111,7 @@ The subsystems connect like this:
 
 ## 3. Proposed module layout
 
-All source modules live under `src/`. One reasonable expansion of the current tree (not prescriptive — adapt as you go):
+One reasonable expansion of the current tree (not prescriptive — adapt as you go):
 
 ```
 andromeda/
@@ -177,7 +177,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [x] Move `util/dir.py` → `resource/directory.py`; kept the existing API.
 - [x] Move `object/Object.py` → `resource/objects.py`; extracted `decrypt_file()` into `util/crypto.py:xor_cycle(key_string, file)`. `objects.py` now imports from there. Same helper will be reused for LOGIC message decryption.
 - [x] Rework `view/vol.py` → `resource/view.py`: returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(width, height, mirror, non_mirror_idx, alpha, cel_data)])])` dataclass. RLE decoding inline in `get_cel_data`.
-- [x] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). `composite_cel(screen, loop_idx, cel)` writes color indices into `VisualScreen`; EGA palette extracted to `gfx/palette.py`. `draw_cel_data` retained temporarily for `src/main.py` compatibility.
+- [x] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). `composite_cel(screen, loop_idx, cel)` writes color indices into `VisualScreen`; EGA palette extracted to `gfx/palette.py`. `draw_cel_data` retained temporarily for `main.py` compatibility.
 
 **Exit criteria:** `uv run python -m main` still prints DIR listings and can still render a test VIEW cel via the old harness path, now going through the new module names.
 
