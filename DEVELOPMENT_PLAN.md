@@ -115,52 +115,51 @@ All source modules live under `src/`. One reasonable expansion of the current tr
 
 ```
 andromeda/
-├── src/
-│   ├── main.py
-│   ├── resource/
-│   │   ├── __init__.py
-│   │   ├── header.py          # 5-byte VOL resource header parsing
-│   │   ├── directory.py       # (moved from util/dir.py)
-│   │   ├── volume.py          # VolumeReader: opens VOL.n, random-access
-│   │   ├── manager.py         # ResourceManager: sticky/per-room lifetimes
-│   │   ├── pic.py             # PIC opcode stream decoder
-│   │   ├── view.py            # VIEW loop/cel decoder (rework from view/vol.py)
-│   │   ├── logic.py           # LOGIC bytecode + message section decoder
-│   │   ├── sound.py           # SOUND channel-stream decoder
-│   │   ├── words.py           # WORDS.TOK decoder
-│   │   └── objects.py         # OBJECT file decoder (moved from object/Object.py)
-│   ├── runtime/
-│   │   ├── __init__.py
-│   │   ├── state.py           # GameState: flags[256], vars[256], strings[12]
-│   │   ├── reserved.py        # constants for reserved vars/flags
-│   │   ├── interp.py          # LOGIC bytecode interpreter (decoder + executor)
-│   │   ├── commands.py        # agi command table + test command table
-│   │   ├── sprites.py         # ScreenObject table + mover + cycler
-│   │   ├── parser.py          # longest-match tokenizer + said() state
-│   │   ├── cycle.py           # main game loop + new-room handling
-│   │   └── errors.py          # NewRoomException, InterpreterError, ...
-│   ├── gfx/
-│   │   ├── __init__.py
-│   │   ├── screens.py         # visual (160x168x4bit) + priority (same)
-│   │   ├── pic_render.py      # executes PIC ops into screens
-│   │   ├── view_render.py     # composites cels into visual screen
-│   │   ├── text_overlay.py    # 40x25 text layer, windows, status line, input line
-│   │   ├── palette.py         # 16-color EGA palette
-│   │   └── blit.py            # SDL2 output: 2x X-double, palette convert, present
-│   ├── audio/
-│   │   ├── __init__.py
-│   │   ├── sn76489.py         # square + noise synth, attenuation table
-│   │   └── player.py          # 4-channel mixer + SDL2 audio callback
-│   ├── io/
-│   │   ├── __init__.py
-│   │   ├── input.py           # SDL2 key → input line + controllers + v19
-│   │   └── save.py            # save/restore serialization
-│   └── util/
-│       └── byte.py            # keep as-is
+├── main.py
+├── resource/
+│   ├── __init__.py
+│   ├── header.py          # 5-byte VOL resource header parsing
+│   ├── directory.py       # (moved from util/dir.py)
+│   ├── volume.py          # VolumeReader: opens VOL.n, random-access
+│   ├── manager.py         # ResourceManager: sticky/per-room lifetimes
+│   ├── pic.py             # PIC opcode stream decoder
+│   ├── view.py            # VIEW loop/cel decoder (rework from view/vol.py)
+│   ├── logic.py           # LOGIC bytecode + message section decoder
+│   ├── sound.py           # SOUND channel-stream decoder
+│   ├── words.py           # WORDS.TOK decoder
+│   └── objects.py         # OBJECT file decoder (moved from object/Object.py)
+├── runtime/
+│   ├── __init__.py
+│   ├── state.py           # GameState: flags[256], vars[256], strings[12]
+│   ├── reserved.py        # constants for reserved vars/flags
+│   ├── interp.py          # LOGIC bytecode interpreter (decoder + executor)
+│   ├── commands.py        # agi command table + test command table
+│   ├── sprites.py         # ScreenObject table + mover + cycler
+│   ├── parser.py          # longest-match tokenizer + said() state
+│   ├── cycle.py           # main game loop + new-room handling
+│   └── errors.py          # NewRoomException, InterpreterError, ...
+├── gfx/
+│   ├── __init__.py
+│   ├── screens.py         # visual (160x168x4bit) + priority (same)
+│   ├── pic_render.py      # executes PIC ops into screens
+│   ├── view_render.py     # composites cels into visual screen
+│   ├── text_overlay.py    # 40x25 text layer, windows, status line, input line
+│   ├── palette.py         # 16-color EGA palette
+│   └── blit.py            # SDL2 output: 2x X-double, palette convert, present
+├── audio/
+│   ├── __init__.py
+│   ├── sn76489.py         # square + noise synth, attenuation table
+│   └── player.py          # 4-channel mixer + SDL2 audio callback
+├── io/
+│   ├── __init__.py
+│   ├── input.py           # SDL2 key → input line + controllers + v19
+│   └── save.py            # save/restore serialization
+├── util/
+│   └── byte.py            # keep as-is
 ├── CLAUDE.md
 ├── DEVELOPMENT_PLAN.md
 ├── README.md
-└── requirements.txt
+└── pyproject.toml
 ```
 
 Migrate incrementally — don't do a big-bang rename. Each milestone below mentions which files change.
@@ -180,7 +179,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [x] Rework `view/vol.py` → `resource/view.py`: returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(width, height, mirror, non_mirror_idx, alpha, cel_data)])])` dataclass. RLE decoding inline in `get_cel_data`.
 - [x] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). `composite_cel(screen, loop_idx, cel)` writes color indices into `VisualScreen`; EGA palette extracted to `gfx/palette.py`. `draw_cel_data` retained temporarily for `src/main.py` compatibility.
 
-**Exit criteria:** `python -m src.main` still prints DIR listings and can still render a test VIEW cel via the old harness path, now going through the new module names.
+**Exit criteria:** `uv run python -m main` still prints DIR listings and can still render a test VIEW cel via the old harness path, now going through the new module names.
 
 ### M1 — PIC decoder and dual-screen compositor
 

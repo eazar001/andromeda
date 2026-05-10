@@ -17,17 +17,16 @@ uv sync
 Place an AGI v2 game's data files under `test_games/<game>/` — for example `test_games/sq1/` containing `VIEWDIR`, `LOGDIR`, `PICDIR`, `SNDDIR`, `OBJECT`, and `VOL.0` (plus any higher-numbered `VOL.*` files). Then run:
 
 ```bash
-uv run python -m src.main
+uv run python -m main
 ```
 
 ## Project layout
 
 ```
-src/
-  main.py       # Entry point
-  resource/     # AGI resource decoders (DIR, VOL, VIEW, OBJECT, ...)
-  gfx/          # SDL2-backed rendering
-  util/         # Byte/crypto helpers
+main.py               # Entry point
+resource/             # AGI resource decoders (DIR, VOL, VIEW, OBJECT, ...)
+gfx/                  # SDL2-backed rendering
+util/                 # Byte/crypto helpers
 AGI_Specifications/   # Vendored copy of Peter Kelly's AGI spec (reference)
 ```
 
