@@ -7,6 +7,4 @@ dependencies = [
     "pysdl2-dll",
 ]
 
-[project.scripts]
-andromeda = "src.main:main"
 
