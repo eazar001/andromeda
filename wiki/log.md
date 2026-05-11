@@ -832,3 +832,104 @@ The "implementation freedom" pattern (chapter spec → reference C/Pascal → an
 Group 5 spans two authors and a ~5-week window in fall 1997 — tighter than Group 4's December-1997 / January-1998 split.
 
 **Phase B status after Group 5 close:** Groups 1 (Files), 2 (Interpreter), 3 (Logic), 4 (PICTURE), 5 (VIEW) done. Groups 6 (Sound), 7 (Other), 8 (Intro/Info) remain. Next chapter: `7-1-SOUND.html` (Group 6, chapter 1 of 2) — moves the wiki into audio territory, the last of the four core resource types.
+
+## [2026-05-11] ingest | 7-1-SOUND.html
+
+**Opens Group 6 (Sound).** AGI v2+ SOUND format: 8-byte header of four voice offsets → per-voice streams of 5-byte notes terminated by dual `0xFF`. Tone vs. noise byte layouts derived from the TI SN76496A chip; AGI v1.12 sketched as historical reference only.
+
+**Created.** [[entities/sound]], [[concepts/pcjr-sound-encoding]], [[sources/7-1-sound]]. Bit layouts diagrammed against spec Appendix 1 using its 1-indexed byte naming.
+
+**Extended.** [[interpreter/variables-and-flags]] (`var(23)` clarifier), [[interpreter/commands]] (`$62..$64` cross-refs), [[interpreter/overview]] (SOUND bullet promoted from Group-6-stub), [[index.md]] (entity, concept, and source rows).
+
+**Review corrections.** Subagent draft had byte-level errors caught before apply:
+1. Attenuation A0↔A3 reversed (spec: A0=MSB=16 dB, A3=LSB=2 dB). Decoder built from the draft would have inverted attenuation entirely.
+2. "Cumulative dB" additivity asserted without spec support — spec only shows single-bit + all-set rows. Pages now flag additivity `(agidev, unverified — inferred)`.
+3. Noise-voice byte-numbering muddle: prose said "bytes 2–3 are both 0x00" while the bit diagram correctly placed the noise control register in byte 4. Rewrote using spec's 1-indexed naming throughout.
+
+Also: byte indexing harmonized to spec-style 1-indexed ("FIRST BYTE"...) to avoid cross-reference footgun.
+
+**Conflicts.** None vs. existing wiki. Intra-chapter byte-order prose is imprecise; Appendix 1 is the authority — documented on the entity page rather than `> [!conflict]`-flagged.
+
+**Open items.** Duration time-unit scale, v1.12 voice-ID algorithm, `var(23)` ↔ T1 attenuation register mapping, `sound`-command flag semantics (may be in 7.2), hardware clock rate (3.579 MHz / 111,860 Hz) not independently corroborated.
+
+**Validation status.** No SOUND decoder in `resource/` or `gfx/` — first core resource type with zero code validation. Reliability tier weaker than VIEW (triangulated) or PICTURE (code-to-spec). Hot-spot `(agidev, unverified)` tags applied selectively rather than page-level.
+
+Next: `7.2-SOUND.html`, closing Group 6.
+
+## [2026-05-11] ingest | 7.2-SOUND.html
+
+**Closes Group 6 (Sound).** Sample-code chapter: 4-row bibliographic table → `adlib.c`/`adlib.h` (Kevin A. Lee), `oldplay.c` (Lance Ewing), `play.c` (Restemeier + Ewing edits). No new format claims; reference-impl citations only.
+
+**Created.** [[sources/7-2-sound]].
+
+**Extended.** [[entities/sound]] (Reference implementations subsection), [[concepts/pcjr-sound-encoding]] (frequency-base code corroboration + outlier note), [[interpreter/variables-and-flags]] (`var(23)` vintage caveat), [[interpreter/commands]] (`$63 sound` flag-semantics open item), [[index.md]] (7-2 source row).
+
+**Findings worth pinning.**
+1. `play.c:107` multiplies the 16-bit duration field by `* 6` — first concrete code-level clue to the duration field's time unit. Unexplained in source. Partial progress on 7-1 open item.
+2. Intra-chapter frequency-base disagreement. `play.c:116` uses 111860 (matching spec, [[concepts/pcjr-sound-encoding]]); `oldplay.c:91` uses 99320 (~12% lower). Same chapter, two ref impls. Tagged as `(agidev, unverified)` outlier; play.c is the recommended cross-reference.
+3. `play.c:9-10` comment: "This program was written before we worked out the details on the fourth voice and the volume control." Contextualizes (does not resolve) `var(23)` ↔ attenuation mapping.
+
+**Open items still open.** `var(23)` ↔ T1 attenuation mapping (vintage-caveat'd now); `sound`-command flag semantics (no ref-impl validates it); v1.12 voice-ID algorithm; 3.579 MHz clock rate. ScummVM `engines/agi/sound_pcjr.cpp` is the recommended next cross-check target before andromeda implements SOUND.
+
+**Pre-apply correction.** Subagent framed the 99320 finding as "oldplay.c contradicts spec." Verification (`play.c:116` also uses 111860) reframed it as "intra-chapter disagreement; play.c corroborates spec, oldplay.c is the outlier." Cleaner narrative; same conclusion.
+
+**Validation status.** Unchanged from 7-1 — SOUND remains the weakest-validated resource type. Group 6 closes with no working decoder.
+
+Next: Group 7 (Other, parallel-safe) — `8-1-OtherData.html`, `8-2-WORDS_TOK.html`, `8-3-SampleCode.html`.
+
+## [2026-05-11] ingest | 8-1-OtherData.html · 8-2-WORDS_TOK.html · 8-3-SampleCode.html
+
+**Closes Group 7 (Other).** Three chapters ingested in parallel as planned: 8-1 (OBJECT format), 8-2 (WORDS.TOK format), 8-3 (sample-code closer covering both).
+
+**Created.** [[entities/object]], [[entities/words-tok]], [[sources/8-1-otherdata]], [[sources/8-2-words-tok]], [[sources/8-3-samplecode]].
+
+**Extended.** [[interpreter/input-parsing]] (vocabulary-store cross-ref); [[concepts/agi-data-types]] §Word and §Inventory Item (back-references to new entities); [[entities/dir-file]] and [[entities/vol-file]] (notes that WORDS.TOK and OBJECT are standalone, not VOL/DIR'd); [[index.md]] (two entities, three sources).
+
+**Findings worth pinning.**
+
+1. **WORDS.TOK is the one big-endian file in AGI.** Spec line 50-51 explicitly: *"the normal Lo-Hi byte order convention used everywhere else in the AGI system is not used here ... This method is used later on for word numbers as well."* Both the 26-entry alphabet index and the per-word 2-byte word number are Hi-Lo.
+2. **Code/spec offset disagreement on OBJECT.** Spec defines the inventory-name-section offset as relative to the start of the entry array (file byte 3). `object.pas:50-52` adds `+ 3` (spec-conformant). `resource/objects.py:31` adds `+ 5` and still parses real SQ1 OBJECT files. Flagged on [[entities/object]] as an open item — likely an upstream-read-pipeline kludge or an undocumented 2-byte file-wrapper; cross-check with andromeda's read path needed before treating the spec's "+3" as authoritative for the in-memory representation.
+3. **Shared Avis-Durgan key.** Same `"Avis Durgan"` XOR key encrypts OBJECT (v2.411+) and v2 LOGIC text-message sections, and is embedded in the interpreter heap [[interpreter/memory-layout]].
+4. **`words.pas:75-76` reads only the low byte of the alphabet index.** A code shortcut assuming Hi=`0x00`; valid in practice for all real WORDS.TOK files (data section starts well under file offset 256) but not a strict reading of the spec's 52-byte index.
+
+**Pre-apply corrections.**
+- 8-2 subagent's pseudocode reversed the word-number bytes (had `lo | (hi << 8)` little-endian; spec and `words.pas:104-106` agree on big-endian `hi*256 + lo`). Fixed on [[entities/words-tok]] before write.
+- 8-1 subagent claimed "8-2 and 8-3 are bibliographic" and proposed putting "Closes Group 7" on the 8-1 source page. Wrong on both counts: 8-2 is a content chapter; "Closes Group 7" belongs on 8-3. Corrected.
+- 8-1 subagent over-claimed code validation ("code-verified by working decoder") and listed KQ1 as round-tripped (CLAUDE.md only confirms SQ1). Softened to "parses real SQ1 OBJECT data" + flagged the +5/+3 discrepancy as an open item.
+
+**Conflicts surfaced.**
+- `resource/objects.py:31` (`+ 5`) vs spec (`+ 3`) vs `object.pas:50-52` (`+ 3`). Documented as `> [!conflict]` on [[entities/object]] and as open item on [[sources/8-1-otherdata]].
+
+**Validation status.** OBJECT now has two ref impls (`object.pas` + andromeda's `resource/objects.py`) but with the offset discrepancy unresolved. WORDS.TOK has one ref impl (`words.pas`); andromeda has no decoder. No conflicts vs existing wiki content; concept/interpreter pages got back-references that close existing forward-refs (the [[concepts/agi-data-types]] §Inventory Item forward-ref to a not-yet-ingested entity page is now resolved).
+
+Next: Group 8 (Intro/Info, parallel-safe, lowest priority) — `1-1-Introduction.html`, `1-2-WhatsNew.html`, `9-1-Info.html`, `9-2AGDS.html`, `9-3-MakingOfThunderstorm.html`. Lightest pages in the corpus.
+
+
+## [2026-05-11] ingest | 1-1-Introduction.html · 1-2-WhatsNew.html · 9-1-Info.html · 9-2AGDS.html · 9-3-MakingOfThunderstorm.html
+
+**Closes Group 8 (Intro/Info) and Phase B (Bootstrap ingest).** All five meta/historical chapters ingested in parallel. Per the plan, these are the lightest pages in the corpus — five thin `sources/` pages and three back-references onto existing pages. No new entity, concept, or interpreter pages.
+
+**Created.** [[sources/1-1-introduction]], [[sources/1-2-whatsnew]], [[sources/9-1-info]], [[sources/9-2-agds]], [[sources/9-3-making-of-thunderstorm]].
+
+**Extended.** [[sources/2-6-interpreter]], [[sources/4-4-logic]], [[sources/5-2-picture]] — each gained a one-line back-reference to [[sources/9-2-agds]] (AGDS toolkit origin and history). All three were already correctly attributed to the Bykov-translated AGDS manual; 9-2 just adds *who built AGDS and when*.
+
+**Reviewer decisions worth pinning.**
+
+1. **9-3 extensions declined.** Subagent proposed three extensions to [[interpreter/event-loop]], [[interpreter/variables-and-flags]], and [[interpreter/command-semantics]] — all pure corroboration of behavior already documented from 2-2 and 4-4. Verified before applying: flag(5) is already pinned as "set on the very first cycle a room is entered" with the new.room step-10 citation; flag(6) is already pinned as the post-`restart_game` sentinel; the cyclic call/return model is already on event-loop. Adding "9-3 also confirms this" annotations would be padding per wiki convention — skipped.
+2. **9-1 "closes Group 8" line stripped.** Subagent applied the closing-marker to 9-1; corrected to 9-3 on apply.
+3. **1-2 index placement.** Subagent suggested placing the 1-2 row before 2-1 for chronological order; the index is chronological by *ingest order* (Group 1 first), so all five Group-8 rows go at the end after 8-3.
+
+**Findings worth pinning.**
+
+1. **AGDS footprint is larger than previously cataloged.** Five of thirty-four chapters in the corpus now trace to AGDS: 2-6, 4-4, 5-2 (Bykov translations of AGDS-manual content), 9-2 (toolkit history), and 9-3 (workflow narrative by a Russian-language AGDS user). AGDS is the parallel canonical source alongside Lance Ewing's English-original reverse engineering, not a single fringe contribution.
+2. **AGDS toolkit components named for the first time.** 9-2 names the AGDS programs: `SE` (LOGIC editor), `VIM` (VIEW editor), `PM` (PICTURE editor), `DUU` (debugger), `VM` (packer). Useful provenance if a future query encounters one of these tool names in vendored code or comments.
+3. **27 January 1998 IA-extraction window** now includes five chapters (2-2, 2-8, 4-2, 5-2, 9-2, 9-1, plus the cover page 1-1 also dated 27 Jan 1998). Whoever performed the archival sweep extracted at least seven chapters that day. Logged on [[sources/1-1-introduction]] and [[sources/1-2-whatsnew]].
+4. **AGDS interpreter ID is `TQ`.** Already on [[interpreter/command-semantics]] under `set.game.id`; 9-2 confirms the origin of this custom ID (AGDS shipped games used a non-Sierra ID).
+
+**Conflicts surfaced.** None.
+
+**Open items.** None added; none resolved. Group 8 chapters are bibliographic and do not engage with the open items pinned in earlier groups (e.g., `resource/objects.py:31` `+ 5` vs spec `+ 3`, `var(23)` ↔ T1 attenuation mapping, sound-flag semantics).
+
+**Validation status.** Unchanged. Group 8 added no format claims and therefore changed no validation surface. The wiki's strongest-validated formats remain VIEW (triangulated: spec → `viewview.pas` → andromeda decoder) and PICTURE (code-to-spec via `showpic.c`); weakest remains SOUND (no working decoder, no andromeda code).
+
+**Phase B status after Group 8 close:** All eight groups done. Thirty-four chapters ingested. Phase B complete. Next: Phase C — single full-wiki lint pass.

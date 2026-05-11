@@ -59,3 +59,7 @@ This enables sparse numbering: a game can define `PICTURE.5` without `PICTURE.0`
 ## Design notes
 
 The encoding supports 16 VOL files (0–15) and up to ~1 MB offset per file (20-bit addressing), matching the file-size norms of 1990s DOS systems (agidev, unverified).
+
+## Standalone files not indexed by DIR
+
+Not every game-data file is reached through a `*DIR` entry. [[entities/words-tok]] (vocabulary) and [[entities/object]] (inventory) are standalone per-game files in the game directory; the directory files only index the resource types stored inside VOL containers (LOGIC, PICTURE, VIEW, SOUND).

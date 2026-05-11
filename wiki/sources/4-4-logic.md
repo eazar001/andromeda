@@ -45,7 +45,7 @@ Deferred:
 
 ## Notes
 
-**Same AGDS source as 2-6.** Both chapters are Vassili Bykov translations of the AGDS manual. 4-4's `said` algorithm matches 2-6's verbatim — corroboration that the wiki's transcription is faithful, not that the algorithm itself is validated against working code. 2-6 covered preprocessing + `said` matching; 4-4 covers the full command set. The two chapters together are the most substantial single source in the corpus.
+**Same AGDS source as 2-6.** Both chapters are Vassili Bykov translations of the AGDS manual. 4-4's `said` algorithm matches 2-6's verbatim — corroboration that the wiki's transcription is faithful, not that the algorithm itself is validated against working code. 2-6 covered preprocessing + `said` matching; 4-4 covers the full command set. The two chapters together are the most substantial single source in the corpus. AGDS toolkit origin and history: [[sources/9-2-agds]].
 
 **Two real conflicts surfaced.**
 

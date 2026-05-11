@@ -189,6 +189,10 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$63` | `sound` | 2 | num, flag |
 | `$64` | `stop.sound` | 0 | — |
 
+`load.sound` reads a SOUND resource into a playback buffer; `sound` initiates playback and signals the named flag on completion; `stop.sound` halts the current sound. See [[entities/sound]] for the SOUND resource format (four-voice PCjr-style note streams; reference playback implementations cataloged in [[sources/7-2-sound]]) and [[interpreter/variables-and-flags]] for the related runtime state (`var(22)` hardware type, `var(23)` volume, `flag(9)` on/off).
+
+**Flag-signal semantics — open item.** Whether the `flag` argument to `$63 sound` is set on completion, cleared at start, toggled, or has some other contract (e.g. clear-on-`stop.sound`) is not detailed in 7-1, and neither reference player in 7-2 implements LOGIC-level flag signaling. Resolution will require LOGIC-level reverse engineering or a ScummVM cross-check.
+
 ### Print, display, screen (`$65..$71`)
 
 | Opcode | Mnemonic | Args | Signature |

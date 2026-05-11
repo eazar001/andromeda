@@ -69,7 +69,7 @@ Game content is organized into five resource categories [2-1-Interpreter.html §
 - **LOGIC** — script bytecode driving a single room's behavior, with an appended Avis-Durgan-XOR'd text-message section. See [[entities/logic]] for the on-disk format.
 - **PICTURE** — vector-based room drawings; encodes both a visual screen and a priority/control-line screen. See [[entities/picture]] for the on-disk format and [[concepts/screen-layers]] for the dual-screen model.
 - **VIEW** — sprite and animation data: actors, NPCs, props, inventory icons. See [[entities/view]] (to be ingested with Group 5 — View).
-- **SOUND** — musical scores and sound effects (PC-speaker mono, PCjr polyphonic). See [[entities/sound]] (to be ingested with Group 6 — Sound).
+- **SOUND** — musical scores and sound effects (PC-speaker mono, PCjr polyphonic four-voice). 8-byte header of per-voice offsets pointing to four streams of 5-byte notes (duration, frequency divisor or noise selector, attenuation). See [[entities/sound]] for the on-disk format and [[concepts/pcjr-sound-encoding]] for the tone/noise/attenuation encoding primitives.
 
 `WORDS.TOK` (the parser dictionary) and `OBJECT` (the inventory list) are auxiliary files at the file-system layer; their formats will be detailed when the relevant chapters are ingested. The on-disk container — VOL files and the DIR index that points into them — is already documented under [[entities/dir-file]] and [[entities/vol-file]].
 

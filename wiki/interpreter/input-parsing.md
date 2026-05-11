@@ -9,7 +9,7 @@ After the player types a message and presses Enter, the interpreter applies thes
 1. Remove all punctuation marks.
 2. Convert all characters to lowercase.
 3. Replace any run of more than one space with a single space.
-4. Starting with the first word of the input, look up the vocabulary, trying to find the longest character sequence matching the input.
+4. Starting with the first word of the input, look up the vocabulary, trying to find the longest character sequence matching the input. The vocabulary itself is stored on disk as [[entities/words-tok]] — a prefix-compressed table mapping every recognised input token to a word number.
 
 The spec's phrasing "trying to find the longest character sequence matching the entered" is ambiguous: it could describe full-word longest-match (preferring a multi-word vocabulary entry over a shorter one), prefix matching against the remaining input, or another strategy (agidev, unverified — exact lookup algorithm not specified). ScummVM's AGI implementation uses a trie-based vocabulary; the Python prototype has no word-lookup code yet to cross-check.
 

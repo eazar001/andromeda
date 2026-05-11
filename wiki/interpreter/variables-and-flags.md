@@ -30,7 +30,7 @@ Variables and flags share a single global namespace across every loaded LOGIC re
 | `var(20)` | Computer type (for hardware compatibility). For IBM PC it is always 0. |
 | `var(21)` | Window auto-close delay. If `flag(15) = 0` (window-auto-close mode) and `var(21) ≠ 0`, message windows automatically close after `0.5 × var(21)` seconds. |
 | `var(22)` | Sound generator type: `1` = PC speaker, `3` = Tandy. |
-| `var(23)` | Sound volume (Tandy only), range `0x0`–`0xF`. |
+| `var(23)` | Sound volume (Tandy only), range `0x0`–`0xF`. Interpreter-managed; orthogonal to the per-note 4-bit attenuation stored in [[entities/sound]] notes. (agidev, unverified — exact mapping between `var(23)` and the T1 chip's attenuation register is not specified in this corpus.) Reference-code vintage caveat: `play.c:9-10` ([[sources/7-2-sound]]) notes the sample player "was written before we worked out the details on the fourth voice and the volume control" — `var(23)` semantics were not finalized at sample-code authoring time. |
 | `var(24)` | Spec lists this as `29h` with no further description; meaning unclear (agidev, unverified). |
 | `var(25)` | ID of the item selected via the `status` command, or `0xFF` if the player pressed Esc. |
 | `var(26)` | Monitor type: `0` = CGA, `2` = Hercules, `3` = EGA. |

@@ -40,11 +40,13 @@ For example, the input "look at the tree" reduces (after filtering) to `word(1) 
 
 See [[interpreter/input-parsing]] for the input-preprocessing pipeline and the `said` test pattern-matching semantics. Other input-handling commands (`read`, `get_string`) are LOGIC opcodes covered by Group 3 — Logic (not yet ingested).
 
+The vocabulary itself — the mapping from input tokens to numeric word codes — is stored in [[entities/words-tok]], a standalone per-game file with prefix-share compression, `0x7F`-XOR character obfuscation, and (unusually for AGI) Hi-Lo byte order for both the alphabet index and the word numbers.
+
 ## Inventory Item
 
 An **inventory item** is a reference to an entry in the OBJECT inventory table. Inventory-item parameters appear in commands like `get()` and `drop()`. In the original LOGIC source text the programmer writes named references (e.g., `get(dagger)`), but the compiled LOGIC encodes inventory items only as indices into the OBJECT table [2-3-Interpreter.html §(5) Inventory Item].
 
-See [[entities/object]] for the OBJECT resource format (to be ingested with Group 7 — Other).
+See [[entities/object]] for the OBJECT resource format: 3-byte header + 3-byte-per-item entries + null-terminated name section, with optional Avis-Durgan XOR encryption from v2.411 onward.
 
 ## Object
 

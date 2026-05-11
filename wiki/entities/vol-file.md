@@ -53,3 +53,7 @@ Bytes 5 through `5 + length - 1` contain the resource data. The interpretation d
 The v2 5-byte header's 2-byte little-endian length field caps an individual resource at 64 KB. Whether the signature is actually used for synchronization or error recovery is unclear from the spec and not exercised by the working code (agidev, unverified).
 
 The v3 7-byte header keeps both size fields at 16 bits, so the compressed payload stays ≤ 64 KB; the uncompressed size can exceed that after LZW expansion. The bit-7 PICTURE flag lets the interpreter pick the right decompression scheme without consulting the DIR or any other type metadata.
+
+## Standalone files not stored in VOL
+
+[[entities/words-tok]] (vocabulary) and [[entities/object]] (inventory) are standalone per-game files alongside the VOL containers, not VOL payloads. They are reached by filename rather than through a `*DIR` lookup.
