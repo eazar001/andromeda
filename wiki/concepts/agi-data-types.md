@@ -38,7 +38,7 @@ A **word** is a single token from the player's parsed input sentence [2-3-Interp
 
 For example, the input "look at the tree" reduces (after filtering) to `word(1) = "look"`, `word(2) = "tree"` [2-3-Interpreter.html §(4) Word]. Words can be converted to strings for display or comparison [2-3-Interpreter.html §(4) Word].
 
-See [[interpreter/input-parsing]] for the input-preprocessing pipeline and the `said` test pattern-matching semantics. Other input-handling commands (`read`, `get_string`) are LOGIC opcodes covered by Group 3 — Logic (not yet ingested).
+See [[interpreter/input-parsing]] for the input-preprocessing pipeline and the `said` test pattern-matching semantics. Other input-handling commands (`get.string` etc.) are in the full opcode catalogue at [[interpreter/commands]].
 
 The vocabulary itself — the mapping from input tokens to numeric word codes — is stored in [[entities/words-tok]], a standalone per-game file with prefix-share compression, `0x7F`-XOR character obfuscation, and (unusually for AGI) Hi-Lo byte order for both the alphabet index and the word numbers.
 
@@ -56,7 +56,7 @@ An **object**, in the interpreter's runtime, is an entry in the on-screen view-o
 
 When a command takes an object parameter, the value is an index into the runtime object table; the interpreter uses that index to find the VIEW instance to operate on. Many AGI commands take object parameters: `move.obj`, `animate.obj`, `set.view`, `set.cel`, `set.loop`, `draw`, and so on [2-3-Interpreter.html §(6) Object].
 
-See [[interpreter/view-objects]] for the screen-object model and animation state management (to be added when later Group-2 chapters detail it).
+See [[interpreter/view-objects]] for the screen-object model and animation state management.
 
 ## Message
 

@@ -48,6 +48,7 @@ The LOGIC VM and runtime model: opcode tables, event loop, priority bands, objec
 - [[interpreter/priority-bands]] — y → priority eleven-band auto-assignment table from `release.priority`. Resolves the long-dangling forward-ref from [[interpreter/overview]].
 - [[interpreter/control-lines]] — black/blue/green/cyan control-line semantics on the priority screen (barrier / conditional barrier / alarm / surface) and the search-downwards algorithm that recovers a priority band under a control-line pixel. Resolves the [[interpreter/control-lines]] forward-ref from [[interpreter/overview]].
 - [[interpreter/view-objects]] — runtime VIEW object table: 43-byte SQ2 entry structure (position, view/loop/cel pointers, size, step/cycle timing, direction, motion type, cycle type, priority, 16-bit flags), hot-spot reference point, and the four collision-test commands (`posn`, `right.posn`, `center.posn`, `obj.in.box`). Resolves forward-refs from [[interpreter/memory-layout]] and [[interpreter/event-loop]].
+- [[interpreter/debug-modes]] — built-in interpreter debugger: ALT-D and per-game magic-phrase activation, debug command vocabulary, command-trace mode (Scroll-Lock), `flag(10)` activation flag.
 
 ## Sources
 

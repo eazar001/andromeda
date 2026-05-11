@@ -15,7 +15,7 @@ The AGI interpreter organizes its state on a single linear heap. This page docum
 | Unknown | unspecified | Chapter labels this region "unknown" [2-4-Interpreter.html]. |
 | UI strings | unspecified | Hardcoded interpreter messages such as `"Press ENTER to quit"` [2-4-Interpreter.html]. |
 | Script command jump table | unspecified | Dispatch table for the ~181 LOGIC procedure commands and ~18 test commands [2-1-Interpreter.html §What are the AGI commands?]. Internal structure not given by 2-4. |
-| Encryption string | 12 bytes | The string `"Avis Durgan"` (11 chars + zero terminator) embedded in the heap [2-4-Interpreter.html]. The chapter says only that this is an "encryption string"; it does not pin the string to a resource type. The Python prototype uses it as the XOR key for OBJECT-file decryption [resource/objects.py]. The LOGIC chapter (Group 3, not yet ingested) is expected to detail any role in resource encryption more broadly. |
+| Encryption string | 12 bytes | The string `"Avis Durgan"` (11 chars + zero terminator) embedded in the heap [2-4-Interpreter.html]. Used as the repeating XOR key for OBJECT-file decryption (`resource/objects.py`) and v2 LOGIC text-message sections — see [[entities/object]] §Encryption and [[entities/logic]] §Text section for details. |
 | AGIDATA.OVL remainder | unspecified | Remaining bytes of the `AGIDATA.OVL` overlay (the interpreter's main code/data segment) [2-4-Interpreter.html]. |
 | Unknown | unspecified | Second region labeled "unknown" [2-4-Interpreter.html]. |
 | WORDS.TOK | variable | Loaded parser dictionary [2-4-Interpreter.html]. Entity page deferred to Group 7 ingest (`8-2-WORDS_TOK.html`). |

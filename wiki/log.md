@@ -933,3 +933,43 @@ Next: Group 8 (Intro/Info, parallel-safe, lowest priority) — `1-1-Introduction
 **Validation status.** Unchanged. Group 8 added no format claims and therefore changed no validation surface. The wiki's strongest-validated formats remain VIEW (triangulated: spec → `viewview.pas` → andromeda decoder) and PICTURE (code-to-spec via `showpic.c`); weakest remains SOUND (no working decoder, no andromeda code).
 
 **Phase B status after Group 8 close:** All eight groups done. Thirty-four chapters ingested. Phase B complete. Next: Phase C — single full-wiki lint pass.
+
+
+## [2026-05-11] lint | full-wiki
+
+**Phase C — Lint pass.** Single main-session pass across all 60 wiki files (8 entity pages, 9 concept pages, 11 interpreter pages, 34 source pages, index, log).
+
+**Findings.**
+
+1. **Missing page — `[[interpreter/debug-modes]]`.** Referenced from four pages (`interpreter/overview.md`, `interpreter/variables-and-flags.md`, `interpreter/commands.md`, `sources/4-4-logic.md`) and tracked as a dangling forward-ref in `wiki/log.md` through all of Phase B. Content sourced from `interpreter/overview.md:52-63` (activation, debug command vocabulary, trace mode) and [2-1-Interpreter.html §What are the debug modes?]. Coverage is thin by spec-corpus standards but complete enough for a useful reference page — the 4-4 source note confirming "not enough for a standalone page" referred to content depth from 4-4 alone; aggregated with 2-1's content, the page is self-contained.
+
+2. **Stale "not yet ingested" markers in six files.** Phase B ingest added these deferred-forward-ref notes during early groups and they were not cleaned up as later groups resolved them. All were pure maintenance debt — no content was wrong.
+
+3. **No new contradictions found.** All existing `[!conflict]` callouts are valid and properly marked. The OBJECT +5/+3 offset discrepancy, the `set.upper.left` arity conflict, the base-point bottom-left/bottom-right conflict, the `print.at` "2.400" version typo, the `add.to.pic` margin=4 gap, and the splatter offset four-position discrepancy are all flagged and documented.
+
+4. **No orphan pages.** All 60 wiki files appear in `wiki/index.md`. Every page is reachable in ≤2 hops from the index.
+
+5. **`util/crypto.py` code reference verified.** The reference in `entities/logic.md` is valid — the file exists in the andromeda codebase.
+
+**Changes applied.**
+
+- **Created** `wiki/interpreter/debug-modes.md` — stub page consolidating debug-mode content (ALT-D activation, per-game magic phrases, debug command vocabulary, command-trace via Scroll-Lock, `flag(10)`). Source: [2-1-Interpreter.html §What are the debug modes?].
+- **Updated** `wiki/index.md` — added `[[interpreter/debug-modes]]` entry to the Interpreter section.
+- **Updated** `interpreter/overview.md` — removed "(to be ingested with Group 5 — View)" from VIEW resource entry; updated WORDS.TOK/OBJECT note to link to their entity pages rather than promise future ingestion.
+- **Updated** `interpreter/event-loop.md` — removed "(to be added when Group 3 — Logic is ingested)" qualifier from `[[interpreter/commands]]` See-also entry.
+- **Updated** `interpreter/input-parsing.md` — replaced stale "4-3-Logic.html (Group 3, not yet ingested)" reference with links to `[[sources/4-3-logic]]`, `[[interpreter/commands]]`, and `[[interpreter/command-evolution]]`.
+- **Updated** `interpreter/memory-layout.md` — replaced "LOGIC chapter (Group 3, not yet ingested) is expected to detail" with concrete links to `[[entities/object]]` and `[[entities/logic]]`.
+- **Updated** `concepts/agi-data-types.md` — two stale deferrals: (a) removed "Group 3 — Logic (not yet ingested)" from Word type; (b) removed "to be added when later Group-2 chapters detail it" from Object type — `[[interpreter/view-objects]]` exists.
+
+**Open items carried forward from Phase B (unresolved, not a lint failure).**
+- `resource/objects.py:31` `+5` vs spec `+3` (OBJECT name-section offset discrepancy).
+- `print.at` / `print.at.v` version boundary "2.400" typo — needs ScummVM cross-check.
+- `set.upper.left` arity conflict between 4-3 (2 args) and 4-4 (0 args).
+- Base-point bottom-left vs bottom-right inconsistency in 4-4.
+- `add.to.pic` margin=4 undefined behavior.
+- Splatter offset table: four-position discrepancy between 5-1 prose and showpic.c.
+- SOUND: `$63 sound` flag-signal semantics unresolved; `var(23)` attenuation mapping unresolved; PCjr frequency base 111860 vs oldplay.c 99320.
+- Screen-object per-pixel occlusion algorithm vs control-line pixels not pinned.
+- `[[interpreter/debug-modes]]` — page created but marked thin; ScummVM cross-check would fill in the unknown flag bits in the view-object table and debug-mode activation internals.
+
+**Phase C status:** Complete. Wiki is lint-clean. Next: Phase D (skill extraction, per plan).

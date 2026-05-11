@@ -48,4 +48,4 @@ The `flag(4)` precondition gives `said` a "first match wins" property within a s
 - [[interpreter/variables-and-flags]] — `var(9)` (unparsed-word index), `flag(2)` (input parsed), `flag(4)` (`said` consumed) — full reserved-slot context.
 - [[concepts/agi-data-types]] — the Word type and its relationship to parsed input.
 - [[interpreter/event-loop]] — step 4 (input poll) feeds keyboard input into the preprocessing pipeline described here.
-- `4-3-Logic.html` (Group 3, not yet ingested) — the original AGDS chapter from which this content was excerpted; opcode-level `said` details (bytecode parameter encoding, version-specific argument-count changes) belong there.
+- [[sources/4-3-logic]] — the opcode catalogue chapter; [[interpreter/commands]] `$0E said` entry gives the bytecode parameter encoding. Version-specific argument-count changes are at [[interpreter/command-evolution]].
