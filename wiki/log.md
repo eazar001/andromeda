@@ -303,3 +303,434 @@ Group 3 should also follow up on these Group-2 breadcrumbs:
 - 2-8: v2 LOGIC text-message encryption with Avis Durgan; PICTURE opcodes 0xF0/0xF2 4-bit-vs-8-bit color encoding.
 
 No conflicts observed against existing pages within this ingest.
+
+## [2026-05-10] ingest | 4-1-Logic.html
+
+Phase B Group 3 (Logic), chapter 1 of 6 ingested.
+
+- Added [[entities/logic]] — LOGIC resource on-disk format: 7-byte header (5-byte universal VOL header per [[entities/vol-file]] + 2-byte LE text offset); bytecode section dispatch ranges (`$00..$B5` AGI commands with `$00` doubling as `return`; `$00..$12` test condition codes; `$FC..$FF` control-flow opcodes); the four control-flow opcodes (`$FF` `if` open/close with 2-byte bracket distance, `$FE` `else/goto` with signed offset, `$FD` `not`, `$FC` `or` bracket); the `if/else` bracket-distance-inflated-by-3 rule; inner-loop encoding via `$FE` with negative offset; argument dispatch via AGIDATA.OVL bit-encoded type byte; text section structure (count + end pointer + offset table + null-terminated bodies XOR'd with "Avis Durgan"); `said` variable-argument encoding; entry-point control (`set.scan.start`/`reset.scan.start`); annotated x86 ASM decode loop from Manhunter: SF.
+- Added [[sources/4-1-logic]] — chapter summary, deferrals, and notes including decoder-gap caveat, cross-key clarification (Avis Durgan vs. 128-byte loader key from 2-5), and section-citation verification (4-1's `<h3>` headers are real, unlike 2-6).
+- Small delta to [[interpreter/overview]] §"The LOGIC virtual machine": added a sentence introducing the on-disk bytecode container with cross-link to [[entities/logic]] and `[4-1-Logic.html]` citation, kept the existing [[interpreter/commands]] forward-ref (still dangling, opcode table not in 4-1).
+- Small delta to [[interpreter/overview]] §"Resource types": LOGIC entry no longer says "to be ingested with Group 3 — Logic"; entry sharpened to mention Avis Durgan encryption explicitly.
+- Updated `wiki/index.md`: added `logic` under Entities and `4-1-logic` under Sources.
+
+Reviewer fixes applied to the subagent proposal:
+
+1. **v2 LOGIC text encryption framed as contrapositive inference from 2-8.** The subagent presented the Avis Durgan XOR claim as derived from 2-8's v3 "no need to encrypt" statement. Verified against the HTML: 4-1 line 302 (§THE TEXT SECTION) states the encryption directly with worked examples. Rewrote both pages to present it as a direct 4-1 spec claim that *corroborates* the 2-8 contrapositive — both sources agree. The `(agidev, unverified)` tag is preserved but reframed: it's there because there's no LOGIC decoder to test against, not because the source is unreliable.
+2. **Header table conflated universal and LOGIC-specific bytes.** Subagent's 4-row header table re-documented the 5-byte VOL resource header (signature, VOL number, length) inline, duplicating [[entities/vol-file]] and creating a future-divergence risk. Restructured into a 2-row table: row 1 delegates the universal 5 bytes to [[entities/vol-file]] by cross-link; row 2 documents the LOGIC-specific 2-byte text-offset prefix. ASCII layout diagram added above the table. The spec's "seven-byte header" framing preserved with explicit "for brevity, 'the header' refers to the full 7-byte prefix" disclaimer.
+3. **"(0x0006)" parenthetical was opaque.** Subagent's text-offset description said "byte offset from start of header (0x0006) where text section begins" — `(0x0006)` reads as if it's the field value (it isn't; example value is `0x02BA`). Replaced with explicit prose: "byte offset from the start of the LOGIC resource (byte 0 of the VOL resource header) at which the text section begins; also marks the end of the bytecode section. Bytecode therefore occupies bytes `7 .. text_offset - 1`."
+4. **Proposed new `## LOGIC Bytecode` overview section was redundant.** Subagent proposed inserting a new section between §"Input parsing" and §"Debug modes". But overview.md already has §"The LOGIC virtual machine" (VM model) and §"Resource types" with a [[entities/logic]] mention. Folded the proposal into a one-sentence extension of §"The LOGIC virtual machine" plus a sharpened §"Resource types" entry, avoiding a third LOGIC-flavored section on the same page.
+5. **Bytecode example corrected.** Subagent's "Simple `if (isset(5))`" example body looked right, but its else-block example introduced `FF 07 E7 FF 05 00` with internal-only attribution. Re-aligned the §THE LOGIC CODES walkthrough to the spec's actual Example 3 (KQ1 Room 2) with the `84 00` bracket distance, and rendered the else-block pattern abstractly to avoid spurious specifics.
+6. **Section-citation verification.** Confirmed 4-1's `<h3><i>UPPERCASE</i></h3>` headers are real HTML tags before keeping `§THE HEADER` / `§THE LOGIC CODES` / `§TEST CONDITIONS` / `§THE TEXT SECTION` / `§THE ELSE COMMAND AND MORE ON BRACKETS` / `§THE 'SAID' TEST COMMAND` / `§INNER LOOPS` / `§ARGUMENTS` / `§HOW THE INTERPRETER HANDLES LOGIC CODE` / `§NEW INFORMATION ON LOGIC INTERPRETATION` citations. (Unlike 2-6's invented section names, these check out — discipline lesson held.)
+
+`(agidev, unverified)` tag usage: applied to the page-level disclaimer (no LOGIC decoder in `resource/`); to AGIDATA.OVL argument-type byte bit-0 semantics (spec is silent); to the question of whether the message count / end pointer / offset table are themselves encrypted (spec doesn't say). Removed any reflexive tags on observations about our own code (gap notes are observations, not unverifiable spec claims).
+
+**Decoder gap (recorded as forward-work):** validating any bytecode-level claim on [[entities/logic]] requires at minimum a 7-byte header parser, a control-flow walker honoring `$FF/$FE/$FD/$FC`, an AGIDATA.OVL-equivalent argument dispatch table, and the text-section XOR loop. The Avis Durgan XOR primitive in `util/crypto.py` is already validated against OBJECT files via [resource/objects.py] and will be directly reusable for LOGIC text decryption. This is the largest remaining decoder gap in the prototype and the natural next milestone after Group 3 ingest completes.
+
+**Forward breadcrumbs for later Group 3 chapters (4-2..4-6):**
+- Full opcode catalogue with semantics, return values, argument signatures — not in 4-1.
+- `said` matching algorithm (wildcards `1` and `9999` semantics, prefix-vs-equality match) — 2-6 forward-pointed to 4-3.
+- `set.game.id` opcode behavior — 2-5 breadcrumb.
+- The four version-conditional argument-count mutations (`quit`, `print.at`, `print.at.v`, unknown #176) — 2-8 / [[interpreter/command-evolution]].
+- v3 LOGIC header layout (4-1 confirms it differs but does not specify).
+
+For Group 4 (Picture): PICTURE opcodes `0xF0`/`0xF2` color encoding (per 2-8 breadcrumb).
+
+Authorship snapshot updated:
+- 4-1: Lance Ewing solo, IA, 20 August 1997. (Fourth Lance-Ewing-primary chapter in the corpus, alongside 2-4, 2-5, 2-8.)
+
+Four forward-references in [[interpreter/overview]] remain dangling: `commands` (opcode tables — deferred to later 4-x), `priority-bands`, `control-lines`, `view-objects`, `debug-modes`. (Five before this ingest; the [[entities/logic]] forward-ref under §"Resource types" was resolved.)
+
+No conflicts observed against existing pages.
+
+## [2026-05-10] ingest | 4-2-Logic.html
+
+Phase B Group 3 (Logic), chapter 2 of 6 ingested. **Authoring-side reference** — 4-2 documents source-language syntax (action-command form, `if/else` with `&&`/`||`/`!`, test commands, labels/`goto`, comments, preprocessor directives, `return`), not bytecode encoding. The wiki is byte-level format only per the plan's "Out of scope" section, so 4-2 generates no new entity / interpreter pages.
+
+- Added [[sources/4-2-logic]] — chapter summary with explicit scope-boundary framing (source language vs. bytecode), explanation of the Number-vs-Controller delta rationale, quote-mark/escape rules, said-word lookup-time semantics.
+- Delta to [[concepts/agi-data-types]]: added a new "## Controller" section after "## Message" — Controller is a genuine new runtime data type introduced by 4-2 (binding between input events — menu items, key presses — and numeric IDs that LOGIC tests). The chapter's actual content on Controllers is one sentence ("Controllers are menu items and keys") plus the `c` source prefix; section preserves only that and defers `set.controller` / `set.menu` / `submit.menu` opcode semantics to later Group 3 chapters.
+- Delta to [[concepts/agi-data-types]] opening: reworded "seven fundamental data types" → "eight fundamental data types" with explicit explanation of 4-2's 9-type enumeration and why we exclude Number (it's an immediate-literal addressing mode, not a distinct runtime type).
+- Fix to [[concepts/agi-data-types]] §See also: broken wiki-link `[[interpreter/input-and-parsing]]` → `[[interpreter/input-parsing]]`. The 2-6 ingest log claimed to have fixed this rename but missed the See-also at the bottom of the data-types page. Caught here.
+- Updated [[concepts/agi-data-types]] §See also: added [[sources/4-2-logic]] as a cross-reference for the source-syntax argument-type catalogue.
+- Updated `wiki/index.md`: extended the Concepts entry for `agi-data-types` to mention controllers (now 8 types); added `4-2-logic` under Sources.
+
+Reviewer fixes applied to the subagent proposal (one substantive miss, two framing improvements):
+
+1. **Subagent missed the Controller delta.** Proposal verdict was "no new pages or deltas — 4-2 generates nothing because all nine parameter types are already enumerated in [[concepts/agi-data-types]]". Verification against 2-3-Interpreter.html confirmed it does **not** mention "controller" or "menu item" anywhere; our data-types page reflects 2-3's seven types. 4-2 introduces Controller as a real new runtime data type. The delta was identified during reviewer spot-check and applied.
+2. **Subagent proposed a new "## Source syntax" section in [[interpreter/overview]].** Rejected: overview.md catalogues runtime VM subsystems, and source-language syntax is an authoring-layer concern (not runtime, not byte-level). Adding a section there would break the page's discipline. The source page is the right place for syntax conventions.
+3. **Subagent proposed a note-style entry under "## Interpreter" in `wiki/index.md`.** Rejected as noise — the index discipline (per WIKI.md) is one line per page. Source-syntax facts live in [[sources/4-2-logic]] and are discoverable from there; the source-page index entry suffices.
+
+`(agidev, unverified)` tag usage: applied to the inferred Controller bytecode encoding (presumed single-byte controller index per AGIDATA.OVL dispatch — 4-2 gives no bytecode-level information about controllers, and no LOGIC decoder exists in `resource/` to validate).
+
+Section-citation verification: 4-2's `<h3><i>Title Case</i></h3>` headers are real HTML tags (`Action Commands`, `IF structures and test commands`, `Argument types`, `Labels and the goto command`, `Comments`, `Defines`, `Including files`, `More on messages`, `The return command`). Note the case difference from 4-1's `UPPERCASE` headers — different chapter, different author convention.
+
+**Forward breadcrumbs for later Group 3 chapters (4-3..4-6):**
+- Full opcode catalogue still missing — 4-2 explicitly defers: "A complete list of the commands and their argument types is available as part of AGI Specs" without identifying the chapter. The [[interpreter/commands]] forward-ref from [[interpreter/overview]] remains dangling.
+- Controller opcode semantics: `set.controller`, `set.menu`, `submit.menu`, `key.pressed`, etc. — runtime binding mechanism not specified in 4-2.
+- Preprocessor-directive semantics (`#define`, `#include`, `#message`) — 4-2 sketches form only; compiler-specific behavior may surface in a later chapter or remain authoring-tooling territory.
+
+Authorship snapshot updated:
+- 4-2: Peter Kelly solo (`ptrkelly@ozemail.com.au`), IA, 27 January 1998. **First directly HTML-verified Peter-Kelly-authored chapter** in the corpus (earlier ingests of 2-1/2-2/2-3 listed him as assumed-author without HTML verification; 2-5 lists him as a contributor).
+
+Four forward-references in [[interpreter/overview]] remain dangling: `commands`, `priority-bands`, `control-lines`, `view-objects`, `debug-modes`. Unchanged from post-4-1 state.
+
+No conflicts observed against existing pages.
+
+## [2026-05-10] ingest | 4-3-Logic.html
+
+Phase B Group 3 (Logic), chapter 3 of 6 ingested. **Largest Group-3 ingest** — 4-3 is the opcode catalogue, resolving the longest-standing dangling forward-reference in the wiki ([[interpreter/commands]], created at 2-1 ingest in Group 2). One new page, four cross-page deltas.
+
+- Added [[interpreter/commands]] — full opcode catalogue with 18 test commands (`$01..$12`) and 182 action commands (`$00..$B5`), each row carrying mnemonic, declared argument count, and per-argument type signature. Organized into eleven sub-sections grouping adjacent opcodes by purpose (flow/arithmetic, rooms/LOGIC/PIC, views/screen-objects, motion/blocks, inventory/rooms, sound, print/display/screen, strings/parsing/input, input bindings, game lifecycle, late-v2 additions, eleven unknown commands). Includes argument-type legend, top-of-page table-artifact disclaimer, page-level `(agidev, unverified)` tag, and notes section covering source-prefix correspondence to 4-2, dangling-forward-ref resolution scope, and behavioral-semantics deferrals.
+- Added [[sources/4-3-logic]] — chapter summary with explicit "this is the long-deferred opcode catalogue" framing, markup-artifact documentation (stray "string" cells in arg slots beyond declared count for `$3E..$71` rows), `said` opcode confirmation (`$0E` per 4-3, matches 4-1 ingest's transcription), and same-author corroboration of the "2.400" typo with 2-8.
+- Delta to [[interpreter/command-evolution]]: opening paragraph now cites 4-3 as an independent source confirming all four version-conditional mutations; conflict callout rewritten to note both 2-8 and 4-3 carry the identical "2.400" string (strengthening the typo reading); See-also section updated to drop the "(Group 3, not yet ingested)" marker on [[interpreter/commands]] and add [[sources/4-3-logic]].
+- Delta to [[interpreter/overview]] §"The LOGIC virtual machine": dropped "to be ingested with later Group 3 chapters" disclaimer; updated command counts from "approximately 181 / approximately 18" to concrete "182 / 18" per 4-3's authoritative tables; added [4-3-Logic.html] citation.
+- Delta to [[concepts/agi-data-types]] §"Message": replaced placeholder cross-link with concrete list of message-consuming opcodes (`$65 print`, `$67 display`, `$76 get.num`, `$8F set.game.id`, `$90 log`, `$9C set.menu`, `$9D set.menu.item`, `print.at` family).
+- Delta to [[concepts/agi-data-types]] §"Controller": dropped `(agidev, unverified)` tag on the bytecode-encoding inference (4-3 confirms the single-byte controller encoding via inline argument types); added enumeration of controller-consuming opcodes (`$0C controller` test; `$79 set.key`, `$9D set.menu.item`, `$9F enable.item`, `$A0 disable.item` actions).
+- Updated `wiki/index.md`: added `commands` under Interpreter and `4-3-logic` under Sources.
+
+Reviewer fixes applied to the subagent proposal (substantive — the subagent's tables contained fabricated content):
+
+1. **Subagent fabricated `gte` and `lte` as test commands at `$0E`/`$0F`.** Verified against HTML lines 191-238: test command at `$0E` is **`said`** (variable args), at `$0F` is **`compare.strings`**. No `gte`/`lte` in the test-command range. The subagent's table was unreliable — full transcription redone from a direct HTML read of lines 21-2270.
+2. **Subagent inconsistently claimed test commands ran `$01..$0C` and `$01..$10` in different places.** Actual range is `$01..$12` (18 conditions), matching 4-1's stated `$00..$12` outer range (where `$00` is unused as a test code, doubling as action-command `return`).
+3. **Subagent placed `said` at `$0F` and `$0x10` in different places.** Verified: `said` is `$0E`.
+4. **Subagent's mislabeled the ingest as "chapter 1 of 4" in the log draft.** Correct: chapter 3 of 6.
+5. **Subagent gave only a partial action-command table with placeholder note "(Table omitted here for brevity)".** All 182 rows transcribed in full on [[interpreter/commands]] from a direct HTML read.
+6. **Subagent missed the cross-reference value of the `$8F set.game.id` opcode signature.** 2-5 had a breadcrumb requesting `set.game.id` semantics — 4-3 partially answers it (source-syntax: 1 arg, `message` type), which now lives on [[interpreter/commands]] §"Quit, debug, misc" with an explicit pointer to [[sources/2-5-interpreter]] for the runtime/loader half.
+7. **Subagent missed the markup-artifact issue.** The HTML has stray `<td>string</td>` cells in argument slots beyond the declared count for many `$3E..$71` rows. The declared-count column is authoritative; stray cells were dropped during transcription. Documented top-of-page on [[interpreter/commands]] and in the source page Notes.
+
+`(agidev, unverified)` tag usage: applied at page level on [[interpreter/commands]] (no LOGIC decoder in `resource/` to validate any signature against working code); applied per-row to `???` argument types (`$9B set.upper.left`, several unknown commands) where spec itself doesn't specify; preserved on the "2.400" typo resolution.
+
+**Dangling forward-references state.** Four remain in [[interpreter/overview]]: `priority-bands`, `control-lines`, `view-objects`, `debug-modes` (all runtime-state subsystems, not opcode dispatch — distinct from what 4-3 resolved). The [[interpreter/commands]] forward-ref previously dangling from overview, agi-data-types §Message, and command-evolution §See-also is **resolved**.
+
+**Forward breadcrumbs for later Group 3 chapters (4-4..4-6):**
+- Behavioral semantics — what each opcode actually does to the VM (mutate which slot, observe which state, when does the side effect commit relative to the event-loop step) — not in 4-3. Watch for chapters that elaborate.
+- `said` matching algorithm — still distributed across 2-6 (algorithm) and 4-1 + this catalogue (bytecode encoding). Not specified in any single chapter.
+- `???` argument-type resolution for `$9B set.upper.left` and the eleven `unknown*` commands. Likely requires ScummVM cross-check (post-Phase-B task).
+
+**Forward breadcrumbs for later groups:**
+- View/loop/cel data type semantics — opcode signatures use `S obj` (screen-object index, runtime VIEW instance) heavily; the underlying VIEW resource format is Group 5 territory.
+- Sound opcode behavioral details (`$62 load.sound`, `$63 sound`, `$64 stop.sound`) — Group 6.
+- `add.to.pic` / `add.to.pic.v` (`$7A`, `$7B`, both 7-arg, all `num` or all `var`) — PICTURE-runtime opcodes; semantics deferred to Group 4.
+- `compare.strings` (`$0F`) and the v3 string-allocation count — touches the 24-vs-12 strings ambiguity from [[concepts/agi-data-types]] §"String". Whether v3 games actually use the larger allocation may show up in 4-4..4-6 or stay unresolved.
+
+Authorship: Peter Kelly, 3 March 1998, IA-provenance. Second Peter-Kelly-primary Group-3 chapter (4-2 was first). Same date as 2-5 (Peter Kelly was a contributor there).
+
+No conflicts observed against existing pages. The "2.400" typo cross-corroboration is captured in the conflict callout on [[interpreter/command-evolution]].
+
+## [2026-05-10] ingest | 4-4-Logic.html
+
+Phase B Group 3 (Logic), chapter 4 of 6 ingested. **Largest dangling-forward-ref resolution in the wiki so far** — 4-4 supplies the priority-band y-boundary table that has been dangling since 2-1.
+
+- Added [[interpreter/priority-bands]] — NEW page documenting the 11-row y → priority auto-assignment table from `release.priority`: bands 4–14, y < 48 → 4 through 156 ≤ y < 168 → 14, with the noted non-uniformity (top band is 48 px tall; all others 12 px). Resolves the [[interpreter/priority-bands]] forward-ref originally placed by the 2-1 ingest. Cross-references to [[interpreter/control-lines]] (still pending — control-line color semantics deferred to Group 4) and [[entities/picture]] (priority screen layer; Group 4).
+- Added [[interpreter/command-semantics]] — NEW page with focused high-value content (~300 lines): arithmetic edge cases (overflow/underflow/division-by-zero all `(agidev, unverified)` per Bykov's translator notes); resource auto-discard rule with mechanism unspecified; missing-command-variants table (`load.pic` asymmetry, no `load.sound.v`, no `discard.logic`/`discard.sound`); PICTURE composition ordering constraint (`load → draw → discard → ... → show`); the `new.room` 11-step procedure with full state-coordination details (var(0/1/2/4/5/16), flag(5)); `release.loop` direction → loop tables for both <4-loop and 4+-loop VIEWs; **two conflict callouts** (intra-4-4 base-point conflict between line 363 "bottom left" and line 854 "bottom right"; 4-3-vs-4-4 disagreement on `$9B set.upper.left` arity — 2 args with `???` vs 0-arg state toggle); mnemonic-variants table (`assign` vs `assignn`, `load.logic` vs `load.logics`, `right.position` vs `right.posn`, `upper.left` vs `set.upper.left`); `add.to.pic` margin rule with gap at value 4; `set.game.id` AGDS interpreter ID `TQ`; `said` algorithm corroborating 2-6 verbatim (same AGDS-Bykov source); AGDS-vs-AGI-Studio surface-syntax distinction (`if_/else_` underscore-suffixed vs `if() {}` C-like).
+- Added [[sources/4-4-logic]] — chapter scope (12 numbered sections from arithmetic through "other"); informs / deferred lists; notes on AGDS-as-2-6's-same-source, mnemonic-variant decisions (canonical = 4-3 forms), and Bykov/Ewing exchanges preserved on `load.pic`, `load.sound`, missing discards, and `show.obj`.
+- Delta to [[interpreter/overview]] §"Screen objects and priority bands": dropped the `(agidev, unverified — exact band boundaries and occlusion algorithm specified in later chapters)` qualifier — boundaries now documented in [[interpreter/priority-bands]]; occlusion algorithm still deferred to Group 4. Added 4-4-Logic.html citation alongside the existing 2-1 citation.
+- Delta to [[interpreter/commands]] Notes section: behavioral-semantics pointer updated from "distributed across later Group 3 and Group 4/5 chapters" to a concrete cross-link to [[interpreter/command-semantics]]; new paragraph on `$9B set.upper.left` flagging the 4-4 conflict.
+- Delta to [[interpreter/variables-and-flags]]: var(0/1/2/16) and flag(5) entries cross-link the `new.room` procedure with the specific step that touches each slot; var(9) entry cross-links the `said` algorithm and notes 4-4's corroboration of 2-6.
+- Updated `wiki/index.md`: added `command-semantics` and `priority-bands` under Interpreter; added `4-4-logic` under Sources.
+
+Reviewer fixes applied to the subagent proposal (the subagent produced ~2200 words of proposed `command-semantics.md` content with substantive errors):
+
+1. **Three opcode-number errors in the subagent's body.** `clear.text.rect` placed at `$6A` (correct: `$9A`; `$6A` is `text.screen`); `close.window` placed at `$A5` (correct: `$A9`; `$A5` is `mul.n`); `upper.left` renamed and given `$A9` (correct: opcode is `$9B set.upper.left` per 4-3). Subagent's draft was not adopted as the basis for command-semantics.md — instead, the page was written from direct HTML reads with every opcode reference cross-validated against [[interpreter/commands]].
+2. **Subagent's "comprehensive prose dump" approach.** The subagent proposed re-transcribing ~150 opcodes in wiki-page form, duplicating the chapter without adding value. Substituted a "focused page" approach: surface only items that are non-obvious from [[interpreter/commands]]'s signatures (multi-step procedures, edge cases, conflicts, hidden runtime constraints, mnemonic variants), and direct readers to `AGI_Specifications/Specifications/4-4-Logic.html` for full per-opcode prose. Reduces page size from ~2200 to ~300 lines without losing the high-value content.
+3. **Subagent missed the priority-band y-table as a dangling-forward-ref resolution.** The subagent did not propose a dedicated `priority-bands.md` page despite 4-4 supplying the complete eleven-row table. The forward-ref had been dangling since the 2-1 ingest. New dedicated page created.
+4. **Subagent missed the intra-4-4 base-point conflict.** Verified at HTML lines 363 ("bottom left") and 854 ("bottom right"). Conflict callout added to command-semantics.md.
+5. **Subagent missed the `$9B set.upper.left` argument-count conflict** between 4-3 (2 args, `???`) and 4-4 (0-arg state toggle). Both verified directly. Conflict callout added; provisional reading favors 4-4's 0-arg form.
+6. **Subagent missed the `add.to.pic` margin gap at value 4.** Verified at HTML line 509: spec covers `margin ∈ {0,1,2,3}` and `margin > 4`, leaving `margin == 4` unspecified. Documented.
+7. **Subagent missed AGDS-vs-AGI-Studio surface-syntax distinction.** 4-4 uses `if_/else_/not_/or_` with trailing underscores (AGDS authoring convention); 4-2 uses `if() {}` C-like syntax (AGI Studio convention). Both compile to the same bytecode. Documented in command-semantics page-level caveats.
+8. **Subagent claimed the `said` algorithm in 4-4 was a new corroboration.** It is corroboration of *the same Bykov AGDS translation* that 2-6 also draws from — same source, not independent. This nuance was added explicitly to [[sources/4-4-logic]] §Notes and to the said-algorithm section.
+9. **Subagent missed mnemonic-variants opportunity.** 4-4 consistently uses slightly different mnemonics than 4-3 for the same opcodes. Cross-reference table added so future decoders can match either form.
+
+`(agidev, unverified)` tag usage and resolutions:
+
+- Applied: arithmetic edge cases (4 unresolved questions); resource-auto-discard mechanism; margin = 4 gap; both conflict callouts; the priority-bands page (process tag — no working renderer).
+- Removed: the `(agidev, unverified — exact band boundaries and occlusion algorithm specified in later chapters)` qualifier from [[interpreter/overview]] §"Screen objects and priority bands" (boundaries now resolved).
+- Preserved unchanged: var(9), var(17), var(24) translator-note flags in [[interpreter/variables-and-flags]] (4-4 corroborates 2-6 for var(9) but both come from the same Bykov source; consistency between translations is not validation against working code).
+
+**Dangling forward-references state.** After this ingest, three remain in [[interpreter/overview]]: `control-lines`, `view-objects`, `debug-modes`. (Four before this ingest; `priority-bands` is now resolved.) `control-lines` partially touched by 4-4 in passing (priority-0 unconditional barrier, priority-1 conditional) but not all four colors documented — likely needs Group 4 (PICTURE). `view-objects` partially touched by 4-4 (direction → loop tables) but the full screen-object model is Group 5 (VIEW) territory. `debug-modes` minimally touched (trace.on / trace.info) but not enough for a dedicated page.
+
+**Forward breadcrumbs for later chapters / groups:**
+
+- Group 4 (PICTURE): per-pixel occlusion algorithm; control-line colors (black/blue/green/cyan); the relationship between `add.to.pic` runtime composition and PICTURE bytecode opcodes (`0xF0`/`0xF2` per 2-8 breadcrumb).
+- Group 5 (VIEW): full screen-object model behind the direction → loop tables; base-point semantics resolution (which corner is the cel base — 4-4 contradicts itself).
+- Group 3 (4-5, 4-6): may resolve resource-auto-discard mechanism details; may resolve the `$9B set.upper.left` arity conflict; may add 24-vs-12-strings v3 detail.
+- Post-Phase-B: ScummVM cross-check for the four arithmetic edge cases (overflow/underflow/division-by-zero) and the eleven `unknown*` opcodes.
+
+Authorship: AGDS manual translated from Russian by Vassili Bykov (`vbykov@cam.org`), annotated by Lance Ewing, IA, 4 December 1997. **Third AGDS-Bykov chapter in the corpus** (after 2-6 and the implicit AGDS-style sections in earlier chapters). Three of four Group-3 chapters so far have non-Peter-Kelly primary authors.
+
+No conflicts observed beyond the two surfaced ones (intra-4-4 base-point; 4-3-vs-4-4 `$9B` arity).
+
+## [2026-05-10] ingest | 4-5-Logic.html
+
+Phase B Group 3 (Logic), chapter 5 of 6 ingested. **Sources-only ingest** — 4-5 is a KQ4 Room 7 code-walkthrough (five BOOK-pseudo-code vs. GAME-bytecode samples), not a format-specification chapter. Pattern matches earlier sources-only ingests (3-4 Sample Code, 2-5 loader, 2-7 versions).
+
+- Added [[sources/4-5-logic]] — chapter summary; author-vs-compiler differences captured as authoring context (named-constants vs. numeric-indices via `#define`; `||` and `&&` boolean operators decomposed at compile-time to bytecode control flow; named variables vs. var-indexed access); spot-checked all opcodes against [[interpreter/commands]] with no conflicts; "anonymous chapter" framing (no HTML byline); IA-provenance date (31 August 1997) matches 2-4 and 2-6's dates exactly, suggesting same-session IA extraction.
+- Small delta to [[sources/4-2-logic]]: added a "Said synonym-group syntax" Notes paragraph documenting the `said(OPEN, DOOR||DOORS||DOORWAY||DOORWAYS)` form observed in 4-5's GAME samples (alternative spellings sharing one WORDS.TOK code; `||` is source sugar with no bytecode effect). 4-2 itself does not document this convention; 4-5 surfaced it via real-game disassembly.
+- Updated `wiki/index.md` with `4-5-logic` under Sources.
+
+Reviewer fixes applied to the subagent proposal (the subagent's framing was correct but had three local errors):
+
+1. **Subagent misread the smoke sample.** Claimed "`ignore.horizon` → `ignore.objs`" (substitution). Verified at HTML lines 28-49: GAME version *adds* `ignore.objs(7)` and `set.priority(7, 5)` to the BOOK version while keeping `ignore.horizon(7)`. The change is two new opcodes, not a substitution. Source page corrects this.
+2. **Subagent attributed authorship to Peter Kelly.** Inferred from HTML meta-keywords, but the actual byline (line 15) has no author named — only the date and IA-provenance annotation. Source page records the chapter as anonymous, contrasting with the named authorship of 4-1/4-2/4-3/4-4.
+3. **Subagent missed the `||` synonym-group syntax** in the GAME-form `said` samples. This is a real AGI Studio source-syntax convention not explicitly described in 4-2 itself; surfaced as a Notes delta to [[sources/4-2-logic]] with cross-reference back to 4-5.
+
+`(agidev, unverified)` tag usage: no changes. 4-5 is exemplary, not specification — it does not introduce claims to validate or invalidate. All opcodes referenced exist with consistent argument counts in [[interpreter/commands]].
+
+**Open items from the Group-3 dossier**: none closed by 4-5. The eleven unknown commands `$AA..$B5`, the `$9B set.upper.left` arity conflict, the intra-4-4 base-point conflict, the `add.to.pic` margin = 4 gap, the arithmetic edge cases, the v3 LOGIC header layout, the 24-vs-12 strings ambiguity, the control-line color semantics, view-objects subsystem mechanics, debug-modes details, and the resource auto-discard mechanism all remain pending. 4-5's value is forward-looking (post-Phase-B): once a LOGIC decoder lands in `resource/`, these five samples become round-trip test cases.
+
+**Dangling forward-references state.** Three remain in [[interpreter/overview]]: `control-lines`, `view-objects`, `debug-modes`. Unchanged from post-4-4.
+
+Authorship: anonymous within chapter; IA-provenance 31 August 1997. **Same-session IA extraction with 2-4 and 2-6** (both also IA, 31 August 1997) is plausible.
+
+No conflicts observed against existing pages. The `||` synonym-group syntax is a documentation gap in 4-2 rather than a conflict; the delta to [[sources/4-2-logic]] fills the gap rather than flagging contradiction.
+
+## [2026-05-10] ingest | 4-6-Logic.html
+
+Phase B Group 3 (Logic), chapter 6 of 6 ingested. **Sources-only ingest, closes Group 3.** 4-6 is a 55-line bibliographic reference table (parallel to [[sources/3-4-files]] at the Files-group level): a 5-row `<table>` pointing at source files vendored under `AGI_Specifications/Code/`. No HTML byline; no date annotation; no format claims.
+
+- Added [[sources/4-6-logic]] — chapter scope, file-by-file attribution table (Lance Ewing: `logic.c`, `logic.h`, `agifiles.c`, `agifiles.h`; Peter Kelly: `agicommands.pas`), post-Phase-B validation roles (`logic.c` plausibly informed 4-1's bytecode spec, `agicommands.pas` plausibly informed 4-3's opcode table), and explicit anonymity framing.
+- Verified all five referenced files exist at `AGI_Specifications/Code/`.
+- Updated `wiki/index.md` with the new source entry and a "closes Group 3" marker.
+
+Reviewer fixes applied to the subagent proposal:
+
+1. **Subagent inferred Peter Kelly as chapter author** from meta-keywords. Same mistake as 4-5: the HTML byline is bare (no chapter-level author). Source page records the chapter as anonymous at chapter level with per-row attribution only.
+2. **Subagent invented an "IA-corpus format" provenance line.** The chapter HTML carries no Internet-Archive annotation at all — unlike 2-4, 2-6, 4-1, 4-5 which explicitly state "Retrived from the Internet Archive". The 4-6 source page records "No IA annotation in HTML" honestly rather than fabricating provenance.
+
+No new conflicts. All five referenced source files exist; no opcode-table cross-reference required (4-6 contains no opcode mentions).
+
+---
+
+## Group 3 closure summary
+
+**Phase B Group 3 (Logic) is complete.** All six chapters ingested on 2026-05-10. Group 3 contributed the bulk of the LOGIC subsystem documentation and resolved the longest-standing dangling forward-reference in the wiki ([[interpreter/commands]], created in the 2-1 ingest).
+
+**Pages added across Group 3:**
+
+- [[entities/logic]] — LOGIC resource on-disk format (4-1).
+- [[interpreter/commands]] — full opcode catalogue, 18 test + 182 action (4-3).
+- [[interpreter/command-semantics]] — selected behavioral semantics + conflicts (4-4).
+- [[interpreter/priority-bands]] — y → priority eleven-band auto-assignment (4-4).
+- Six source pages: [[sources/4-1-logic]] through [[sources/4-6-logic]].
+
+Plus deltas to existing pages: [[interpreter/overview]] (LOGIC VM model concretized, priority-bands resolved); [[interpreter/command-evolution]] (4-3 corroboration of 2-8; sharpened "2.400" typo callout); [[concepts/agi-data-types]] (Controller section added by 4-2; opcode-consumer lists for Message and Controller added by 4-3; broken See-also link fixed); [[interpreter/variables-and-flags]] (var(0/1/2/9/16) and flag(5) cross-linked to new.room and said procedures); [[sources/4-2-logic]] (`||` said-synonym-group syntax noted from 4-5).
+
+**Dangling forward-references state.** Three remain in [[interpreter/overview]] after Group 3 close: `[[interpreter/control-lines]]`, `[[interpreter/view-objects]]`, `[[interpreter/debug-modes]]`. One (`[[interpreter/priority-bands]]`) was resolved by 4-4; one (`[[interpreter/commands]]`) was resolved by 4-3. Phase C lint will need to accept the remaining three as legitimately-deferred placeholders (Groups 4/5 will resolve `control-lines` and `view-objects`; `debug-modes` may remain a thin section in [[interpreter/overview]] without a dedicated page unless later chapters supply more content).
+
+**Open items unresolved at Group 3 close** (tracked across the ingest log; expected resolution sources noted):
+
+1. **Eleven unknown commands `$AA..$B5`** (`unknown170..unknown181`) — Group 3 did not identify them. Resolution requires ScummVM `engines/agi/op_*.cpp` cross-check or AGI Studio source (post-Phase-B).
+2. **`$9B set.upper.left` arity conflict** — 4-3 says 2 args (`???`), 4-4 says 0-arg state toggle. Provisional reading favors 4-4. Conflict callout on [[interpreter/command-semantics]]. May resolve via Group 5 (VIEW) if `upper.left` is a VIEW-rendering concern, or post-Phase-B.
+3. **Intra-4-4 base-point conflict** — line 363 says cel base is bottom-left; line 854 says bottom-right. Conflict callout on [[interpreter/command-semantics]]. Likely resolved by Group 5 (VIEW), which specifies the cel coordinate system.
+4. **`add.to.pic` margin = 4 gap** — spec covers `{0,1,2,3}` (priority-margin rectangle) and `> 4` (no margin); leaves `== 4` undefined. May resolve via Group 4 (PICTURE) if margin semantics are PICTURE-resource-level.
+5. **Arithmetic edge cases** (`addn`/`addv` overflow, `subn`/`subv` underflow, `muln`/`mulv` overflow, `divn`/`divv` division by zero) — Bykov translator notes flagged all four as unspecified. Resolution requires ScummVM cross-check or instrumented testing on original interpreter binary (post-Phase-B).
+6. **v3 LOGIC header layout** — 4-1 confirms v3 differs from v2's 7-byte header but does not specify the v3 layout. May resolve via Group 4/5/6 (which use v3 resource formats) or remain open until ScummVM cross-check.
+7. **24-vs-12 strings in v3** — [[concepts/agi-data-types]] §"String" notes the spec itself is unsure whether v3 games actually use the larger allocation. Empirical enumeration of v3 games via [[sources/2-7-interpreter]] grounds the abstract category but doesn't resolve usage. Post-Phase-B.
+8. **Resource auto-discard mechanism** — 4-4 documents the rule ("all resources loaded after an unloaded one are also unloaded") but not the tracking mechanism. May surface in Group 4/5 when PICTURE/VIEW lifecycle is documented, or in [[interpreter/memory-layout]] if [[sources/2-4-interpreter]] re-read reveals it.
+9. **Control-line color semantics** (black/blue/green/cyan) — 4-4 touched priority-0 (unconditional barrier) and priority-1 (conditional barrier) but not the full color set. Awaits Group 4 (PICTURE), which encodes the priority screen.
+10. **View-objects subsystem mechanics** — 4-4 supplied direction → loop tables but not the full screen-object state model. Awaits Group 5 (VIEW).
+11. **Debug-modes details** — 4-4 minimally touched `trace.on`/`trace.info`/Scroll-Lock activation. May remain thinly documented without a dedicated chapter.
+
+**Conflicts in the wiki at Group 3 close** (preserved as `> [!conflict]` callouts):
+
+- **"2.400" version-string typo** in [[interpreter/command-evolution]] — replicated by both 2-8 and 4-3, strengthening typo reading. Provisional resolution: 2.440. Post-Phase-B ScummVM check.
+- **`$9B set.upper.left` arity** in [[interpreter/command-semantics]] and [[interpreter/commands]] §Notes — 4-3 vs 4-4 disagreement, see open item #2 above.
+- **Intra-4-4 base-point** in [[interpreter/command-semantics]] §"Base-point semantics" — same chapter, two contradictory locations, see open item #3.
+- **`add.to.pic` margin = 4 gap** in [[interpreter/command-semantics]] §`add.to.pic` — see open item #4.
+
+**Authorship snapshot for the corpus (Group 3 complete):**
+
+- 2-1, 2-2, 2-3: Peter Kelly (assumed; not HTML-verified).
+- 2-4: Lance Ewing solo, IA 31 Aug 1997.
+- 2-5: Lance Ewing primary + Peter Kelly + Anders M Olsson, 3 Mar 1998.
+- 2-6: AGDS / Vassili Bykov, IA 31 Aug 1997.
+- 2-7: hobbyist `mikeph@concentric.net`, IA, no date.
+- 2-8: Lance Ewing solo, IA 27 Jan 1998.
+- 3-1, 3-2, 3-3, 3-4: Peter Kelly (3-4 is also a bibliographic table).
+- 4-1: Lance Ewing solo, IA 20 Aug 1997.
+- 4-2: Peter Kelly solo, IA 27 Jan 1998. **First HTML-verified Peter Kelly chapter.**
+- 4-3: Peter Kelly solo, IA 3 Mar 1998.
+- 4-4: AGDS / Vassili Bykov / Lance Ewing, IA 4 Dec 1997. **Third Bykov-AGDS chapter** (the others are 2-6 and the AGDS-influenced 4-5).
+- 4-5: anonymous, IA 31 Aug 1997. Same-session extraction with 2-4 and 2-6.
+- 4-6: anonymous (per-row author cells only), no date.
+
+The "Peter Kelly's AGI Specifications" framing in CLAUDE.md describes the corpus curator, not most chapter authors. Lance Ewing is primary on 4 chapters; Vassili Bykov on 2 (translations); Peter Kelly on 3 (4-2/4-3/3-x); hobbyist contributions on 2; anonymous on 2.
+
+**Phase B status after Group 3 close:** Groups 1 (Files, complete) and 2 (Interpreter, complete) and 3 (Logic, complete) done. Groups 4 (PICTURE), 5 (VIEW), 6 (Sound), 7 (Other), 8 (Intro/Info) remain. Next chapter: `5-1-PICTURE.html` (Group 4, chapter 1 of 3).
+
+## [2026-05-10] ingest | 5-1-PICTURE.html
+
+Phase B Group 4 (PICTURE), chapter 1 of 3 ingested. **Opens Group 4.** First split-subagent ingest (two parallel Explore agents, disjoint scopes — format-bytes and rendering-semantics) per the plan's "split if a chapter risks ballooning past ~3K words" risk-mitigation. Worked cleanly: the two halves produced non-overlapping proposals and each came in well under 2500 words.
+
+- Added [[entities/picture]] — full PICTURE bytecode opcode catalogue (`0xF0..0xFF`): set-visual-color, disable-visual, set-priority-color, disable-priority, Y/X corner, absolute line, relative line (with sign-magnitude displacement layout for `0xF7`), flood fill, set pen style, plot with pen (with solid/splatter argument-grouping), reserved range `0xFB..0xFE`, terminator `0xFF`. Coordinate encoding (160×168 logical pixel frame). Pen-style byte layout (splatter bit / shape bit / 3-bit size; visual extent `2·size+1`). Verbatim transcription of the 32-byte splatter-texture bit array and the 128-entry offset table. Screen initialization (visual → white 15; priority → red 4). Wrap-at-255 splatter quirk. Page-level `(agidev, unverified)` (no decoder in `resource/`).
+- Added [[interpreter/control-lines]] — NEW page resolving the long-dangling `[[interpreter/control-lines]]` forward-ref originally placed by the 2-1 ingest into [[interpreter/overview]]. Four-color table with EGA palette mapping (black=0 barrier, blue=1 conditional barrier, green=2 alarm, cyan=3 surface confinement). Search-downwards algorithm for priority recovery under a control pixel, with KQ1 room 20 cited as the canonical visual-artifact case. Flood-fill / control-line interaction. SCI-divergence note. Page-level `(agidev, unverified)` process tag.
+- Added [[concepts/screen-layers]] — NEW page for the visual / priority dual-screen model. 160×168 logical pixel frame, 320×200 doubled-horizontal display. Per-screen encoding (visual = EGA color, priority = 0..3 control / 4..14 band / 15 unused). Initial state (white visual / red priority). Drawing-mode flags and common-pattern recipes. Object composition / occlusion stub with explicit deferral (occlusion algorithm still open). SCI-divergence note. Shared-primitive page — will be extended by Group 5 (VIEW) from the screen-object side.
+- Added [[sources/5-1-picture]] — chapter scope; informs / deferred lists; authorship (Lance Ewing, IA, 5 December 1997, Trivette-adaptation note); meta-keywords trap explicitly called out (HTML keywords list "peter kelly" but byline is Lance Ewing only); open-items resolution table.
+- Delta to [[concepts/picture-compression]] — added "Relation to PICTURE bytecode dispatch" section clarifying that decompression precedes opcode dispatch (no compressed-vs-expanded ambiguity for the opcode catalogue).
+- Delta to [[interpreter/overview]] §"Screen objects and priority bands" — occlusion-deferral pointer updated to cite [[concepts/screen-layers]] and explicitly note that 5-1 documents screen-layer structure and search-downwards but not the object-vs-screen comparison procedure.
+- Delta to [[interpreter/overview]] §"Control lines" — added priority indices to each color (black=0, blue=1, green=2, cyan=3); removed the `(agidev, unverified — exact constraint semantics deferred to [[interpreter/control-lines]])` qualifier on cyan (now fully documented); cited 5-1 alongside existing 2-1 citation; added pointer paragraph to the new control-lines page.
+- Delta to [[interpreter/overview]] §"Resource types" — removed `(to be ingested with Group 4 — Picture)` deferral on the PICTURE entry; added pointer to [[concepts/screen-layers]].
+- Updated `wiki/index.md`: added `entities/picture`, `concepts/screen-layers`, `interpreter/control-lines`, `sources/5-1-picture` under their respective sections; the 5-1-picture entry includes the "Opens Group 4" marker symmetric with 4-6's "closes Group 3".
+
+Split-subagent quality (first run of the parallel pattern):
+
+- **Format-bytes subagent (A)** — Substantively correct. Used the visible byline rather than HTML meta-keywords (this confirms the Group-3 lesson is generalizable — the meta-keywords trap is real on 5-1 as well). All opcode hex values cross-validated against the chapter and against existing wiki pages. The `0xF7` displacement bit-layout and pen-style byte layout are internally consistent across the table summary and the detailed sections. Splatter-texture tables transcribed verbatim. Minor cleanups during apply: smoothed the sign-magnitude prose for clarity; no factual corrections needed.
+- **Rendering-semantics subagent (B)** — Substantively correct on color semantics, search-downwards, and SCI-divergence framing, but **two dimension errors in the proposed screen-layers.md** required in-place fixing during apply: claimed "320 pixels wide and 200 pixels tall in the on-disk PICTURE resource" (the resource is bytecode, not a pixel grid; the logical frame is 160×168 with display-time horizontal doubling to 320×200). Corrected to 160×168 logical, with the doubling and the 168-vs-200 consistency-with-[[interpreter/priority-bands]] explicit. Also softened the forward-promise in control-lines.md ("documented in [[interpreter/commands]]") to "behavioral binding surfaces in subsequent Group 4/5 chapters; not yet pinned" — `commands.md` does not specifically document blue/green opcode bindings, so the original wording would have been a dead promise.
+
+Main session verified the byline directly (40-line targeted read of 5-1-PICTURE.html top-of-file before applying any wiki edits) per reviewer concern #3 above. Author: Lance Ewing `<be@ihug.co.nz>`, last updated 5 December 1997, IA-provenance with original "Retrived" typo preserved. The Trivette adaptation note is verbatim from line 19.
+
+`(agidev, unverified)` tag usage:
+
+- Applied (page-level, process tag): [[entities/picture]], [[interpreter/control-lines]], [[concepts/screen-layers]] — no PICTURE/control-line/renderer code in `resource/` to validate against.
+- Applied (per-claim): wrap-at-255 splatter quirk; sign-bit polarity of `0xF7` displacements (inferred from chapter's worked example).
+- Removed: the `(agidev, unverified — exact constraint semantics deferred to [[interpreter/control-lines]])` qualifier from the cyan-line bullet in [[interpreter/overview]] §"Control lines" (now resolved in the dedicated page).
+
+**Dangling forward-references state.** After this ingest, two remain in [[interpreter/overview]]: `view-objects`, `debug-modes`. (Three before this ingest; `control-lines` is now resolved.) `view-objects` awaits Group 5 (VIEW). `debug-modes` may remain a thin section in [[interpreter/overview]] without a dedicated page unless later chapters supply more content (4-4 minimally touched it; no other Group-3 chapter expanded it).
+
+**Open items state (carried from Group 3 closure summary, updated):**
+
+| # | Item | Status after 5-1 |
+|---|------|-------------------|
+| 1 | Eleven unknown commands `$AA..$B5` | Unchanged. Awaits post-Phase-B ScummVM check. |
+| 2 | `$9B set.upper.left` arity conflict (4-3 vs 4-4) | Unchanged. May resolve in Group 5 (VIEW). |
+| 3 | Intra-4-4 base-point conflict (bottom-left vs bottom-right) | Unchanged. 5-1 doesn't discuss cel base-points. Deferred to Group 5. |
+| 4 | `add.to.pic` margin = 4 gap | Unchanged. 5-1 doesn't discuss `add.to.pic`'s LOGIC-side margin parameter; may be a 4-4 spec oversight rather than a PICTURE-side concern. |
+| 5 | Arithmetic edge cases | Unchanged. Awaits post-Phase-B. |
+| 6 | v3 LOGIC header layout | Unchanged. May resolve via Group 4/5/6 v3 framing or post-Phase-B. |
+| 7 | 24-vs-12 strings in v3 | Unchanged. Post-Phase-B. |
+| 8 | Resource auto-discard mechanism | Unchanged. |
+| 9 | **Control-line color semantics (black/blue/green/cyan)** | **RESOLVED.** All four colors documented in [[interpreter/control-lines]] with EGA-palette mapping. |
+| 10 | View-objects subsystem mechanics | Unchanged. Awaits Group 5. |
+| 11 | Debug-modes details | Unchanged. |
+
+New open items introduced by 5-1:
+
+- **Per-pixel occlusion algorithm.** 5-1 documents the screen-layer structure and the search-downwards rule for *recovering* a band value under a control pixel, but not the object-vs-screen comparison procedure that drives screen-object visibility. Deferred to Group 5 (VIEW) or ScummVM.
+- **Object-vs-control-line interaction.** When an object pixel lands on a control-line position, behavior is unspecified (search-downwards applies to recovering priority for *non-object* purposes).
+- **Wrap-at-255 splatter quirk.** Documented as `(agidev, unverified)`; needs decoder cross-check.
+- **Sign-bit polarity of `0xF7` displacements.** Inferred from chapter example; needs cross-check.
+- **Opcodes `0xFB..0xFE`.** "Unused in most AGI games" with no enumeration.
+
+Authorship: Lance Ewing solo, IA, 5 December 1997. Same author and same IA-extraction window as [[sources/4-4-logic]] (which was AGDS/Bykov-primary with Ewing annotation). Consistent with Ewing's `logic.c` / `agifiles.c` work listed in [[sources/4-6-logic]] §Bibliographic table — Ewing as the PICTURE/LOGIC pairing author across the corpus.
+
+No conflicts observed against existing wiki content. Cyan-confinement semantics from 2-1 are corroborated. The control-line-priority numeric mapping (black=0, blue=1, green=2, cyan=3) is consistent with the priorities-0–3-reserved note already in [[interpreter/priority-bands]] line 7 (the page noted "priority 0 = unconditional barrier, priority 1 = conditional barrier, priority 2/3 = other control roles" — 5-1 fills in the green=2, cyan=3 specifics).
+
+## [2026-05-10] ingest | 5-2-PICTURE.html
+
+Phase B Group 4 (PICTURE), chapter 2 of 3 ingested. **Corroborating-source ingest, no new pages.** 5-2 is the AGDS-manual's parallel documentation of the same PICTURE format that 5-1 already established; the value is independent corroboration plus one refinement on `0xF8`'s target-selection rule.
+
+- Added [[sources/5-2-picture]] — chapter scope, authorship (Vassili Bykov translator, AGDS, IA, 27 January 1998), open-items table, the "fourth Bykov/AGDS chapter" framing, the shared 27-January-1998 IA-extraction date with [[sources/4-2-logic]] and [[sources/2-8-interpreter]] (three chapters from three authors uploaded the same day).
+- Delta to [[entities/picture]] — added "Flood-fill target rule (`0xF8`)" subsection with 5-2's more-specific wording on what `0xF8` chooses to fill (white-on-visual when visual-draw enabled and color ≠ 15; priority-4-on-priority when visual-draw cancelled; both-screens simultaneous when both enabled). Added Notes paragraph documenting the AGDS "dot parameters / dot plotting" terminology for `0xF9`/`0xFA` (vs 5-1's "pen" framing); same bytecode, different framing.
+- Delta to [[concepts/screen-layers]] §"Initial state" — added 5-2 corroboration: "Initially all pixels of the background are white and priority 4".
+- Delta to [[interpreter/control-lines]] §"Color semantics" — added 5-2 corroboration of the four-color mapping with the "alarm barrier" wording note for green.
+- Updated `wiki/index.md` with `5-2-picture` under Sources.
+
+Reviewer fixes applied to the subagent proposal:
+
+1. **Recategorized the dot-vs-pen terminology divergence** from `> [!conflict]` callout to a Notes paragraph. Not a contradiction; both descriptions match the same bytecode; the framing difference is reader-aid material rather than wiki-conflict material. Keeps the conflicts surface (currently four callouts across the wiki) genuinely about contradictions.
+2. **Promoted the `0xF8` flood-fill refinement** from a cell-text inline note in the opcode table to a dedicated short subsection ("Flood-fill target rule (`0xF8`)") in [[entities/picture]]. The refinement is a real semantics clarification, not a table-cell footnote, and several pages (control-lines, screen-layers) link to "flood fill" — they now have a more specific anchor target.
+
+Subagent quality: substantively correct, byline verified directly in the proposal (line 20 quoted verbatim: "Translated from Russian by Vassili Bykov"), meta-keywords trap caught and explicitly called out (the third live confirmation after 5-1, 4-5, 4-6 — pattern is reliable now). All opcode hex values cross-validated against [[interpreter/commands]] and [[entities/picture]]. No fabricated opcodes, no inferred authorship.
+
+`(agidev, unverified)` tag usage: no changes. 5-2 introduces no new claims requiring tagging; the existing page-level tags on [[entities/picture]], [[interpreter/control-lines]], [[concepts/screen-layers]] continue to apply (no PICTURE decoder in `resource/`).
+
+**Independent corroboration question raised by the subagent.** 5-1 (Lance Ewing English-original) and 5-2 (AGDS Russian-original via Bykov translation) agree on init colors, control-line colors, opcode catalogue, and flood-fill behavior. The subagent suggested this might warrant downgrading the page-level `(agidev, unverified)` process tag on [[entities/picture]]. Reviewer reading: both sources are agidev-corpus regardless of authorship variety; the process tag tracks "no working decoder in `resource/` to validate against", not "single-source claim". Tag stays. Phase C lint can revisit if a per-claim downgrade is justifiable for the specific claims that both sources independently corroborate.
+
+**Dangling forward-references state.** Unchanged from post-5-1: two remain in [[interpreter/overview]] (`view-objects`, `debug-modes`). 5-2 does not introduce or resolve forward-refs.
+
+**Open items state.** Unchanged from post-5-1; 5-2 resolved nothing new. All eleven Group-3 carry-forwards + 5-1's five new items + Group-3 items #3 / #4 remain open. The `0xFB..0xFE` reserved-range question now has corroborating *absence* from a second source (5-2's A.2.1 catalogue also ends at `0xFF`) — strengthens the reading that these opcodes are genuinely unused rather than just under-documented.
+
+**Bykov/AGDS corpus tally.** Now four chapters from this source family:
+- [[sources/2-6-interpreter]] — input preprocessing and `said` semantics, IA 31 August 1997.
+- [[sources/4-4-logic]] — LOGIC command-set prose, IA 4 December 1997 (Bykov primary, Lance Ewing annotations).
+- [[sources/5-2-picture]] — PICTURE format, IA 27 January 1998.
+- (Plus AGDS-style sections influencing 4-5's KQ4 sample code per its noted "AGDS-style" framing.)
+
+The AGDS manual is now confirmed as a parallel canonical source for AGI internals — not a single-chapter outlier. Worth noting in any future cross-source consolidation that AGDS material is at least as authoritative as Lance Ewing's English-original chapters; both predate the public ScummVM AGI implementation.
+
+**Three-author 27-January-1998 IA-extraction window.** [[sources/2-8-interpreter]] (Lance Ewing), [[sources/4-2-logic]] (Peter Kelly), and [[sources/5-2-picture]] (Vassili Bykov / AGDS) all share the same upload date. Three different authors, three different topics, uploaded the same day — suggests a coordinated late-January-1998 preservation effort by an unidentified curator. Worth noting if a Phase C cross-source consolidation surfaces patterns that line up with this window.
+
+No conflicts observed against existing wiki content. Independent corroboration of init colors, control-line color mapping, and opcode catalogue. The dot-vs-pen terminology is divergent framing, not contradiction.
+
+## [2026-05-10] ingest | 5-3-PICTURE.html
+
+Phase B Group 4 (PICTURE), chapter 3 of 3 ingested. **Closes Group 4.** 5-3 is the "Sample Code" chapter — a thin HTML pointer to two vendored C files at `AGI_Specifications/Code/`. The substance lives in the code: `showpic.c` (650 lines, Allegro-based PICTURE viewer by Lance Ewing) and `picv3-v2.c` (67-line v3→v2 transcoder, also Ewing). This ingest is structurally different from 5-1/5-2: the subagent read both C files and reported algorithm-level findings rather than chapter prose.
+
+**Significant validation-status change.** Prior to 5-3, [[entities/picture]] and [[concepts/screen-layers]] carried page-level `(agidev, unverified)` banners on the premise "no PICTURE decoder in `resource/` to validate against". 5-3 surfaced that `showpic.c` IS a working PICTURE decoder — just vendored at `AGI_Specifications/Code/` rather than built into andromeda. The page-level banners were replaced with per-claim verification citations distinguishing code-verified claims from genuinely-unverified claims. [[interpreter/control-lines]] retains its page-level tag (showpic.c is a pic viewer, not a game runtime — it doesn't decode control-line semantics).
+
+- Added [[concepts/picture-rendering]] — NEW page documenting the rendering algorithms code-verified against showpic.c: additive-fixed-point line drawing with direction-sensitive rounding (lines 191-231); BFS flood-fill with 4000-entry queue (lines 249-293); brush plotting with precomputed circle/rectangle masks (lines 305-340); splatter texture masking with wrap-at-255 (lines 425-478). This is the page that captures what 5-1 deliberately punted on as "chapter pseudocode is the source of truth" — except the source of truth is showpic.c, not pseudocode.
+- Added [[sources/5-3-picture]] — chapter scope (code-pointer chapter, no specification prose), authorship (anonymous chapter byline / Lance Ewing on both files, "Lange Ewing" typo on picv3-v2.c noted), the **fifth confirmed meta-keywords trap** (peter-kelly keyword vs. Ewing actual authorship), open-items resolution table, and the AGI_Specifications/Code/-as-validation-surface framing.
+- Delta to [[entities/picture]]: page-level `(agidev, unverified)` banner replaced with a verification-status banner pointing to showpic.c; per-claim code-verified citations added for coordinate encoding (`[showpic.c:113-114]`), `0xF7` sign-bit polarity (`[showpic.c:369-372]`, **previously inferred from a single worked example, now resolved**), wrap-at-255 splatter quirk (`[showpic.c:428-429]`), and `0xFB..0xFE` reserved range (`[showpic.c:627]`); Implementation-guidance section now cross-links [[concepts/picture-rendering]] for the three items 5-1 punted on; new "Reference implementation" section listing showpic.c line ranges for opcode dispatch / line drawing / flood fill / pen plotting / splatter.
+- Delta to [[entities/picture]] §"Splatter texture data": **new `> [!conflict]` callout** documenting a 4-position discrepancy in the splatter offset table between 5-1 prose (current wiki transcription) and showpic.c reference implementation (indices 11, 15, 124, 125). Both sources are Lance Ewing. Verified directly by main session: 5-1-PICTURE.html line 316 / 329 vs showpic.c line 461 / 474. The wiki retains the 5-1 prose values pending ScummVM `engines/agi/picture.cpp` cross-check (post-Phase-B); the conflict callout is the proper documentation for an unresolvable-with-in-corpus-sources discrepancy.
+- Delta to [[concepts/screen-layers]]: page-level banner downgraded from `(agidev, unverified)` process tag to verification-status banner noting which subsystems are code-verified by showpic.c (dimensions / init colors / drawing-mode flags) vs. still-open (per-pixel occlusion — showpic.c is a pic viewer, not a game runtime).
+- Delta to [[concepts/picture-compression]]: NEW "Reference implementation: picv3-v2.c" section. Replaces 5-1's example-derived bit-packing description with picv3-v2.c's literal two-state machine (NORMAL ↔ ALTERNATE) — clarifies the previously-`(agidev, unverified)` bit-packing rule.
+- Updated `wiki/index.md`: added `picture-rendering` under Concepts; added `5-3-picture` under Sources (with "closes Group 4" marker symmetric with 4-6's "closes Group 3" and 5-1's "opens Group 4").
+
+Reviewer fixes / discretionary calls applied during ingest:
+
+1. **Conflict callout, not silent patch, for splatter table.** Subagent recommended replacing the wiki's four discrepant values with showpic.c's. Reviewer judgment: both 5-1 and showpic.c are Ewing-authored agidev-corpus material; unilateral preference for one over the other is not justifiable without ScummVM tiebreaker. Documented the divergence; deferred resolution.
+2. **Verification banner downgrade scope.** Subagent suggested wholesale removal of `(agidev, unverified)` tags. Reviewer judgment: [[interpreter/control-lines]] retains its banner — showpic.c doesn't decode control-line semantics — but [[entities/picture]] and [[concepts/screen-layers]] are downgraded to per-claim. This preserves accurate verification status per-subsystem rather than per-Group.
+3. **Inline citations over dedicated source/code/ pages.** Per user direction, `[AGI_Specifications/Code/showpic.c:LINE]` citations are inline in the relevant pages; no new directory or page-per-codefile.
+4. **Algorithms captured in a new concept page.** Per user direction, new [[concepts/picture-rendering]] page rather than pointer-only notes on [[entities/picture]]. The Bresenham-variant rounding, BFS queue sizing, and splatter wrap mechanics are genuine rendering algorithms — they deserve a dedicated page that future Rust-rewrite work can consult as a single artifact.
+
+Main session direct verification on the splatter-table conflict: read showpic.c lines 455-475 and 5-1-PICTURE.html grep around lines 313-329. Confirmed the four byte-value discrepancies (indices 11: 0x04 vs 0x05; 15: 0x6d vs 0x7d; 124: 0x75 vs 0xa4; 125: 0xa3 vs 0x75). Three of four are 1-bit-flip distance; the 124/125 pair is not a clean swap (5-1 has 0xa3 where showpic has 0xa4 at index 125).
+
+Authorship: chapter byline empty ("5.3 Sample Code", no author named in HTML header). File table cells attribute both files to Lance Ewing (with picv3-v2.c misspelled "Lange Ewing" — preserved in source-page documentation as a literal HTML typo). Code copyright headers confirm Lance Ewing 1997 for both. Meta-keywords trap: fifth live confirmation in the corpus (after 4-5, 4-6, 5-1, 5-2). The HTML `<meta name="keywords">` pattern lists "peter kelly" universally regardless of chapter byline — the rule "trust only the visible byline" is fully generalized.
+
+Group 4 closure follows below.
+
+---
+
+## Group 4 closure summary
+
+**Phase B Group 4 (PICTURE) is complete.** All three chapters ingested on 2026-05-10. Group 4 contributed the PICTURE bytecode subsystem documentation, resolved the long-dangling `[[interpreter/control-lines]]` forward-ref, and shifted the wiki's validation surface to include vendored reference C code at `AGI_Specifications/Code/`.
+
+**Pages added across Group 4:**
+
+- [[entities/picture]] — PICTURE resource on-disk format, opcode catalogue, encoding details, splatter texture data, screen initialization, reference-implementation pointers.
+- [[interpreter/control-lines]] — Black/blue/green/cyan control-line semantics with EGA-palette mapping, search-downwards algorithm, KQ1 room 20 artifact case, two-source corroboration.
+- [[concepts/screen-layers]] — Visual/priority dual-screen model with code-verified dimensions and init colors.
+- [[concepts/picture-rendering]] — Bresenham-variant line drawing, BFS flood-fill, brush plotting, splatter mechanics — every algorithm code-verified against showpic.c.
+- Three source pages: [[sources/5-1-picture]], [[sources/5-2-picture]], [[sources/5-3-picture]].
+
+Plus deltas to existing pages: [[interpreter/overview]] §"Screen objects and priority bands" (occlusion-deferral pointer); [[interpreter/overview]] §"Control lines" (full color-priority mapping and pointer); [[interpreter/overview]] §"Resource types" (PICTURE no longer deferred); [[concepts/picture-compression]] (decompression-precedes-dispatch note + picv3-v2.c two-state-machine clarification).
+
+**Dangling forward-references state.** Two remain in [[interpreter/overview]] after Group 4 close: `[[interpreter/view-objects]]` (Group 5 territory), `[[interpreter/debug-modes]]` (may remain thin). `[[interpreter/control-lines]]` was resolved by 5-1.
+
+**Open items resolved by Group 4:**
+
+- **Group-3 Item #9 (control-line color semantics)** — RESOLVED. 5-1 fully documented black/blue/green/cyan; 5-2 independently corroborated.
+- **5-1 `0xF7` sign-bit polarity** — RESOLVED by showpic.c:369-372. No longer inferred from a single worked example.
+- **5-1 wrap-at-255 splatter quirk** — CODE-VERIFIED by showpic.c:428-429. Whether intentional or a Sierra bug remains philosophical; the wrap must be replicated either way.
+- **5-1 `0xFB..0xFE` reserved range** — STRENGTHENED. Three independent sources agree (5-1 prose, 5-2 catalogue ending at `0xFF`, showpic.c "Unknown picture code" fall-through). Not 100% closed (no exhaustive game scan) but as resolved as feasible in-corpus.
+
+**Open items NOT resolved by Group 4 (carry to Group 5/post-Phase-B):**
+
+- **Per-pixel occlusion algorithm.** showpic.c is a pic viewer; object-vs-priority-screen comparison is runtime LOGIC concern. Likely Group 5 (VIEW) territory.
+- **Object-vs-control-line interaction.** Same.
+- **Group-3 #3 base-point conflict** (bottom-left vs bottom-right). Untouched by Group 4. Group 5 likely resolves.
+- **Group-3 #4 `add.to.pic` margin = 4 gap.** Untouched. Possibly a 4-4 spec oversight, not a PICTURE-side concern.
+
+**New open items introduced by Group 4:**
+
+- **Splatter offset table 4-position discrepancy** between 5-1 prose and showpic.c at indices 11, 15, 124, 125. Resolution requires ScummVM `engines/agi/picture.cpp` cross-check. `> [!conflict]` callout on [[entities/picture]].
+
+**Conflicts in the wiki at Group 4 close** (preserved as `> [!conflict]` callouts):
+
+- "2.400" version-string typo in [[interpreter/command-evolution]] — carried forward from Group 3; post-Phase-B ScummVM check.
+- `$9B set.upper.left` arity in [[interpreter/command-semantics]] / [[interpreter/commands]] — 4-3 vs 4-4 disagreement; carried forward.
+- Intra-4-4 base-point in [[interpreter/command-semantics]] — same chapter, two locations; carried forward.
+- `add.to.pic` margin = 4 gap in [[interpreter/command-semantics]] — carried forward.
+- **Splatter offset table indices 11/15/124/125** in [[entities/picture]] — NEW from 5-3. 5-1 prose vs showpic.c.
+
+**Authorship snapshot for Group 4:**
+
+- 5-1: Lance Ewing solo, IA 5 December 1997.
+- 5-2: Vassili Bykov (translator), AGDS, IA 27 January 1998. **Fourth Bykov/AGDS chapter.** Same date as [[sources/4-2-logic]] (Peter Kelly) and [[sources/2-8-interpreter]] (Lance Ewing) — three-author January-1998 IA-extraction window confirmed.
+- 5-3: anonymous chapter byline, file attribution Lance Ewing (with "Lange Ewing" typo on picv3-v2.c). No date in chapter HTML; file copyright headers 1997.
+
+Lance Ewing as PICTURE-subsystem author across the corpus is now consolidated: 5-1 prose + 5-3 reference code + the AGDS-translation companion 5-2. The trio gives the wiki strongest single-subsystem coverage of any group so far.
+
+**Validation surface expansion.** Group 4 changed the wiki's relationship to `AGI_Specifications/Code/`. Prior groups treated it as bibliographic-only reference (per [[sources/3-4-files]], [[sources/4-6-logic]]). Group 4 promoted `showpic.c` to a per-claim citation target for [[entities/picture]] and [[concepts/picture-rendering]], and `picv3-v2.c` for [[concepts/picture-compression]]. Going forward, Group 5 should consider whether `viewview.pas` (vendored at `AGI_Specifications/Code/`) similarly validates [[entities/view]] claims when that page lands.
+
+**Phase B status after Group 4 close:** Groups 1 (Files), 2 (Interpreter), 3 (Logic), 4 (PICTURE) done. Groups 5 (VIEW), 6 (Sound), 7 (Other), 8 (Intro/Info) remain. Next chapter: `6-1-VIEW.html` (Group 5, chapter 1 of 3) — **the validation-case group**, since andromeda has a working `resource/view.py` decoder. The wiki claims for VIEW format will be cross-checkable against running Python code, not just vendored C reference code.

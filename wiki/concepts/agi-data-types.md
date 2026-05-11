@@ -1,6 +1,6 @@
 # AGI Data Types
 
-AGI command parameters and variable semantics are built on seven fundamental data types, each with distinct memory layout, scope, and purpose [2-3-Interpreter.html §Variable Types Used].
+AGI command parameters and variable semantics are built on eight fundamental data types, each with distinct memory layout, scope, and purpose. 2-3-Interpreter enumerates seven (variable, flag, string, word, inventory item, object, message) [2-3-Interpreter.html §Variable Types Used]; 4-2-Logic adds Controller as an eighth source-level argument type [4-2-Logic.html §Argument types]. 4-2 also lists "Number" (no prefix) as a ninth source-syntax argument category, but Number is an immediate-literal addressing mode — every type-prefixed argument can also appear as a literal byte — and is therefore not given its own section here.
 
 ## Variable
 
@@ -64,11 +64,18 @@ Messages in LOGIC 0 are global and can be referenced from any LOGIC via the form
 
 Example: `print("Message 34 in LOGIC.0 is %g34.")` references message 34 of LOGIC 0 from any LOGIC [2-3-Interpreter.html §(7) Message].
 
-See [[interpreter/commands]] for the print / format-code syntax that consumes messages (to be added with Group 3 — Logic).
+Messages are consumed by `$65 print`, `$67 display`, `$76 get.num`, `$8F set.game.id`, `$90 log`, `$9C set.menu`, `$9D set.menu.item`, and the `print.at` / `print.at.v` family — see [[interpreter/commands]] for the full opcode catalogue.
+
+## Controller
+
+A **controller** is a binding between an input event (menu item selection or key press) and a numeric identifier that LOGIC scripts can test [4-2-Logic.html §Argument types]. 4-2 documents only the source-syntax form: a controller argument uses the `c` prefix followed by a number 0–255 (e.g., `c4`). The chapter states only "Controllers are menu items and keys" without specifying the runtime mechanism or the binding opcodes (presumably `set.controller`, `set.menu`, `submit.menu`, and similar — deferred to later Group 3 chapters).
+
+Programmer-facing intent: a single LOGIC test can detect either a function-key press or a pull-down-menu selection through the same controller value, so input-handling code is written once and the binding (`Save Game` → F5, or `Save Game` → menu item, or both) is configured separately [4-2-Logic.html §Argument types]. The bytecode-level encoding is a single byte (the controller number) wherever opcodes consume a controller parameter — confirmed by [4-3-Logic.html §Action commands] inline argument types. Test opcode `$0C controller` checks the latched event; action opcodes that bind and gate controllers include `$79 set.key`, `$9D set.menu.item`, `$9F enable.item`, and `$A0 disable.item` — see [[interpreter/commands]].
 
 ## See also
 
 - [[interpreter/variables-and-flags]] — variables and flags as part of the reserved-slot interpreter model
 - [[entities/object]] — OBJECT resource format (inventory table)
 - [[interpreter/view-objects]] — on-screen object model and VIEW-instance animation
-- [[interpreter/input-and-parsing]] — word parsing and the `said` test command
+- [[interpreter/input-parsing]] — word parsing and the `said` test command
+- [[sources/4-2-logic]] — source-syntax argument-type catalogue (the nine source-level prefixes), including Number / Controller

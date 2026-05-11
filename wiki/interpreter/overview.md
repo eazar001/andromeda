@@ -8,7 +8,7 @@ AGI stands for *Adventure Game Interpreter* — Sierra On-Line's 2D adventure-ga
 
 ## The LOGIC virtual machine
 
-The interpreter runs compiled scripts stored in LOGIC resources. The command language contains approximately 181 procedure-type commands (imperative actions) and approximately 18 test commands (boolean predicates), plus standard control-flow keywords (`if`, `else`, `not`, `or`, `and`, `goto`, `return`) [2-1-Interpreter.html §What are the AGI commands?]. See [[interpreter/commands]] for the full opcode tables (to be ingested with Group 3 — Logic).
+The interpreter runs compiled scripts stored in LOGIC resources. The command language contains 182 action commands (imperative opcodes `$00..$B5`) and 18 test commands (boolean predicates `$01..$12`), plus standard control-flow keywords (`if`, `else`, `not`, `or`, `and`, `goto`, `return`) [2-1-Interpreter.html §What are the AGI commands?; 4-3-Logic.html §Action commands, §Text commands]. The bytecode container — header layout, control-flow opcodes (`$FF` `if`, `$FE` `else/goto`, `$FD` `not`, `$FC` `or` brackets), argument dispatch via AGIDATA.OVL, and the Avis-Durgan-encrypted text-message section — is documented in [[entities/logic]] [4-1-Logic.html]. The full opcode catalogue with per-argument signatures lives at [[interpreter/commands]] [4-3-Logic.html].
 
 ## Variables and flags
 
@@ -18,16 +18,18 @@ Variables and flags are two of seven semantic data types that AGI commands consu
 
 ## Screen objects and priority bands
 
-The visible screen consists of *screen objects* — controllable view objects (ego, NPCs) and non-controllable ones (animated props, scenery elements) — each with position `(x, y)`, view/loop/cel animation state, and a priority value. The screen is divided into approximately eleven invisible horizontal priority bands [2-1-Interpreter.html §What are the priority bands?]; an object's vertical position determines its band, and the per-pixel priority screen (encoded in PICTURE resources alongside the visual screen) controls occlusion so objects appear behind trees, rocks, and other scenery (agidev, unverified — exact band boundaries and occlusion algorithm specified in later chapters). See [[interpreter/priority-bands]].
+The visible screen consists of *screen objects* — controllable view objects (ego, NPCs) and non-controllable ones (animated props, scenery elements) — each with position `(x, y)`, view/loop/cel animation state, and a priority value. The screen is divided into eleven horizontal priority bands (indices 4..14) [2-1-Interpreter.html §What are the priority bands?, 4-4-Logic.html §OBJECT DESCRIPTION COMMANDS]; an object's vertical position determines its band per the y → priority table in [[interpreter/priority-bands]]. The dual-screen model (visual + priority) and per-screen init colors are documented in [[concepts/screen-layers]]; the per-pixel priority screen carried by PICTURE resources controls occlusion so objects appear behind trees, rocks, and other scenery. The full per-pixel occlusion algorithm (how an object's priority value is compared against the priority screen pixel-by-pixel) is still deferred — 5-1 documents the screen layers and the [[interpreter/control-lines]] search-downwards rule but not the object-vs-screen comparison procedure.
 
 ## Control lines
 
-The priority screen also encodes *control lines* — colored lines that trigger interpreter behavior when objects cross or touch them [2-1-Interpreter.html §What are the priority bands?]:
+The priority screen also encodes *control lines* — colored lines that trigger interpreter behavior when objects cross or touch them [2-1-Interpreter.html §What are the priority bands?; 5-1-PICTURE.html §CONTROL LINES]:
 
-- **Black** — unconditional obstacle; motion is blocked.
-- **Blue** — conditional obstacle; LOGIC can permit or forbid crossing.
-- **Green** — alarm line; typically triggers a script (falling, drowning, scene transition).
-- **Cyan** — water boundary; objects flagged `object.on.water` are confined to cyan regions (agidev, unverified — exact constraint semantics deferred to [[interpreter/control-lines]]).
+- **Black** (priority 0) — unconditional obstacle; motion is blocked.
+- **Blue** (priority 1) — conditional obstacle; LOGIC can permit or forbid crossing.
+- **Green** (priority 2) — alarm line; typically triggers a script (falling, drowning, scene transition).
+- **Cyan** (priority 3) — water boundary; objects flagged `object.on.water` are confined to cyan regions.
+
+See [[interpreter/control-lines]] for the per-color semantics, the search-downwards algorithm that recovers a priority-band value under a control-line pixel, and the relationship to flood-fill boundary detection in [[entities/picture]].
 
 ## Ego
 
@@ -64,8 +66,8 @@ Most games also support a command-trace mode (Scroll-Lock) that single-steps thr
 
 Game content is organized into five resource categories [2-1-Interpreter.html §What are the LOGIC, PICTURE, SOUND, and VIEW data files?]:
 
-- **LOGIC** — script bytecode driving a single room's behavior, with optional appended encrypted text messages. See [[entities/logic]] (to be ingested with Group 3 — Logic).
-- **PICTURE** — vector-based room drawings; encodes both a visual screen and a priority/control-line screen. See [[entities/picture]] (to be ingested with Group 4 — Picture).
+- **LOGIC** — script bytecode driving a single room's behavior, with an appended Avis-Durgan-XOR'd text-message section. See [[entities/logic]] for the on-disk format.
+- **PICTURE** — vector-based room drawings; encodes both a visual screen and a priority/control-line screen. See [[entities/picture]] for the on-disk format and [[concepts/screen-layers]] for the dual-screen model.
 - **VIEW** — sprite and animation data: actors, NPCs, props, inventory icons. See [[entities/view]] (to be ingested with Group 5 — View).
 - **SOUND** — musical scores and sound effects (PC-speaker mono, PCjr polyphonic). See [[entities/sound]] (to be ingested with Group 6 — Sound).
 

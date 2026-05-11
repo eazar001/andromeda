@@ -34,3 +34,19 @@ Only PICTURE resources use this scheme. v3 PICTURE resources are identified by b
 The spec notes: "As far as I can tell, none of the PICTUREs are compressed with LZW. This may well be possible though." So PICTURE compression appears to be the *only* compression applied to PICTURE resources in known AGI v3 games (agidev, unverified).
 
 **Implementation status:** Not currently implemented in [resource/volume.py].
+
+## Relation to PICTURE bytecode dispatch
+
+This compression scheme operates *before* PICTURE bytecode interpretation. The decompressor expands the packed byte stream back to the v2-style format (each `0xF0` / `0xF2` followed by a full byte color), and the [[entities/picture]] bytecode interpreter then dispatches the expanded stream uniformly across v2 and v3 resources. See [[entities/picture]] §"Bytecode dispatch" for the opcode catalogue applied to the expanded stream.
+
+## Reference implementation: picv3-v2.c
+
+Lance Ewing's [`AGI_Specifications/Code/picv3-v2.c`](../../AGI_Specifications/Code/picv3-v2.c) (67 lines, 1997) implements the decompression as a two-state machine, clarifying the bit-packing rule that the 5-1 example-derived prose left under-specified:
+
+| State | On encountering byte `b` | Output |
+|-------|--------------------------|--------|
+| NORMAL | `b == 0xF0` or `b == 0xF2` | Emit `b`, then emit `next.high_nibble`. Transition to ALTERNATE. |
+| NORMAL | other | Emit `b`. Stay in NORMAL. |
+| ALTERNATE | next byte's high nibble combined with prev byte's low nibble | Emit assembled byte. If that assembled byte is `0xF0`/`0xF2`, emit `next.low_nibble` and return to NORMAL; else stay in ALTERNATE. |
+
+(Pseudocode summary; see picv3-v2.c lines 37-62 for the literal implementation.) The state-machine framing replaces 5-1's reverse-engineered-from-example description and makes the bit-packing rule unambiguous.
