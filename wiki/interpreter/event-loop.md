@@ -101,4 +101,4 @@ See [[interpreter/variables-and-flags]] for the complete table of reserved slots
 
 - [[interpreter/variables-and-flags]] — every reserved variable and flag referenced by the cycle
 - [[interpreter/commands]] — control-flow and object-animation commands that interact with the cycle (to be added when Group 3 — Logic is ingested)
-- [[interpreter/view-objects]] — on-screen object state model and animation-cel sequencing (to be added when view-object semantics are detailed)
+- [[interpreter/view-objects]] — on-screen object state model (43-byte table entry for SQ2), animation-cel sequencing via `cycle_time` and `cycle_type` fields, and collision-test commands

@@ -57,11 +57,14 @@ SCI splits this two-screen model into three independent layers (visual / priorit
 
 - **Per-pixel occlusion algorithm** — screen structure documented; full object-vs-screen comparison procedure deferred.
 - **Object-vs-control-line interaction** — search-downwards recovers priority under a control pixel, but interaction with an object pixel that *is* a control color (rather than a band index) is unspecified.
-- **Visual-screen masking by transparent cels** — VIEW cels have a transparent color (see `gfx/view_render.py`); how that interacts with priority comparison is a Group 5 concern.
+- **Visual-screen masking by transparent cels** — VIEW cels carry a transparent color in the low nibble of cel-header byte 2 ([[entities/view]] §"Byte 2 layout"); transparent pixels are simply skipped during composition [gfx/view_render.py:19, 42]. The interaction with priority-screen comparison is unchanged: transparent pixels don't participate in occlusion because they aren't drawn. The remaining unresolved piece is the per-pixel comparison rule for non-transparent cel pixels, below.
 
 ## See also
 
 - [[entities/picture]] — the PICTURE bytecode that writes both screens.
+- [[entities/view]] — VIEW cels composited on top of the visual screen.
+- [[concepts/rle-encoding]] — VIEW cel pixel encoding.
+- [[concepts/ega-palette]] — 16-color palette shared by both screens.
 - [[interpreter/priority-bands]] — y → priority band assignment.
 - [[interpreter/control-lines]] — black/blue/green/cyan color semantics on the priority screen.
 - [[interpreter/command-semantics]] §`add.to.pic` — LOGIC-side composition of VIEW cels into the PICTURE buffers.

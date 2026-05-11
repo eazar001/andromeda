@@ -734,3 +734,101 @@ Lance Ewing as PICTURE-subsystem author across the corpus is now consolidated: 5
 **Validation surface expansion.** Group 4 changed the wiki's relationship to `AGI_Specifications/Code/`. Prior groups treated it as bibliographic-only reference (per [[sources/3-4-files]], [[sources/4-6-logic]]). Group 4 promoted `showpic.c` to a per-claim citation target for [[entities/picture]] and [[concepts/picture-rendering]], and `picv3-v2.c` for [[concepts/picture-compression]]. Going forward, Group 5 should consider whether `viewview.pas` (vendored at `AGI_Specifications/Code/`) similarly validates [[entities/view]] claims when that page lands.
 
 **Phase B status after Group 4 close:** Groups 1 (Files), 2 (Interpreter), 3 (Logic), 4 (PICTURE) done. Groups 5 (VIEW), 6 (Sound), 7 (Other), 8 (Intro/Info) remain. Next chapter: `6-1-VIEW.html` (Group 5, chapter 1 of 3) — **the validation-case group**, since andromeda has a working `resource/view.py` decoder. The wiki claims for VIEW format will be cross-checkable against running Python code, not just vendored C reference code.
+
+## [2026-05-11] ingest | 6-1-VIEW.html
+
+**Opens Group 5 (VIEW).** Validation-case ingest: every byte-level claim in the new [[entities/view]] page was cross-checked against the working andromeda decoder at [`resource/view.py`](../resource/view.py) and [`gfx/view_render.py`](../gfx/view_render.py), which round-trips SQ1 game data.
+
+**Pages added:**
+- [[entities/view]] — full VIEW resource format: view/loop/cel headers, RLE cel data, byte-2 mirror+transparency packing, loop mirroring + in-place Sierra-runtime mutation note, optional description string.
+- [[concepts/rle-encoding]] — VIEW-cel RLE specifics: chunk byte, 0x00 terminator, transparency padding optimization.
+- [[concepts/ega-palette]] — 16-color IBM EGA palette table; sourced from `gfx/palette.py` since the AGI specs reference but never enumerate it.
+- [[sources/6-1-view]] — chapter provenance.
+
+**Pages updated:**
+- [[concepts/screen-layers]] — closes the long-standing "Visual-screen masking by transparent cels" open item; adds VIEW/RLE/palette cross-refs in See also.
+- [[index.md]] — three new entries (one Entity, two Concept, one Source).
+
+**Subagent vs. applied: one notable correction.**
+
+The Explore subagent's proposal flagged a `> [!conflict]` callout on cel header byte 2 (claimed spec and code disagree on nibble ordering). Closer inspection: the spec's wording ("first four bits / last four bits") is ambiguous about bit-numbering convention, and the §Mirroring section contains an apparent typo ("Bit 1 specifies whether mirrored" overlapping with "Bits 1, 2, and 3 specify the loop number"). On the natural reading, the spec and code agree on nibble assignment. The real disagreement is *within* the high nibble: spec implies LSB-of-high-nibble = mirror flag (byte bit 4); code uses MSB-of-high-nibble = mirror flag (byte bit 7) [resource/view.py:89-90]. Per user direction, this was reframed as a "spec wording is unreliable" note rather than a `> [!conflict]` callout — the wiki now documents the code-verified layout authoritatively and notes the spec wording is unclear and typo-affected.
+
+The subagent also got the bit-within-nibble assignment wrong in its proposal ("bit 4 = flag, bits 5-7 = loop idx"), reversing what the code actually does. The applied page documents the correct layout: bit 7 = flag (`mirror >> 3`), bits 4-6 = loop index (`mirror & 7`), bits 0-3 = transparency.
+
+**Cross-cutting observations.**
+
+- The agidev spec is silent on the EGA palette enumeration itself — it uses "color index 0..15" throughout but never specifies RGB values. The new [[concepts/ega-palette]] page sources values from [gfx/palette.py:6-11]. This pattern (spec references a primitive, code defines it) is likely to recur for other base-level constants.
+- VIEW is the first format whose wiki page can be fully byte-level-verified against running Python code rather than vendored C reference. This makes the validation surface stronger than for PICTURE (where showpic.c was the highest-fidelity check) or LOGIC (no working decoder yet in andromeda).
+- The "in-place mutation" quirk in the Sierra interpreter (overwriting cel header byte 2 as it renders different loops) is captured as a runtime behavior note. Andromeda doesn't replicate this and likely never will — it's a memory-conservation hack for 256k machines. Worth keeping in the wiki because it explains *why* the format stores a loop index rather than a flip-or-not bit.
+
+**Next:** `6-2-VIEW.html`.
+
+## [2026-05-11] ingest | 6-2-VIEW.html
+
+**Scope.** Lance Ewing's runtime spec for the VIEW object table — not the on-disk format. Documents the 43-byte SQ2 per-object entry (position, view/loop/cel pointers, animation timing, direction, motion type, cycle type, priority, 16-bit flags) and four collision-test commands (`posn`, `right.posn`, `center.posn`, `obj.in.box`) keyed off the object's bottom-left hot-spot.
+
+**Applied.**
+
+- New page `[[interpreter/view-objects]]` — full 43-byte entry table, view-flags 16-bit bitfield breakdown, hot-spot diagram, collision-test formula. Resolves the long-standing forward-refs from `[[interpreter/memory-layout]]` and `[[interpreter/event-loop]]`.
+- New source `[[sources/6-2-view]]`.
+- `[[interpreter/memory-layout]]`: de-deferred the VIEW-object-table row; now links to the live page.
+- `[[interpreter/event-loop]]`: de-deferred the See-also link with a concrete one-line summary.
+- `[[entities/view]]`: added a "Runtime object state" subsection bridging on-disk format (6-1) to runtime state (6-2).
+- `[[index]]`: added Interpreter line for `view-objects` and Sources line for `6-2-view` (marked "Second of three VIEW chapters", since 6-3 is still pending).
+
+**Conflicts.** None against 6-1, the andromeda decoder, or other wiki pages. 6-2 is a pure complement to 6-1.
+
+**Open items recorded on the new page.**
+
+- Unknown bytes at offsets 02, 14–15, 27–2A (spec marks "??"; offset 27–2A described only as "storage for some view related command parameters").
+- View-flags bits 0, 4, 6, 7, 10, 12, 14, 15 marked "??" in the spec.
+- Per-interpreter-version entry-size variation (43 bytes is specific to SQ2; other games not enumerated).
+
+These are candidates for ScummVM cross-check or reverse-engineering, not blockers.
+
+**Subagent notes.** Initial proposal mis-labeled the index entry as "Closes Group 5" — corrected to "Second of three VIEW chapters" before applying. Subagent omitted an Interpreter-section index line; added on review. `set.upper.left` hot-spot reference was double-checked against the existing argument-count conflict in `[[interpreter/command-semantics]]` and reframed to point at that conflict explicitly.
+
+**Next:** `6-3-VIEW.html` (closes Group 5).
+
+## [2026-05-11] ingest | 6-3-VIEW.html
+
+**Closes Group 5 (VIEW).** Sample-code closer chapter analogous to [[sources/3-4-files]], [[sources/4-6-logic]], [[sources/5-3-picture]] — a one-row pointer table at Peter Kelly's `viewview.pas` (Borland Pascal 7, AGIhack 2.0). No new specification surface.
+
+**Pages added:**
+- [[sources/6-3-view]] — chapter stub. Documents `viewview.pas` as the canonical reference parser and itemizes which `ReadViewInfo` / `LoadCel` line ranges validate which on-disk format claims.
+
+**Pages updated:**
+- [[entities/view]] — added a "Reference implementation" section with a 5-row table tying each byte-level claim to a `viewview.pas` line and an `resource/view.py` / `gfx/view_render.py` line; appended `[[sources/6-3-view]]` to See also.
+- [[index]] — added Sources line for 6-3-view marking Group 5 close.
+
+**Subagent vs. applied: two departures.**
+
+1. Subagent proposed a "Reference implementation (6-3)" subsection on [[interpreter/view-objects]] citing `viewview.pas`'s keyboard-navigation UI as "parallel[ing] the fields documented in the [object] table." Dropped: `viewview.pas` is a VIEW-resource viewer, not a VIEW-*object*-table parser; the proposed text was filler that admitted as much in its first sentence. 6-3 has nothing to say about runtime objects.
+2. Subagent's [[entities/view]] subsection draft was ~400 words restating claims already on the page. Slimmed to the 5-row validation table that is the actual new value.
+
+Line citations from the subagent were spot-checked against `viewview.pas` (lines 91-142, 152-212, 200-205), `resource/view.py` (lines 82-90, 103-106), and `gfx/view_render.py` (line 7) — all accurate. The claim that andromeda "defers the mirror decision per render" is correct: `gfx/view_render.py:7` evaluates `mirrored = cel.mirror and loop_idx != cel.non_mirror_idx` at each draw call, without mutating cel state.
+
+**Conflicts.** None introduced. None resolved.
+
+**Open items.** No 6-2 open items resolved (unknown object-entry bytes 02, 14-15, 27-2A; flag bits 0/4/6/7/10/12/14/15; per-interpreter entry-size variation). The [[entities/view]] description-string-body open item also remains — `viewview.pas` parses the description (lines 165-175, 251-296) but 6-3 itself doesn't *specify* it, and the line-wrapping logic at 251-296 is a viewer-UI concern, not a format claim.
+
+**Group 5 close-out observations.**
+
+VIEW now has the strongest cross-validation coverage of any format group in the wiki so far:
+- 6-1 (on-disk format) is verified against `resource/view.py` (working andromeda decoder) **and** `viewview.pas` (independent Pascal reference).
+- 6-2 (runtime object table) is currently only spec-sourced; andromeda has no runtime VM yet.
+- 6-3 closes the loop with explicit cross-references between `viewview.pas` line ranges and the andromeda decoder.
+
+Compare to PICTURE (Group 4): `showpic.c` was the primary validation surface for the rendering algorithm, but andromeda has no working PICTURE decoder yet — so PICTURE validation was code-to-spec only. VIEW is **code-to-code-to-spec triangulated**.
+
+The "implementation freedom" pattern (chapter spec → reference C/Pascal → andromeda Python) is now established as the highest-confidence validation tier in the wiki. Worth surfacing in a Phase C lint pass as a per-page reliability marker.
+
+**Authorship snapshot for Group 5:**
+
+- 6-1: Peter Kelly, IA 5 October 1997.
+- 6-2: Lance Ewing, IA 31 August 1997.
+- 6-3: Implicit Peter Kelly (single listed entry attributes code to him); no chapter date.
+
+Group 5 spans two authors and a ~5-week window in fall 1997 — tighter than Group 4's December-1997 / January-1998 split.
+
+**Phase B status after Group 5 close:** Groups 1 (Files), 2 (Interpreter), 3 (Logic), 4 (PICTURE), 5 (VIEW) done. Groups 6 (Sound), 7 (Other), 8 (Intro/Info) remain. Next chapter: `7-1-SOUND.html` (Group 6, chapter 1 of 2) — moves the wiki into audio territory, the last of the four core resource types.

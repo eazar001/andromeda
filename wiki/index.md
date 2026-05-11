@@ -14,6 +14,7 @@ Resource types and on-disk file formats. One page per resource.
 - [[entities/vol-file]] — VOL container format: 5-byte resource header (signature, VOL number, length) and payload structure.
 - [[entities/logic]] — LOGIC resource bytecode format: 7-byte header (5-byte VOL header + 2-byte text offset), `$FF/$FE/$FD/$FC` control-flow opcodes, AGIDATA.OVL argument dispatch, and Avis-Durgan-XOR'd text-message section.
 - [[entities/picture]] — PICTURE resource bytecode format: drawing-opcode catalogue `0xF0..0xFF`, dual-screen dispatch, sign-magnitude `0xF7` displacements, pen-style and splatter-texture encoding.
+- [[entities/view]] — VIEW resource format: loop/cel hierarchy, RLE-compressed bitmap cel data, code-verified byte-2 mirror/transparency packing, loop mirroring with in-place Sierra-runtime mutation note.
 
 ## Concepts
 
@@ -25,6 +26,8 @@ Shared primitives referenced by multiple entities: encoding schemes, palettes, e
 - [[concepts/agi-data-types]] — semantic data types used as AGI command parameters: variables, flags, strings, words, objects, inventory items, messages, controllers.
 - [[concepts/screen-layers]] — visual / priority dual-screen model: 160×168 logical pixel grid, init colors (white visual / red priority), per-pixel encoding of bands (4..14) and control colors (0..3), drawing-mode flags.
 - [[concepts/picture-rendering]] — PICTURE rendering algorithms code-verified against Lance Ewing's reference decoder: additive-fixed-point line drawing with direction-sensitive rounding, BFS flood-fill (4000-entry queue), brush plotting, splatter texture masking with wrap-at-255.
+- [[concepts/rle-encoding]] — VIEW-cel RLE: chunk byte (high nibble = color, low nibble = run length 1..15), `0x00` row terminator, trailing-transparency padding rule.
+- [[concepts/ega-palette]] — IBM EGA 16-color palette table; explains why priority-screen 0..3 are control colors and 4..14 are depth bands.
 
 ## Interpreter
 
@@ -40,6 +43,7 @@ The LOGIC VM and runtime model: opcode tables, event loop, priority bands, objec
 - [[interpreter/command-semantics]] — selected behavioral semantics for high-value opcodes from 4-4: arithmetic edge cases, resource auto-discard rule, `new.room` eleven-step procedure, `release.loop` direction tables, `add.to.pic` margin gap, base-point and `set.upper.left` conflicts with 4-3, AGDS surface syntax, the `said` algorithm.
 - [[interpreter/priority-bands]] — y → priority eleven-band auto-assignment table from `release.priority`. Resolves the long-dangling forward-ref from [[interpreter/overview]].
 - [[interpreter/control-lines]] — black/blue/green/cyan control-line semantics on the priority screen (barrier / conditional barrier / alarm / surface) and the search-downwards algorithm that recovers a priority band under a control-line pixel. Resolves the [[interpreter/control-lines]] forward-ref from [[interpreter/overview]].
+- [[interpreter/view-objects]] — runtime VIEW object table: 43-byte SQ2 entry structure (position, view/loop/cel pointers, size, step/cycle timing, direction, motion type, cycle type, priority, 16-bit flags), hot-spot reference point, and the four collision-test commands (`posn`, `right.posn`, `center.posn`, `obj.in.box`). Resolves forward-refs from [[interpreter/memory-layout]] and [[interpreter/event-loop]].
 
 ## Sources
 
@@ -66,3 +70,6 @@ One page per ingested AGI Specification chapter, with a short summary and links 
 - [[sources/5-1-picture]] — PICTURE resource bytecode format chapter: drawing opcodes `0xF0..0xFF`, dual-screen model, control-line color semantics, search-downwards priority recovery, sign-magnitude `0xF7` displacements, pen-style and splatter-texture encodings. **Opens Group 4 (PICTURE)**. Lance Ewing, IA, 5 December 1997.
 - [[sources/5-2-picture]] — AGDS-manual translation covering the same PICTURE format from a Russian-language source. Corroborates 5-1's init colors, control-line color mapping, and opcode catalogue; refines `0xF8` flood-fill target rule. Independent source, no new specification surface. Vassili Bykov (translator), AGDS, IA, 27 January 1998. **Fourth Bykov/AGDS chapter in the corpus.**
 - [[sources/5-3-picture]] — "Sample Code" chapter pointing at two reference C implementations vendored at `AGI_Specifications/Code/`: `showpic.c` (working PICTURE viewer, ~650 lines) and `picv3-v2.c` (v3→v2 transcoder, 67 lines). Resolves `0xF7` sign-bit polarity, wrap-at-255 splatter quirk, `0xFB..0xFE` reserved-range; surfaces a 4-position conflict in the splatter offset table between 5-1 prose and showpic.c. Page-level `(agidev, unverified)` tags downgraded across PICTURE pages — showpic.c is now the validation surface. Lance Ewing, IA. **Closes Group 4 (PICTURE).**
+- [[sources/6-1-view]] — VIEW resource format chapter: three-level container, RLE cel encoding, loop mirroring, optional close-up descriptions. Validation-case ingest cross-checked against `resource/view.py` and `gfx/view_render.py`; spec's cel-header byte-2 wording (ambiguous nibble ordering + a "Bit 1" typo) was overridden by the code-verified layout. Peter Kelly, IA, 5 October 1997. **Opens Group 5 (VIEW).**
+- [[sources/6-2-view]] — VIEW *object* table and runtime sprite state: 43-byte SQ2 entry structure (per-object position, animation, motion, priority, 16-bit flags) and four collision-test commands (`posn`, `right.posn`, `center.posn`, `obj.in.box`) referencing the object hot-spot pixel. Entry size is interpreter-version-specific; many bytes and flag bits marked "??" in the spec (unknown purpose). Lance Ewing, IA, 31 August 1997. **Second of three VIEW chapters.**
+- [[sources/6-3-view]] — "Sample Code" chapter: single-row pointer at `viewview.pas` (Peter Kelly, Borland Pascal 7, from AGIhack 2.0) vendored at `AGI_Specifications/Code/`. No new specification surface; the code independently verifies cel-header byte-2 nibble layout, RLE chunk structure, `0x00` row termination, and horizontal-doubling display width as documented on [[entities/view]]. Mirroring style differs (in-place mutation in `viewview.pas` vs. deferred per-render in andromeda); both spec-conformant. **Closes Group 5 (VIEW).**

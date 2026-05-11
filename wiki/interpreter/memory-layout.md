@@ -20,7 +20,7 @@ The AGI interpreter organizes its state on a single linear heap. This page docum
 | Unknown | unspecified | Second region labeled "unknown" [2-4-Interpreter.html]. |
 | WORDS.TOK | variable | Loaded parser dictionary [2-4-Interpreter.html]. Entity page deferred to Group 7 ingest (`8-2-WORDS_TOK.html`). |
 | OBJECT file | variable | Loaded inventory table [2-4-Interpreter.html]. Entity page deferred to Group 7 ingest (`8-1-OtherData.html`). |
-| VIEW object table | variable | Runtime table of active screen-object instances — each an instance of a VIEW resource, controllable or non-controllable [2-4-Interpreter.html]. See [[interpreter/view-objects]] (deferred to a later Group-2 chapter). |
+| VIEW object table | variable | Runtime table of active screen-object instances — each an instance of a VIEW resource, controllable or non-controllable [2-4-Interpreter.html]. See [[interpreter/view-objects]] for the 43-byte SQ2 entry structure with per-object properties [6-2-VIEW.html §VIEW TABLE ENTRY]. |
 | LOGIC.0 | variable | The root LOGIC resource, loaded once at startup and resident for the entire session [2-4-Interpreter.html]. |
 | Other loaded resources | variable | Dynamically loaded room-specific LOGICs and other resources, swapped in and out as gameplay progresses [2-4-Interpreter.html]. |
 
