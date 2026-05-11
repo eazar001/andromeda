@@ -62,32 +62,32 @@ Group 4 — Picture:
 - [x] `5-3-PICTURE.html`
 
 Group 5 — View (validation case):
-- [ ] `6-1-VIEW.html`
-- [ ] `6-2-VIEW.html`
-- [ ] `6-3-VIEW.html`
+- [x] `6-1-VIEW.html`
+- [x] `6-2-VIEW.html`
+- [x] `6-3-VIEW.html`
 
 Group 6 — Sound:
-- [ ] `7-1-SOUND.html`
-- [ ] `7.2-SOUND.html`
+- [x] `7-1-SOUND.html`
+- [x] `7.2-SOUND.html`
 
 Group 7 — Other (parallel-safe):
-- [ ] `8-1-OtherData.html`
-- [ ] `8-2-WORDS_TOK.html`
-- [ ] `8-3-SampleCode.html`
+- [x] `8-1-OtherData.html`
+- [x] `8-2-WORDS_TOK.html`
+- [x] `8-3-SampleCode.html`
 
 Group 8 — Intro/Info (parallel-safe, lowest priority):
-- [ ] `1-1-Introduction.html`
-- [ ] `1-2-WhatsNew.html`
-- [ ] `9-1-Info.html`
-- [ ] `9-2AGDS.html`
-- [ ] `9-3-MakingOfThunderstorm.html`
+- [x] `1-1-Introduction.html`
+- [x] `1-2-WhatsNew.html`
+- [x] `9-1-Info.html`
+- [x] `9-2AGDS.html`
+- [x] `9-3-MakingOfThunderstorm.html`
 
 **Phase C — Lint pass**
-- [ ] Contradictions scan
-- [ ] Orphan-page scan
-- [ ] Missing-concept-page scan
-- [ ] Stale-claim scan
-- [ ] Conflicts page consolidated (if `> [!conflict]` callouts proliferated)
+- [x] Contradictions scan — no new contradictions; all six existing ones properly flagged with `[!conflict]`
+- [x] Orphan-page scan — none; all 60 pages in index, reachable in ≤2 hops
+- [x] Missing-concept-page scan — `[[interpreter/debug-modes]]` was dangling; created stub page + index entry
+- [x] Stale-claim scan — six files had "not yet ingested" / "to be added when" markers; all resolved
+- [x] Conflicts page consolidated — six `[!conflict]` callouts across five pages; density is acceptable, no dedicated conflicts.md needed
 
 **Phase D — Extract skills from usage**
 - [ ] Review `wiki/log.md` for prompt patterns that repeated during Phases B and C
