@@ -2,14 +2,14 @@
 
 ## Purpose
 
-`wiki/` is an AGI-format-only knowledge base distilled from `AGI_Specifications/` and cross-checked against working decoders in `resource/` and external sources (ScummVM, AGI Studio). It is **Claude-authored, user-directed**: Claude proposes, writes, and maintains the content; the user directs ingestion priorities and reviews edits. The wiki exists so future sessions consult a small, cited, cross-linked reference instead of re-deriving format facts from a ~640K HTML corpus the project's `CLAUDE.md` explicitly tells Claude not to read broadly.
+`andromeda-wiki/` is an AGI-format-only knowledge base distilled from `AGI_Specifications/` and cross-checked against working decoders in `resource/` and external sources (ScummVM, AGI Studio). It is **Claude-authored, user-directed**: Claude proposes, writes, and maintains the content; the user directs ingestion priorities and reviews edits. The wiki exists so future sessions consult a small, cited, cross-linked reference instead of re-deriving format facts from a ~640K HTML corpus the project's `CLAUDE.md` explicitly tells Claude not to read broadly.
 
 Scope is strictly **byte-level formats and the LOGIC VM**: layouts, encodings, opcodes, palettes, encryption, event-loop semantics. Engine architecture, Python implementation notes, and future-rewrite design stay in `README.md`, `DEVELOPMENT_PLAN.md`, and `CLAUDE.md` — not here.
 
 ## Directory layout
 
 ```
-wiki/
+andromeda-wiki/
 ├── index.md         # categorized catalog of every page; entry point for all queries
 ├── log.md           # chronological log of ingest / query / lint operations
 ├── entities/        # one page per resource type (VIEW, PIC, LOG, SND, OBJECT, WORDS.TOK, VOL, *DIR)
@@ -23,7 +23,7 @@ Empty subdirectories carry a `.gitkeep` until they hold real pages.
 ## Page conventions
 
 - **Markdown only.** No frontmatter, no Dataview, no custom syntax. If conventions need to evolve, write them here first.
-- **Cross-references use Obsidian-style wiki-links**: `[[entities/view]]`, `[[concepts/rle]]`. Relative paths from `wiki/` root.
+- **Cross-references use Obsidian-style wiki-links**: `[[entities/view]]`, `[[concepts/rle]]`. Relative paths from `andromeda-wiki/` root.
 - **Every factual claim cites a source** inline, in square brackets after the claim:
   - Spec citation: `[3-2-Files.html §VOL layout]`
   - Code citation: `[resource/view.py:get_view_data]` or `[ScummVM agi/decode.cpp:42]`
@@ -33,7 +33,7 @@ Empty subdirectories carry a `.gitkeep` until they hold real pages.
   > [!conflict] agidev vs. ScummVM
   > agidev.com claims X. ScummVM treats it as Y. Ground truth: Y, per [resource/view.py] which round-trips Y correctly on sq1.
   ```
-  If `> [!conflict]` callouts proliferate (more than ~6 across the wiki), consolidate to `wiki/conflicts.md` (per Phase C lint rule).
+  If `> [!conflict]` callouts proliferate (more than ~6 across the wiki), consolidate to `andromeda-wiki/conflicts.md` (per Phase C lint rule).
 - **No orphans.** Every page is linked from `index.md` and reachable in ≤2 hops. Every new page adds an `index.md` entry in the same edit.
 
 ## Source-reliability rules
@@ -57,9 +57,9 @@ Four canonical workflows. Each gets a short prompt template here; these seed the
 
 ### Query
 
-> "Check the wiki for `<question>`. If `wiki/index.md` doesn't surface it, fall back to `AGI_Specifications/` for that specific chapter and offer to file the answer."
+> "Check the wiki for `<question>`. If `andromeda-wiki/index.md` doesn't surface it, fall back to `AGI_Specifications/` for that specific chapter and offer to file the answer."
 
-The agent reads `wiki/index.md` first, follows wiki-links to the relevant page(s), answers with citations from the wiki. Only falls through to `AGI_Specifications/` HTML if the wiki is silent or the user is verifying a contested claim.
+The agent reads `andromeda-wiki/index.md` first, follows wiki-links to the relevant page(s), answers with citations from the wiki. Only falls through to `AGI_Specifications/` HTML if the wiki is silent or the user is verifying a contested claim.
 
 ### File (conversational)
 
@@ -82,7 +82,7 @@ A single main-session sweep: contradictions, orphans, missing concept pages, sta
 
 ## Log discipline
 
-Every ingest, file, query (when notable), and lint pass appends an entry to `wiki/log.md` with the canonical prefix:
+Every ingest, file, query (when notable), and lint pass appends an entry to `andromeda-wiki/log.md` with the canonical prefix:
 
 ```
 ## [YYYY-MM-DD] <op> | <target>
