@@ -95,7 +95,6 @@ Group 8 — Intro/Info (parallel-safe, lowest priority):
 - [x] Draft `/wiki-ingest <path>` skill body
 - [x] Draft `/wiki-query <question>` skill body
 - [x] Draft `/wiki-lint` skill body
-- [ ] User installs the skills they want via `update-config` or hand-editing
 
 ## End state
 
