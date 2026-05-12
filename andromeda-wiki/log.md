@@ -973,3 +973,27 @@ Next: Group 8 (Intro/Info, parallel-safe, lowest priority) — `1-1-Introduction
 - `[[interpreter/debug-modes]]` — page created but marked thin; ScummVM cross-check would fill in the unknown flag bits in the view-object table and debug-mode activation internals.
 
 **Phase C status:** Complete. Wiki is lint-clean. Next: Phase D (skill extraction, per plan).
+
+## [2026-05-12] phase-d | skill-drafts
+
+Phase D — Extract skills from usage. Reviewed all 975 lines of `log.md` to identify patterns that recurred across Phases B and C, then authored four skill bodies in `.claude/commands/`.
+
+**Patterns extracted from the log.**
+
+Six categories of reviewer correction appeared in every Phase B ingest entry, in order of frequency:
+1. Byte-level errors — inverted nibble pairs, wrong endianness, off-by-one counts. Caught before apply in every group with format content.
+2. `(agidev, unverified)` tag misapplication — subagents consistently tagged code observations (facts about `resource/` files) instead of limiting tags to unverifiable spec claims.
+3. Invented `§SectionName` citations — many chapters have no formal section headers; subagents fabricated them.
+4. Scope overreach — claims predicted or inferred from other chapters presented as this chapter's content.
+5. Premature page creation — child pages proposed before parent exists; stubs below the 3-fact threshold.
+6. Stale forward-refs — "not yet ingested" / "to be added when Group N..." markers left unresolved after the referenced group landed.
+
+The log's per-entry structure converged by Group 5-6 to: Created / Extended / Review corrections / Findings worth pinning / Conflicts / Open items / Validation status. All four skill bodies encode this format.
+
+**Created.**
+- `.claude/commands/wiki-ingest.md` — subagent brief + 9-item reviewer checklist + log entry template.
+- `.claude/commands/wiki-file.md` — conversational filing: identify → locate → propose → confirm → apply → log.
+- `.claude/commands/wiki-query.md` — wiki-first answer with confidence tier; fallback to spec + offer to file.
+- `.claude/commands/wiki-lint.md` — five checks (contradictions, orphans, broken links, stale deferrals, conflicts-page threshold) + log entry template.
+
+**Remaining Phase D item.** User installs the skills they want via `update-config` or hand-editing `.claude/commands/`.

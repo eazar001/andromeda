@@ -90,11 +90,11 @@ Group 8 — Intro/Info (parallel-safe, lowest priority):
 - [x] Conflicts page consolidated — six `[!conflict]` callouts across five pages; density is acceptable, no dedicated conflicts.md needed
 
 **Phase D — Extract skills from usage**
-- [ ] Review `andromeda-wiki/log.md` for prompt patterns that repeated during Phases B and C
-- [ ] Draft `/wiki-file` skill body (highest-value, conversational filing)
-- [ ] Draft `/wiki-ingest <path>` skill body
-- [ ] Draft `/wiki-query <question>` skill body
-- [ ] Draft `/wiki-lint` skill body
+- [x] Review `andromeda-wiki/log.md` for prompt patterns that repeated during Phases B and C
+- [x] Draft `/wiki-file` skill body (highest-value, conversational filing)
+- [x] Draft `/wiki-ingest <path>` skill body
+- [x] Draft `/wiki-query <question>` skill body
+- [x] Draft `/wiki-lint` skill body
 - [ ] User installs the skills they want via `update-config` or hand-editing
 
 ## End state
