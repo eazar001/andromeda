@@ -59,6 +59,8 @@ AGI resources follow a two-step access pattern:
 
 ### AGI Specification Reference
 
+**Consult `andromeda-wiki/index.md` first for AGI format questions.** It is a distilled, cited knowledge base maintained by this agent (schema in `WIKI.md` at repo root). Fall back to `AGI_Specifications/` only when the wiki is silent or when verifying a contested byte-level claim against source-of-truth.
+
 Peter Kelly's AGI Specifications are vendored at `AGI_Specifications/` (index: `AGISpecifications.html`, chapters: `Specifications/`). **Do not read this by default** — it is ~640K of HTML across 30+ chapters and will bloat context if ingested broadly. Consult it only when you need byte-level format details that aren't covered in this file or clear from the existing decoders in `resource/`, and read just the specific chapter section you need (e.g., `6-1-VIEW.html` for VIEW resource layout). If the local spec is ambiguous or seems wrong, cross-check against ScummVM source or AGI Studio rather than trusting agidev.com.
 
 ### Game Data

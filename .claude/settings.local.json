@@ -7,7 +7,15 @@
       "WebFetch(domain:wiki.scummvm.org)",
       "WebFetch(domain:www.agidev.com)",
       "Bash(git mv *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\ebrah\\\\Github\\\\andromeda\\\\wiki\" -Recurse -Filter \"*.md\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\ebrah\\\\Github\\\\andromeda\\\\resource\")",
+      "Bash(Select-Object Name)",
+      "Bash(grep -o '\\\\$[0-9A-F][0-9A-F]' wiki/interpreter/commands.md)",
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\ebrah\\\\Github\\\\andromeda\\\\AGI_Specifications\\\\Specifications\" -Filter \"*4-6*\")",
+      "Bash(Select-Object FullName)",
+      "Bash(python3)"
     ]
   }
 }
