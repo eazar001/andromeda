@@ -39,7 +39,7 @@ The priority screen overloads 4-bit pixel values as **either** a priority-band i
 ## Out-of-scope variants
 
 - **EGA hardware palette remapping.** Real EGA hardware allowed remapping the 16 displayed colors to any subset of a 64-color master palette. AGI did not exercise this; the 16 colors above are the fixed render palette. Not relevant to format decoding.
-- **CGA / Hercules / Tandy fallback palettes.** Some AGI builds shipped renderer paths for older hardware that mapped these 16 indices to fewer-color outputs. The on-disk format is unchanged; only the runtime display path differs. Not relevant to this wiki.
+- **CGA / Hercules / Tandy.** Two distinct scenarios exist. (1) AGI v1 (KQ1–2) used CGA natively — a genuinely different graphics generation with 4-color 320×200 output, not EGA. The 16-color EGA model on this page applies to **v2 and v3 only**. (2) Within v2/v3, the interpreter tracked monitor type in `var(26)` (`0` = CGA, `2` = Hercules, `3` = EGA — see [[interpreter/variables-and-flags]]) and shipped renderer paths that remapped these 16 EGA palette entries to fewer-color outputs at display time. The on-disk resource format is unchanged in the v2/v3 case. Neither variant is in scope for Andromeda (which targets v2 game data), but the v1 distinction matters when reading spec claims that don't qualify their version. See [[interpreter/overview]] §"What is AGI?" for the version summary.
 
 ## See also
 

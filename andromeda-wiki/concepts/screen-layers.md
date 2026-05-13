@@ -6,6 +6,8 @@ A rendered AGI room consists of two parallel logical pixel grids — the **visua
 
 ## Dimensions
 
+*(Applies to AGI v2/v3. AGI v1 used a CGA-native display model; see [[concepts/ega-palette]] §"CGA / Hercules / Tandy".)*
+
 Both screens are **160 pixels wide × 168 pixels tall** in logical AGI coordinates. The visible display doubles the horizontal resolution to 320×200 at render time (each AGI pixel painted twice horizontally; the bottom ~32 pixel rows below y=167 are reserved for the status line and input area outside the room frame). The 168-tall logical frame is the one used by the y → priority table in [[interpreter/priority-bands]].
 
 ## What each screen encodes

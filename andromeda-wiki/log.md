@@ -996,4 +996,8 @@ The log's per-entry structure converged by Group 5-6 to: Created / Extended / Re
 - `.claude/commands/wiki-query.md` — wiki-first answer with confidence tier; fallback to spec + offer to file.
 - `.claude/commands/wiki-lint.md` — five checks (contradictions, orphans, broken links, stale deferrals, conflicts-page threshold) + log entry template.
 
+## [2026-05-12] file | AGI v1 CGA graphics / ega-palette version scope
+
+Corrected `concepts/ega-palette` §"Out-of-scope variants" and added a scope note to `concepts/screen-layers` §Dimensions. The original CGA bullet incorrectly framed CGA/Hercules/Tandy as purely a v2/v3 runtime remapping of EGA indices. Two distinct scenarios actually exist: (1) AGI v1 (KQ1–2) used CGA natively — a genuinely different graphics generation with 4-color 320×200 output; the 16-color EGA model documented across the wiki applies only to v2 and v3. (2) Within v2/v3, first-class CGA/Hercules support was tracked at runtime via `var(26)` (`0` = CGA, `2` = Hercules, `3` = EGA — per [[interpreter/variables-and-flags]]). The updated bullet covers both scenarios and cross-links [[interpreter/overview]] §"What is AGI?" and [[interpreter/variables-and-flags]] for provenance. The `screen-layers` scope note was added because that page's 160×168 dual-screen model also applies to v2/v3 only. Mini-lint: six inbound neighbors checked (`entities/picture`, `interpreter/control-lines`, `concepts/picture-rendering`, `concepts/rle-encoding`, `entities/view`, `sources/6-1-view`); no contradictions, no unverified tags requiring upgrade.
+
 **Remaining Phase D item.** User installs the skills they want via `update-config` or hand-editing `.claude/commands/`.
