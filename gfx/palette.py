@@ -14,7 +14,7 @@ palette = [
 def visual_screen_buffer_to_texture(screen: VisualScreen, renderer: Renderer) -> Texture:
     pixels = []
 
-    for row in screen.screen:
+    for row in screen.buffer:
         for color in row:
             r, g, b = palette[color]
             pixels.append(bytes([r, g, b, 0xFF]))

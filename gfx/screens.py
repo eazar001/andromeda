@@ -3,10 +3,10 @@ class Screen:
 
     def __init__(self, width, height, default=0x00):
         self.default = default
-        self.screen = [[self.default for _ in range(width)] for _ in range(height)]
+        self.buffer = [[self.default for _ in range(width)] for _ in range(height)]
 
     def store(self, x, y, value):
-        self.screen[y][x] = value
+        self.buffer[y][x] = value
 
 class VisualScreen(Screen):
     def __init__(self, width, height, default=0x0F):
