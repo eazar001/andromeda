@@ -86,7 +86,7 @@ def get_cel_data(bs, cel_offsets):
         # Note: this is the OPPOSITE of what agidev's AGI spec page states. The empirical
         # behavior matches AGI Studio's renderer, so the spec page appears to be wrong
         # (or uses non-standard bit numbering).
-        width, mirror, alpha = width * 2, nibble(alpha_mirroring, 'hi'), nibble(alpha_mirroring, 'lo')
+        mirror, alpha = nibble(alpha_mirroring, 'hi'), nibble(alpha_mirroring, 'lo')
         mirror, non_mirror_idx = mirror >> 3, mirror & 7
         cel_data = []
 

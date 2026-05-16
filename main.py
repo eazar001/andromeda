@@ -1,5 +1,8 @@
 import ctypes
-from gfx.view_render import draw_cel_data
+
+from gfx.palette import visual_screen_buffer_to_texture
+from gfx.screens import VisualScreen
+from gfx.view_render import composite_cel
 from resource.view import get_view_data
 from resource.directory import read_dir
 from sdl2 import SDL_PollEvent, SDL_Event, SDL_RenderSetScale, SDL_Delay
@@ -23,7 +26,10 @@ def animate_cels(loop_idx, cels, window, frame_delay_ms=120, infinite=False):
     while running and cel_idx < len(cels):
         renderer.color = Color(0x00, 0x00, 0x00, 0x00)
         renderer.clear()
-        draw_cel_data(renderer, loop_idx, cels[cel_idx])
+        visual_screen = VisualScreen(160, 168, default=0x00)
+        composite_cel(visual_screen, loop_idx, cels[cel_idx])
+        texture = visual_screen_buffer_to_texture(visual_screen, renderer)
+        renderer.copy(texture, dstrect=(0, 0))
         renderer.present()
 
         SDL_Delay(frame_delay_ms)
