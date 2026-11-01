@@ -4,7 +4,7 @@ A LOGIC resource holds the bytecode program for a single room. Each room has one
 
 This page documents the on-disk format. Execution semantics (opcode behavior, VM cycle integration) live under [[interpreter/overview]] and its detail pages.
 
-The Python prototype in `resource/` has no LOGIC decoder, so every bytecode-level claim on this page is `(agidev, unverified)` against working code.
+The Python prototype in `resource/` has no LOGIC decoder, so these claims are unverified against project code. A throwaway walker did decode all 101 SQ1 LOGICs with no desyncs or bad branch targets, which confirms the control-flow bytes, argument counts, and text-section layout on that game [SQ1 data check, log 2026-11-01]. Execution semantics remain `(agidev, unverified)`.
 
 ## Format overview
 
@@ -24,7 +24,7 @@ The Python prototype in `resource/` has no LOGIC decoder, so every bytecode-leve
 
 The spec describes this as "a seven-byte header" — the first 5 bytes are the universal VOL resource header documented in [[entities/vol-file]]; only the trailing 2-byte text offset is LOGIC-specific. For brevity below, "the header" refers to the full 7-byte prefix.
 
-**Versioning:** 4-1-Logic specifies v2 only. The chapter notes "the header of each logic script is seven bytes in length for games before 1988. After this date compression seems to have been introduced and the header was subsequently altered" — implying v3 LOGIC headers differ. v3 LOGIC layout is unspecified in this chapter and deferred to later Logic chapters [4-1-Logic.html §THE HEADER].
+**Versioning:** 4-1-Logic specifies v2 only. The chapter notes "the header of each logic script is seven bytes in length for games before 1988. After this date compression seems to have been introduced and the header was subsequently altered" — implying v3 LOGIC headers differ. v3 LOGIC layout is unspecified in this chapter [4-1-Logic.html §THE HEADER].
 
 ## Header
 
@@ -114,13 +114,15 @@ The text section is always present (possibly with zero messages). Layout [4-1-Lo
 | Offset (relative to text section start) | Size | Content |
 |---|---|---|
 | 0 | 1 | Number of messages (0–255) |
-| 1 | 2 | Little-endian offset (relative to text section start) to the end of the message data |
-| 3 | 2 × num_messages | Offset table: one little-endian offset per message, each pointing to that message's start |
+| 1 | 2 | Little-endian offset to the end of the message data, relative to **byte 1** of the section |
+| 3 | 2 × num_messages | Offset table: one little-endian offset per message, each relative to **byte 1** of the section |
 | ... | varies | Encrypted message bytes; each message is null-terminated (`0x00`) |
 
 **Encryption.** Every byte of every message body is XOR'd with the repeating 11-byte key `"Avis Durgan"` [4-1-Logic.html §THE TEXT SECTION]. The spec states this directly and shows worked examples of decrypted message bytes. The implication of [2-8-Interpreter.html §AGI VERSION THREE] ("v3 LOGIC files do not encrypt the text messages with 'Avis Durgan' since there is no need to do this because it is compressed anyway") is consistent: v2 encrypts, v3 does not. Note that the key is the same as the OBJECT-file XOR key already used in [resource/objects.py] — the same key, different consumer.
 
-Whether the message-count byte, the end-pointer, and the offset table are also encrypted vs. stored in the clear is not stated explicitly `(agidev, unverified)`. No LOGIC decoder in `resource/` to test against.
+**Pointer base.** Message and end pointers count from the byte after the message count, not from the section start. Reading them from the section start lands each pointer on the previous message's terminator, so nearly every message decodes as empty. On all 101 SQ1 LOGICs, section length minus the end pointer is exactly 1 [SQ1 data check, log 2026-11-01].
+
+**What is encrypted.** The count, end pointer, and offset table are stored in the clear. The XOR starts with key index 0 at the first byte after the offset table [SQ1 data check, log 2026-11-01]; see also [Code/logic.c:loadMessages].
 
 **Message access via LOGIC.** The `print` command (and similar) takes a 1-byte message index referring into this table — e.g. `65 08` is `print(message #8)` [4-1-Logic.html §THE TEXT SECTION].
 
@@ -133,7 +135,7 @@ FF 0E 01 1E 01 FF                  ; if (said("marble"))      — 1 word: vocab 
 FF 0E 02 37 02 73 00 FF            ; if (said("open", "door")) — 2 words: 0x0237, 0x0073
 ```
 
-The byte immediately following `$0E` is the count of 2-byte little-endian word codes that follow. Word codes are looked up against [[entities/words-tok]] (Group 7). For the preprocessing pipeline that produces the parsed-word vector against which `said` matches, see [[interpreter/input-parsing]] (the AGDS chapter, 2-6, references `4-3-Logic.html` for the matching algorithm — that ingest will likely supersede or extend this summary).
+The byte immediately following `$0E` is the count of 2-byte little-endian word codes that follow. Word codes are looked up against [[entities/words-tok]]. For the preprocessing pipeline that produces the parsed-word vector against which `said` matches, see [[interpreter/input-parsing]] (the AGDS chapter, 2-6, references `4-3-Logic.html` for the matching algorithm — that ingest will likely supersede or extend this summary).
 
 ## How the interpreter decodes LOGIC
 
@@ -148,4 +150,4 @@ The bracket-distance-inflated-by-3 rule for `if/else` is a consequence of step 2
 
 ## Implementation gap
 
-`resource/` contains no LOGIC decoder. Validating the claims on this page requires implementing — at minimum — a header parser, a control-flow walker that respects the `$FF/$FE/$FD/$FC` opcodes, the AGIDATA.OVL-equivalent argument dispatch table, and the text-section XOR. The Avis Durgan XOR primitive is already in `util/crypto.py` and reused by [resource/objects.py:Objects.extract_inventory_objects]; the same primitive will decrypt LOGIC text messages once a parser exists.
+`resource/` contains no LOGIC decoder. Validating these claims in project code requires implementing — at minimum — a header parser, a control-flow walker that respects the `$FF/$FE/$FD/$FC` opcodes, the AGIDATA.OVL-equivalent argument dispatch table, and the text-section XOR. The Avis Durgan XOR primitive is already in `util/crypto.py` and reused by [resource/objects.py:Objects.extract_inventory_objects]; the same primitive will decrypt LOGIC text messages once a parser exists.

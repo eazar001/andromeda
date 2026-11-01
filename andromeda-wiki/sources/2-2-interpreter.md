@@ -4,7 +4,7 @@ Peter Kelly's AGI Specifications, vendored at `AGI_Specifications/Specifications
 
 ## Scope
 
-Complete table of the 27 reserved variables (`var(0)`–`var(26)`) and 16 reserved flags (`flag(0)`–`flag(15)`), including semantics and initial values. Block diagram and textual specification of the per-frame interpreter cycle: eleven ordered steps from inter-cycle delay through room-transition check, with the exact list of variable/flag resets performed in post-LOGIC cleanup. Shared-namespace scoping (every LOGIC sees the same variable/flag store) is also established here.
+Complete table of the 27 reserved variables (`var(0)`–`var(26)`) and 16 reserved flags (`flag(0)`–`flag(15)`), including semantics and initial values. Block diagram and textual specification of the per-frame interpreter cycle: eleven ordered steps from inter-cycle delay through room-transition check, with the per-cycle post-LOGIC reset and the separate room-change procedure that runs only after `new_room`. Shared-namespace scoping (every LOGIC sees the same variable/flag store) is also established here.
 
 ## Informs
 

@@ -10,7 +10,7 @@ Companion pages:
 
 ## Page-level caveats
 
-- No LOGIC decoder in `resource/`; every behavioral claim is `(agidev, unverified)` against working code.
+- No LOGIC decoder in `resource/`; every behavioral claim is `(agidev, unverified)` against working code. SQ1 confirms argument counts only, not behavior (see [[interpreter/commands]]).
 - 4-4 is an AGDS manual chapter. AGDS surface syntax (`if_`, `else_`, `not_`, `or_` — keywords with trailing underscores) differs from the AGI Studio syntax in [[sources/4-2-logic]] (`if () { }`, `else { }`, `&&`, `||`, `!`). Both compile to the same `$FC..$FF` bytecode control-flow opcodes; the underscore-suffixed mnemonics are AGDS authoring conventions, not bytecode-level distinctions.
 
 ## Arithmetic edge cases (unresolved)
@@ -152,7 +152,7 @@ The variable-form `add.to.pic.v` takes 7 `var` arguments (verified against [4-3-
 > [!conflict]
 > **Margin = 4 behavior is unspecified.** The spec covers `margin ∈ {0, 1, 2, 3}` (priority-margin rectangle drawn) and `margin > 4` (no margin), but not `margin == 4`. Plausibly a typo for "margin ≥ 4" or "margin > 3"; conclusive resolution requires implementation cross-check. `(agidev, unverified)`.
 
-The relationship between `add.to.pic` (LOGIC-side runtime composition) and the PICTURE resource's own internal opcodes for VIEW composition (which Group 4 will document) is unspecified here.
+PICTURE bytecode has no VIEW-composition opcodes ([[entities/picture]]), so `add.to.pic` is purely a LOGIC-side operation.
 
 ## `set.game.id` — interpreter identification
 

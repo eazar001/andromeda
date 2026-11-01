@@ -1001,3 +1001,45 @@ The log's per-entry structure converged by Group 5-6 to: Created / Extended / Re
 Corrected `concepts/ega-palette` §"Out-of-scope variants" and added a scope note to `concepts/screen-layers` §Dimensions. The original CGA bullet incorrectly framed CGA/Hercules/Tandy as purely a v2/v3 runtime remapping of EGA indices. Two distinct scenarios actually exist: (1) AGI v1 (KQ1–2) used CGA natively — a genuinely different graphics generation with 4-color 320×200 output; the 16-color EGA model documented across the wiki applies only to v2 and v3. (2) Within v2/v3, first-class CGA/Hercules support was tracked at runtime via `var(26)` (`0` = CGA, `2` = Hercules, `3` = EGA — per [[interpreter/variables-and-flags]]). The updated bullet covers both scenarios and cross-links [[interpreter/overview]] §"What is AGI?" and [[interpreter/variables-and-flags]] for provenance. The `screen-layers` scope note was added because that page's 160×168 dual-screen model also applies to v2/v3 only. Mini-lint: six inbound neighbors checked (`entities/picture`, `interpreter/control-lines`, `concepts/picture-rendering`, `concepts/rle-encoding`, `entities/view`, `sources/6-1-view`); no contradictions, no unverified tags requiring upgrade.
 
 **Remaining Phase D item.** User installs the skills they want via `update-config` or hand-editing `.claude/commands/`.
+
+## [2026-11-01] file | Corrections from SQ1 data checks
+
+Filed corrections after decoding all of `test_games/sq1` with throwaway probes. Citations reading `[SQ1 data check, log 2026-11-01]` point here. **Method:** scratchpad scripts, not kept in the repo, decoded SQ1 from the wiki's own tables without reading `AGI` or the `.OVL` binaries, apart from their file sizes. They walked all 101 LOGICs, rendered all 73 PICTUREs (one fill-rule variant per test), compared 1,652 VIEW cels with `gfx/view_render.py`, and checked SOUND framing only. The SQ1 copy's file sizes match the 2.915–2.936 rows of 2-8's table. No LOGIC was executed.
+
+**Corrected.**
+1. `interpreter/event-loop`: the room-change procedure ran every cycle; it now runs only after `new_room`, followed by re-entry at step 8. Added the missing per-cycle reset [2-2-Interpreter.html, block diagram]. Propagated to `interpreter/overview`, `interpreter/variables-and-flags`, `sources/2-2-interpreter`, `index`.
+2. `entities/logic`: message and end pointers are relative to byte 1 of the text section. Count, end pointer, and offset table are stored in the clear.
+3. Priority 15 is real, not unused [5-1, 5-2; 45 of 73 SQ1 pictures; 32 `set.priority` calls]: `concepts/screen-layers`, `concepts/ega-palette`, `interpreter/view-objects`, `interpreter/priority-bands`, `interpreter/control-lines`, `sources/5-2-picture`, `index`. Priority 4 is now "farthest back", not "topmost".
+4. Flood fill with both layers on: the visual layer decides. `entities/picture`, `concepts/picture-rendering`, `interpreter/control-lines`.
+5. `entities/object`: names must be resolved through pointers. The `+ 5` conflict is resolved: `+ 3` is correct, and `+ 5` only skips SQ1's `?\0` placeholder. Propagated to `sources/8-1-otherdata`, `sources/8-3-samplecode`, `index`.
+6. `$63 sound`: set-on-completion comes from 4-4; clear-on-start and `stop.sound` remain open. `interpreter/commands`, `entities/sound`, `sources/7-1-sound`, `sources/7-2-sound`, `index`.
+7. `entities/dir-file`: `read_dir` loses resource numbers, and `FF FF FF` is not the only invalid entry.
+8. Argument counts confirmed for the commands SQ1 uses: `interpreter/commands`, `interpreter/command-semantics`, `interpreter/command-evolution`.
+
+**Conflicts.** Resolved 1 (`entities/object`, `+ 5`). Added 2: `interpreter/event-loop` (when `new.room` takes effect) and `entities/picture` (priority writes during a both-screens fill; literal 5-1 reading differs from `showpic.c` in 2 of 73 pictures).
+
+**Deliberately unchanged.** `concepts/picture-rendering` still calls `showpic.c` the byte-exact target. Its stale-colour check appears to skip priority-only fills in 8 of 73 SQ1 pictures, but this was judged by eye and against spec text, so the user deferred the decision.
+
+**Outside the wiki.** Corrected `DEVELOPMENT_PLAN.md`, `README.md`, and `PICTURE_DECODER.md` to match.
+
+## [2026-11-01] lint | full-wiki
+
+**Findings.**
+1. Contradictions: `interpreter/control-lines` still called 15 unused; `entities/picture` had a "Consequences" sentence and an implementation note conflicting with the fill rule; `entities/sound` and `concepts/pcjr-sound-encoding` called byte 3 the low bits although their own formula makes it the high bits [7-1 Appendix 1; play.c:108; SQ1 median 254 Hz vs. 1,776 Hz].
+2. Stale code descriptions: `concepts/rle-encoding` and `entities/view` described horizontal doubling inside `gfx/view_render.py` and cited line numbers from before its refactor; `concepts/rle-encoding` also kept a draft "no, wait" in a worked example.
+3. Orphans: none. Broken links: none.
+4. Stale deferrals: fixed on entity, concept, and interpreter pages. Left on `sources/` pages as historical ingest records.
+5. Conflict callouts: 7, above the ~6 threshold.
+
+**Changes applied.**
+- Fixed the items in findings 1, 2, and 4.
+- Added data-backed upgrades to `entities/picture`, `entities/view`, `entities/vol-file`, `entities/words-tok`, and `entities/sound`.
+
+**Open items carried forward.**
+- Consolidating callouts into `conflicts.md` needs a user decision.
+- `interpreter/overview`, `sources/3-3-files`, and `sources/4-1-logic` mention a planned Rust rewrite, but `DEVELOPMENT_PLAN.md` and `README.md` describe Python only. Left unchanged pending the user's intent.
+- `interpreter/commands` argument counts for commands SQ1 does not use remain unverified.
+
+## [2026-11-01] file | Planned Rust rewrite confirmed
+
+Closes the Rust open item from the lint pass above. The user confirmed the rewrite is still planned, so the mentions on `interpreter/overview`, `sources/3-3-files`, and `sources/4-1-logic` stand unchanged. Recorded it in `README.md`, `DEVELOPMENT_PLAN.md`, and `CLAUDE.md`; no design or timing is documented yet. `CLAUDE.md` was also rewritten to match the current code. Consolidating conflict callouts into `conflicts.md` stays deferred at the user's choice, even though the count of 7 is above the ~6 threshold.

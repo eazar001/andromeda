@@ -1,10 +1,10 @@
 # Andromeda
 
-A cleanroom Python re-implementation of Sierra On-Line's AGI (Adventure Game Interpreter) v2, the engine behind *Space Quest 1*, *King's Quest 1/2*, *Leisure Suit Larry 1*, and other early Sierra adventure games. Rendering is prototyped against PySDL2. The first playable milestone targets Space Quest 1, room 1.
+A cleanroom re-implementation of Sierra On-Line's AGI (Adventure Game Interpreter) v2, the engine behind *Space Quest 1*, *King's Quest 1/2*, *Leisure Suit Larry 1*, and other early Sierra adventure games. This Python codebase is the prototype, rendering through PySDL2; a Rust rewrite is planned. The first playable milestone targets Space Quest 1, room 1.
 
 ## Status
 
-Pre-alpha. Resource decoders for `OBJECT`, `VIEWDIR`/`VIEW`, `LOGDIR`, `PICDIR`, and `SNDDIR` are working; the LOG bytecode interpreter, PIC renderer, and sound engine are not yet implemented. See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the detailed roadmap and design notes.
+Pre-alpha. `VIEW` decoding and cel compositing work on all of Space Quest 1. `OBJECT` and the `*DIR` index files are parsed with known bugs (see the plan's section 1). `LOGDIR`, `PICDIR`, and `SNDDIR` are only read as indexes: the LOGIC, PICTURE, and SOUND resources themselves are not decoded, and nothing runs game logic yet. See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the detailed roadmap and design notes.
 
 ## Quick start
 
@@ -20,6 +20,8 @@ Place an AGI v2 game's data files under `test_games/<game>/` — for example `te
 uv run python -m main
 ```
 
+This opens a window that plays through every VIEW cel, then prints the directory listings. It does not play the game.
+
 ## Project layout
 
 ```
@@ -28,6 +30,7 @@ resource/             # AGI resource decoders (DIR, VOL, VIEW, OBJECT, ...)
 gfx/                  # SDL2-backed rendering
 util/                 # Byte/crypto helpers
 AGI_Specifications/   # Vendored copy of Peter Kelly's AGI spec (reference)
+andromeda-wiki/       # Distilled, cited AGI format notes; start at index.md
 ```
 
 ## References

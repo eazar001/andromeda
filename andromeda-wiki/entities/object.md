@@ -48,14 +48,14 @@ The entry array begins at file byte 3 and continues until file byte `3 + name_se
 
 ### Name section
 
-Null-terminated ASCII strings, one per inventory item, in the same order as the entries that reference them. The name offset in each entry points to the first character of its name (not the terminator) [8-1-OtherData.html §The inventory name section].
+Null-terminated ASCII strings. The name offset in each entry points to the first character of its name (not the terminator) [8-1-OtherData.html §The inventory name section]. **Always resolve names through the entry's pointer.** Strings are not one-per-item in entry order: SQ1's section starts with a `?\0` placeholder at offset 75, item 0 (`dummy`) points to offset 77, and item 17 points back to the placeholder [SQ1 data check, log 2026-11-01].
 
 ## Reference implementations
 
 - **`AGI_Specifications/Code/object.pas`** (Peter Kelly, indexed by [[sources/8-3-samplecode]]) — interactive OBJECT viewer. Implements the cyclic-key decryption (`object.pas:25-37`), little-endian header parsing (`object.pas:50-52`), 3-byte-stride entry iteration (`object.pas:54-71`), and null-terminated name recovery.
-- **`resource/objects.py`** (andromeda) — `Object.extract_inventory_objects` parses real SQ1 OBJECT data end-to-end. `decrypt_object_file` (`objects.py:72-73`) uses `util.crypto.xor_cycle` with the `"Avis Durgan"` key.
+- **`resource/objects.py`** (andromeda) — `Object.extract_inventory_objects` returns 24 of SQ1's 25 items: it reads names sequentially, drops item 17, and renumbers items 18–24 down by one [SQ1 data check, log 2026-11-01]. `decrypt_object_file` (`objects.py:72-73`) uses `util.crypto.xor_cycle` with the `"Avis Durgan"` key.
 
-> [!conflict] `resource/objects.py:31` computes `inventory_start = inventory_offset + 5`, but the spec defines the name-section offset as relative to the start of the entry array (file byte 3) — which would make file-byte name-section start `inventory_offset + 3`, not `+5`. The decoder works in practice on SQ1, suggesting either an undocumented file-prefix wrapper in andromeda's read path or a 2-byte off-by-N kludge that happens to land in valid name-section interior. Flagged as an open item — cross-check `object.pas:50-52` (which uses `+ 3`) against andromeda's read pipeline before treating the spec's "offset relative to entry 0" definition as ratified.
+**Resolved: `+ 5` vs. `+ 3`.** The spec's `+ 3` is correct: the name section starts at `inventory_offset + 3`. The `+ 5` at `resource/objects.py:31` skips SQ1's two-byte `?\0` placeholder, which is why item 0 still reads `dummy`. Changing it to `+ 3` alone makes things worse, because every name moves down one item [SQ1 data check, log 2026-11-01]. The fix is pointer-based name lookup.
 
 ## See also
 

@@ -54,7 +54,9 @@ The `LOGDIR` offset is always 8 (encoded as bytes `08 00` little-endian), since 
 
 An entry value of `FF FF FF` (all three bytes `0xFF`) signals that the resource slot is unused — distinct from a resource that exists with zero length. The directory reserves the numbering slot but no VOL storage is allocated [3-1-Files.html §Version 2 directories].
 
-This enables sparse numbering: a game can define `PICTURE.5` without `PICTURE.0`–`PICTURE.4`, with the unused entries marked `FF FF FF`. [resource/directory.py:read_dir] filters these entries out when reading a directory.
+This enables sparse numbering: a game can define `PICTURE.5` without `PICTURE.0`–`PICTURE.4`, with the unused entries marked `FF FF FF`. [resource/directory.py:read_dir] filters these entries out, which also loses the numbering: list position no longer equals resource number. On SQ1, 61 of 101 LOGIC, 73 of 73 PICTURE, 228 of 238 VIEW, and 46 of 51 SOUND entries sit at the wrong position [SQ1 data check, log 2026-11-01]. LOGIC addresses resources by number, so a reader must key entries by slot.
+
+**Other invalid entries exist.** SQ1's `SNDDIR` slot 0 holds `FF 23 C1`, which decodes to VOL 15 although the game has no `VOL.15`. No literal `load.sound` in SQ1 refers to it [SQ1 data check, log 2026-11-01]. Do not treat `FF FF FF` as the only sign of an absent resource.
 
 ## Design notes
 

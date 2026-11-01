@@ -33,8 +33,8 @@ Each voice's data section is a sequence of 5-byte note entries, terminated by tw
 | Byte | Field |
 |---|---|
 | 1–2 | Duration (low byte then high byte) — 16-bit little-endian. (agidev, unverified — time-unit scale not specified in the chapter.) |
-| 3 | Tone: low 6 bits of 10-bit frequency divisor. Noise: `0x00`. |
-| 4 | Tone: register address + high 4 bits of frequency divisor. Noise: register address + FB + NF0/NF1. |
+| 3 | Tone: high 6 bits of 10-bit frequency divisor. Noise: `0x00`. |
+| 4 | Tone: register address + low 4 bits of frequency divisor. Noise: register address + FB + NF0/NF1. |
 | 5 | Attenuation (register address + 4 attenuation bits) — same layout for all four voices. |
 
 #### Third byte — tone voice
@@ -45,7 +45,7 @@ bit:  7   6   5   4   3   2   1   0
 ```
 - Bit 7: Always 0 [7-1-SOUND.html §Appendix 1].
 - Bit 6: Unused, ignored.
-- Bits 5–0: F0–F5, lower 6 bits of the 10-bit frequency divisor.
+- Bits 5–0: F0–F5, upper 6 bits of the 10-bit frequency divisor.
 
 #### Third byte — noise voice
 
@@ -62,13 +62,15 @@ bit:  7   6   5   4   3   2   1   0
   - `000` → Voice 1 frequency
   - `010` → Voice 2 frequency
   - `100` → Voice 3 frequency
-- Bits 3–0: F6–F9, upper 4 bits of the 10-bit frequency divisor.
+- Bits 3–0: F6–F9, lower 4 bits of the 10-bit frequency divisor.
 
 **Frequency calculation** [7-1-SOUND.html §Appendix 1]:
 
 ```
 F = 111860 / (((Byte-3 AND 0x3F) * 16) + (Byte-4 MOD 16))
 ```
+
+The formula makes byte 3 the high-order part, and [play.c:108] agrees. On SQ1 tone voices it gives a median of 254 Hz; the reverse reading gives 1,776 Hz with 16% of notes above 5 kHz [SQ1 data check, log 2026-11-01]. No audio has been produced yet.
 
 The constant 111,860 Hz is reported as 1/32 of the PCjr system clock (3.579 MHz) [7-1-SOUND.html §The Tone Generators]. (agidev, unverified — hardware clock rate not independently corroborated in this wiki.)
 
@@ -120,7 +122,7 @@ When all four bits are set (`1111`), the voice is muted ("Volume off"). The spec
 
 ## Byte-order note
 
-The note data is stored in little-endian byte order in the SOUND resource: the 16-bit duration field is low-byte-first, and bytes 3–4 carry the frequency divisor in low-bits-first order. The chapter notes this is **reversed** relative to the sequential order in which bytes would be sent to the T1 chip's register interface [7-1-SOUND.html §Appendix 1, §Playing the Sounds on a Sound Card]. Lance Ewing's prose around this point is imprecise ("the two bytes are around the other way", "opposite from the order that would be output to the T1 sound chip"); Appendix 1's bit tables are unambiguous and authoritative.
+The note data is stored in little-endian byte order in the SOUND resource: the 16-bit duration field is low-byte-first, and bytes 3–4 carry the frequency divisor as its high 6 bits, then its low 4 bits. The chapter notes this is **reversed** relative to the sequential order in which bytes would be sent to the T1 chip's register interface [7-1-SOUND.html §Appendix 1, §Playing the Sounds on a Sound Card]. Lance Ewing's prose around this point is imprecise ("the two bytes are around the other way", "opposite from the order that would be output to the T1 sound chip"); Appendix 1's bit tables are unambiguous and authoritative.
 
 ## AGI v1.12 SOUND format (legacy)
 
@@ -141,7 +143,7 @@ Two playback programs are vendored under `AGI_Specifications/Code/` and indexed 
 - **Duration field — time-unit clue.** `play.c:107` multiplies the 16-bit duration field by 6 before emitting a MIDI delta. This is the only concrete code-level clue to the duration field's time unit; the spec does not state it. (agidev, unverified — `* 6` is undocumented in the source.)
 - **Multi-voice / volume-control vintage caveat.** `play.c:9-10` notes the program "was written before we worked out the details on the fourth voice and the volume control." Earlier reference code may not fully reflect the v2+ four-voice and `var(23)` volume semantics.
 
-SOUND remains the AGI resource type with the weakest code-validation coverage; andromeda has no SOUND decoder yet, and cross-check against ScummVM `engines/agi/sound_pcjr.cpp` is recommended before treating any byte-level claim on this page as production-ready.
+All 50 SQ1 SOUNDs have voices whose 5-byte notes reach an `FF FF` terminator, which checks framing only [SQ1 data check, log 2026-11-01]. SOUND remains the AGI resource type with the weakest code-validation coverage; andromeda has no SOUND decoder yet, and cross-check against ScummVM `engines/agi/sound_pcjr.cpp` is recommended before treating any byte-level claim on this page as production-ready.
 
 ## Related runtime state
 
@@ -157,7 +159,7 @@ Three LOGIC commands control playback (see [[interpreter/commands]]):
 - `sound` (`$63`, 2 args: `num`, `flag`) — Initiate playback of the loaded sound and signal the named flag at completion.
 - `stop.sound` (`$64`, 0 args) — Halt the current sound.
 
-Exact semantics of the `sound` command's flag argument (set on completion vs. cleared on start, interaction with `stop.sound`) are not detailed in 7-1-SOUND; they may be elaborated in 7.2-SOUND or remain an open item.
+The flag is set to 1 when playback finishes [4-4-Logic.html §SOUND RESOURCE MANAGEMENT COMMANDS] `(agidev, unverified)`. Still unspecified: whether it is cleared when playback starts, and what `stop.sound` does to it.
 
 ## See also
 

@@ -18,12 +18,12 @@ Structurally parallel to [[sources/3-4-files]], [[sources/4-6-logic]], [[sources
 
 ## Reference implementations
 
-- **`object.pas`** (Peter Kelly, Borland Pascal 7) — Interactive OBJECT viewer. Validates [[entities/object]]: Avis-Durgan cyclic XOR (`object.pas:25-37`), little-endian header parsing (`object.pas:50-52`), 3-byte-stride entry iteration (`object.pas:54-71`), null-terminated name recovery. Uses spec-conformant `+ 3` for the name-section offset (file byte 3 + index), unlike andromeda's `resource/objects.py:31` which adds `+ 5` — see open item on [[entities/object]].
+- **`object.pas`** (Peter Kelly, Borland Pascal 7) — Interactive OBJECT viewer. Validates [[entities/object]]: Avis-Durgan cyclic XOR (`object.pas:25-37`), little-endian header parsing (`object.pas:50-52`), 3-byte-stride entry iteration (`object.pas:54-71`), null-terminated name recovery. Uses spec-conformant `+ 3` for the name-section offset (file byte 3 + index), unlike andromeda's `resource/objects.py:31` which adds `+ 5` — resolved on [[entities/object]].
 - **`words.pas`** (Peter Kelly, Borland Pascal 7) — Interactive WORDS.TOK viewer / index builder. Validates [[entities/words-tok]]: prefix-share decoding (`words.pas:86-88`), `0x7F`-XOR character decode written as `chr(63 + 32 - curbyte)` arithmetic identity (`words.pas:92-102`), high-bit end-of-word marker (`words.pas:100-102`), big-endian word-number decode `msbyte*256 + lsbyte` (`words.pas:104-106`), pipe-separator joining for synonym groups sharing a word number (`words.pas:110`). Reads only the low byte of `A`'s alphabet-index offset (`words.pas:75-76`) — a code shortcut that assumes the Hi byte is `0x00`, satisfied by all real WORDS.TOK files but not a complete reading of the spec's 52-byte index.
 
 ## Validation outcome
 
-No new format claims; both decoders corroborate the byte-level specs in 8-1 and 8-2 respectively. The single conflict surfaced is between `object.pas:50-52` (spec-conformant `+ 3`) and andromeda's `resource/objects.py:31` (`+ 5`) — documented on [[entities/object]] as an open item rather than treated as a code-validates-spec round-trip.
+No new format claims; both decoders corroborate the byte-level specs in 8-1 and 8-2 respectively. The single conflict surfaced is between `object.pas:50-52` (spec-conformant `+ 3`) and andromeda's `resource/objects.py:31` (`+ 5`) — since resolved on [[entities/object]] in favor of `+ 3`.
 
 ## See also
 

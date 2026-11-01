@@ -1,6 +1,6 @@
 # Andromeda — AGI Interpreter Development Plan
 
-A personal working document for building a cleanroom Python re-implementation of Sierra's AGI (Adventure Game Interpreter) targeting AGI v2 games (Space Quest 1, King's Quest 1/2, Leisure Suit Larry 1, etc.), prototyped against PySDL2.
+A personal working document for building a cleanroom Python prototype of Sierra's AGI (Adventure Game Interpreter) targeting AGI v2 games (Space Quest 1, King's Quest 1/2, Leisure Suit Larry 1, etc.), prototyped against PySDL2.
 
 ---
 
@@ -9,7 +9,7 @@ A personal working document for building a cleanroom Python re-implementation of
 - **Cleanroom.** All spec knowledge must come from publicly documented AGI specifications — primarily Peter Kelly's "AGI Specifications" (a.k.a. `agispec`) and Lance Ewing's notes, as mirrored on the ScummVM wiki, agidev.com, and agiwiki.sierrahelp.com. **Do not** read original Sierra binaries or decompiled interpreter sources. ScummVM and NAGI sources are acceptable only as secondary cross-checks on behavior once you've read the spec; prefer the spec text when in doubt.
 - **Web verification caveat.** The research that backs this plan was compiled in an environment where live web fetching was disabled, so every byte-level claim below should be diffed against a freshly fetched copy of the Kelly spec before you commit code that depends on it. The gotchas listed per subsystem flag the high-risk spots.
 - **Scope target.** First playable milestone is **Space Quest 1 room 1** (outside the Arcada): PIC loaded, ego drawn, input parsed, basic `said()` dialogue works. Everything else is scaffolding toward that.
-- **Language/stack.** Python 3.14, PySDL2 (already a dep). Avoid heavy dependencies — one goal is to keep the code pedagogical.
+- **Language/stack.** Python 3.14, PySDL2 (already a dep). Avoid heavy dependencies — one goal is to keep the code pedagogical. This is the prototype: a Rust rewrite is planned, but its design and timing aren't covered in this plan yet.
 - **AGI v2 only for now.** v3 adds LZW compression and a handful of opcodes; defer until v2 is playable.
 
 ### Canonical sources to verify against
@@ -28,15 +28,15 @@ What exists today (April 2026):
 
 | Module | Status | Notes |
 |---|---|---|
-| `resource/directory.py` | ✅ Working | Moved from `util/dir.py`. Parses `*DIR` files to `(vol, offset)` pairs. Caps at 256 entries, skips `(0xF, 0xFFFFF)` sentinels. |
+| `resource/directory.py` | ⚠️ Known bug | Moved from `util/dir.py`. Parses `*DIR` files to `(vol, offset)` pairs and skips `(0xF, 0xFFFFF)` sentinels. **Dropping those slots loses resource numbers**, so `entries[n]` is not resource `n` (wrong for 61 of 101 SQ1 LOGICs). Must key by slot before M3. |
 | `resource/volume.py` | ✅ Working | `VolumeReader(path)` holds an open file handle. `read_resource(offset)` returns `(ResourceHeader, payload_bytes)` without re-opening the VOL file. |
 | `util/byte.py` | ✅ Working | `nibble(byte, 'hi'/'lo')` helper. `cel_mirror()` removed — mirror flag and loop index are now extracted inline in `resource/view.py`. |
-| `resource/header.py` | ✅ Working | `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reads the 5-byte VOL chunk header: 2-byte signature (`0x1234`, big-endian), 1-byte vol number, 2-byte LE resource length. Verified against SQ1 VOL files. |
+| `resource/header.py` | ✅ Working | `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reads the 5-byte VOL chunk header: 2-byte signature (`0x1234`, big-endian), 1-byte vol number, 2-byte LE resource length. Verified against all 462 SQ1 resources. The signature is parsed but not validated. |
 | `resource/view.py` | ✅ Working | Moved from `view/vol.py`. `get_view_data(reader, offset)` takes a `VolumeReader`, parses via `BytesIO`, and returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(...)])])` dataclass. Mirror flag and source loop index decoded from cel header nibble. |
-| `gfx/view_render.py` | ✅ Working | Moved from `view/render.py`. `draw_cel_data` accepts a `mirrored` bool and horizontally flips pixel positions (`width - 1 - x0`) when true. Rasterizes pre-decoded `(color, count)` pairs to SDL2 with the hardcoded 16-color EGA palette, alpha-aware. |
-| `resource/objects.py` | ✅ Working | Moved from `object/Object.py`. Decrypts `OBJECT` file via `util/crypto.py:xor_cycle`, extracts inventory triplets `(index, name, room)`. |
+| `gfx/view_render.py` | ✅ Working | `composite_cel(screen, loop_idx, cel)` writes a cel into a screen buffer, handling transparency and mirroring. Always draws at the top-left corner, with no x/y or priority yet (M4). All 1,652 SQ1 cels verified. |
+| `resource/objects.py` | ⚠️ Known bug | Moved from `object/Object.py`. Decrypts `OBJECT` file via `util/crypto.py:xor_cycle`, extracts `(index, name, room)`. **Reads names sequentially, not through pointers**, so SQ1 returns 24 of 25 items and items 18–24 are misnumbered. The `+ 5` at line 31 only works by skipping SQ1's `?\0` placeholder; do not change it to `+ 3` without moving to pointer lookup. Also always decrypts, though pre-2.411 files are unencrypted. |
 | `util/crypto.py` | ✅ Working | `xor_cycle(key_string, file)` — standalone XOR decryption helper. Used by `objects.py`; will also be reused for LOGIC message decryption. |
-| `main.py` | ✅ Working | `animate_cels` unpacks the full cel tuple `(width, height, mirror, non_mirror_idx, alpha, loop_idx, cel_data)` and passes `mirror and loop_idx != non_mirror_idx` as the `mirrored` flag to `draw_cel_data`. |
+| `main.py` | ✅ Working | Test harness: plays every VIEW cel through `composite_cel`, then prints the directory listings. Closing the window plays out the current view first. |
 
 **Confirmed facts from the existing code worth preserving:**
 
@@ -46,8 +46,8 @@ What exists today (April 2026):
 
 **Gaps to be aware of before writing new code:**
 
-- No resource manager exists. Each subsystem currently opens the VOL file fresh. For a real game loop you'll want a `VolumeReader` that keeps file handles open and a `ResourceCache` that honors sticky (game-global) vs. per-room lifetimes (see §3).
-- The VIEW loader parses `num_loops` and per-cel `mirror`/`alpha` internally, but does not return a structured `View(loops=[Loop(cels=[Cel(...)])])` dataclass — it returns a flat `(desc_offset, cels)` tuple with cels from all loops concatenated. A structured object is needed for the animation system (loop selection, mirror logic). Mirror flag and source loop index are now correctly decoded and passed through; however, mirrored cels still read their own (garbage) pixel data from the file — proper pixel reuse from the source loop requires the structured `View` dataclass (M0).
+- No resource manager exists. `VolumeReader` keeps a file handle open, but nothing caches resources or honors sticky (game-global) vs. per-room lifetimes (see §3).
+- The VIEW loader returns only `desc_offset`, not the description text (20 SQ1 views have one). A view with no loops crashes it, and a loop with no cels shifts later loops down a position; SQ1 has neither.
 - Note: `*.gitignore` should include `*.stackdump` to suppress Cygwin/MSYS2 crash dumps from appearing as untracked files.
 
 ---
@@ -58,8 +58,8 @@ AGI is, at its core, four things glued together:
 
 1. **A resource container** — `*DIR` index files + `VOL.n` volume files, with PIC/VIEW/LOGIC/SOUND bodies after a 5-byte header. Plus the top-level `OBJECT` and `WORDS.TOK` files. This layer is already partially built.
 2. **A bytecode VM** — LOGIC resources are a stack-less bytecode with ~175 action opcodes, ~18 test opcodes, and an `if`/`else`/`goto` structure built from three control bytes (`0xFF`, `0xFE`, `0xFD`/`0xFC`). The VM owns 256 flags, 256 variables, ~12 strings, a sprite table, and the two screens. LOGIC is the game's "scripting language."
-3. **A rendering and animation pipeline** — two 160×168 4-bit screens (visual + priority), 15 priority bands for Z-sorting, control cells 0–3 for walkability/triggers, a ~16-slot screen-object table with auto-movers and auto-cyclers. Composited with a 40×25 text overlay and blitted to a 320×200 host window (X is doubled).
-4. **A fixed-step main cycle** — nominally 20 Hz, throttled by reserved variable `v10`. Each cycle: poll input → run parser if ENTER → call LOGIC 0 → update objects → re-blit. `new.room(n)` aborts the current cycle and restarts at the top with the "new room" flag (f5) set.
+3. **A rendering and animation pipeline** — two 160×168 4-bit screens (visual + priority), priority values 4–15 for Z-sorting, control values 0–3 for walkability/triggers, a ~16-slot screen-object table with auto-movers and auto-cyclers. Composited with a 40×25 text overlay and blitted to a 320×200 host window (X is doubled).
+4. **A fixed-step main cycle** — nominally 20 Hz, throttled by reserved variable `v10`. Each cycle: poll input → run parser if ENTER → call LOGIC 0 → update objects → re-blit. `new.room(n)` runs the room-change procedure and re-enters LOGIC 0 with the "new room" flag (f5) set.
 
 The subsystems connect like this:
 
@@ -172,12 +172,12 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 **Goal:** Clean resource-layer seams so the rest of the work has a solid base.
 
-- [x] Extract a `resource/header.py` that parses the 5-byte VOL resource header (signature check, volume number, LE length). Implemented as `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reuse from PIC/LOGIC/SOUND.
+- [x] Extract a `resource/header.py` that parses the 5-byte VOL resource header (signature check, volume number, LE length). Implemented as `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reuse from PIC/LOGIC/SOUND. **Signature check not yet implemented.**
 - [x] Add `resource/volume.py:VolumeReader(path)` that holds an open file handle and exposes `read_resource(offset) -> (ResourceHeader, bytes)`. Returns the parsed header and payload separately for clean caller access.
 - [x] Move `util/dir.py` → `resource/directory.py`; kept the existing API.
 - [x] Move `object/Object.py` → `resource/objects.py`; extracted `decrypt_file()` into `util/crypto.py:xor_cycle(key_string, file)`. `objects.py` now imports from there. Same helper will be reused for LOGIC message decryption.
 - [x] Rework `view/vol.py` → `resource/view.py`: returns a structured `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(width, height, mirror, non_mirror_idx, alpha, cel_data)])])` dataclass. RLE decoding inline in `get_cel_data`.
-- [x] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). `composite_cel(screen, loop_idx, cel)` writes color indices into `VisualScreen`; EGA palette extracted to `gfx/palette.py`. `draw_cel_data` retained temporarily for `main.py` compatibility.
+- [x] Keep `view/render.py` → `gfx/view_render.py`, but now it takes `Cel` objects and composites into a `VisualScreen` buffer (not directly into the SDL renderer — see M1). `composite_cel(screen, loop_idx, cel)` writes color indices into `VisualScreen`; EGA palette extracted to `gfx/palette.py`. `draw_cel_data` has since been removed.
 
 **Exit criteria:** `uv run python -m main` still prints DIR listings and can still render a test VIEW cel via the old harness path, now going through the new module names.
 
@@ -194,24 +194,24 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
   - `0xF6` absolute line (polyline of (x,y) points)
   - `0xF7` relative short line (bit 7 = Δx sign, bits 6-4 = |Δx|, bit 3 = Δy sign, bits 2-0 = |Δy|)
   - `0xF8` flood fill (list of seed points)
-  - `0xF9` set pen (bit 5 shape 0=circle/1=square, bit 4 texture 0=solid/1=splatter, bits 0-2 size 0-7)
+  - `0xF9` set pen (bit 5 texture 0=solid/1=splatter, bit 4 shape 0=circle/1=square, bits 0-2 size 0-7)
   - `0xFA` plot pen (solid: `(x,y)` per point; splatter: `(pattern, x, y)` per point)
   - `0xFF` end of picture
 - [ ] `gfx/pic_render.py`: executes a decoded PIC op list into a `VisualScreen` + `PriorityScreen` pair. Implement:
-  - Bresenham line drawing — use the Kelly-spec pseudocode for rounding, not the textbook version, or you'll get one-pixel gaps that let floods leak. Verify against Kelly Chapter 7.
+  - Bresenham line drawing — use the Kelly-spec pseudocode for rounding, not the textbook version, or you'll get one-pixel gaps that let floods leak. See `andromeda-wiki/concepts/picture-rendering.md` and `AGI_Specifications/Code/showpic.c`.
   - Flood fill: **iterative** (stack-based), not recursive. Fill rules:
     - Visual enabled only: fill pixels currently == 15 (white).
     - Priority enabled only: fill cells currently == 4.
-    - Both enabled: **visual drives** — flood the visual on the "== 15" rule, and for every pixel you paint visually, also write the priority latch. Do **not** apply the priority-only rule.
+    - Both enabled: **visual drives** — flood the visual on the "== 15" rule, and for every pixel you paint visually, also write the priority latch. Do **not** apply the priority-only rule. One narrow open conflict on priority writes is recorded in `andromeda-wiki/entities/picture.md`.
     - Both disabled: consume coordinates, no-op.
-  - Splatter pen: needs the Sierra 254-entry splatter/PRNG table from Kelly Chapter 11. Until that's implemented, splatter will look solid.
+  - Splatter pen: needs the 256-bit pattern and 128-entry offset table in `andromeda-wiki/entities/picture.md`. SQ1 has no `0xF9`, so this isn't needed for the first playable.
   - Circle pen at sizes 0–3 uses hand-tuned bitmaps from the spec — don't rasterize from `math.hypot`.
 - [ ] Main-file smoke test: load `PICDIR` → pick pic 1 → decode → render both screens → blit visual to an SDL window.
 
 **Gotchas called out by research:**
 - Parameter runs end when the next byte is `>= 0xF0`, not when a count is exhausted. Rewind one byte and re-dispatch.
 - Keep PIC rendering in logical 160×168 space; X-doubling happens only at blit time.
-- Control cells (priority values 0–3) overlay the priority screen. When the sprite system later needs "true" priority under a control cell, walk upward in the priority buffer until a value ≥ 4 is found.
+- Control cells (priority values 0–3) overlay the priority screen. When the sprite system later needs "true" priority under a control cell, search downward (increasing y) in the priority buffer until a value ≥ 4 is found.
 
 **Exit criteria:** Room 1 of SQ1 renders recognizably on screen. Priority screen can be toggled via a debug key.
 
@@ -221,10 +221,10 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 - [ ] `resource/logic.py`: `decode_logic(payload: bytes) -> Logic`:
   - Header: `messages_offset = u16 LE` at byte 0. Bytecode is `payload[2 : 2 + messages_offset]`; message section starts at `2 + messages_offset`.
-  - Message section: `num_messages (u8)`, `end_offset (u16 LE)`, then `num_messages` u16 LE pointers to strings. String bodies are null-terminated and XOR-encrypted with `"Avis Durgan"`. Offset 0 in the pointer table = missing message. Messages are 1-indexed.
+  - Message section: `num_messages (u8)`, `end_offset (u16 LE)`, then `num_messages` u16 LE pointers to strings. String bodies are null-terminated and XOR-encrypted with `"Avis Durgan"`. Offset 0 in the pointer table = missing message. Messages are 1-indexed. **Pointers and `end_offset` are relative to the byte after `num_messages`**, not the section start.
   - XOR key range is **only** the string body area (from the first string onward up to `end_offset`), not the pointer table. Getting this bound off by one scrambles every message.
 - [ ] `runtime/commands.py`: the **opcode arity table**. This is the single most important piece of data in the whole project — one wrong arity and every instruction after it is garbage. Sources:
-  - Kelly spec Chapter 8 (AGI Commands) + Chapter 9 (Test Commands).
+  - `andromeda-wiki/interpreter/commands.md` (from spec chapter 4-3). Confirmed against all 101 SQ1 LOGICs for the commands SQ1 uses.
   - Cross-verify against agiwiki.sierrahelp.com tables.
   - Store as a `dict[int, CommandSpec]` where `CommandSpec` is `(name, num_args, arg_kinds)`. `arg_kinds` is metadata like `"var" | "flag" | "obj" | "msg" | "num" | "str"` for prettier disassembly later.
 - [ ] `runtime/interp.py:disassemble(logic: Logic) -> str`: walk the bytecode, emit human-readable assembly. Handles the three special control bytes:
@@ -245,10 +245,10 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
   - `vars: bytearray` (256 uint8)
   - `strings: list[str]` (start with 24 empty slots)
   - Setter hooks: writes to reserved indices (e.g., `v16` = ego view, `v10` = cycle delay) should route through property setters so side effects fire. Don't scatter side-effect checks at call sites.
-- [ ] `runtime/reserved.py`: constants for the reserved vars/flags. Build the table from Kelly Chapter 3; don't hardcode raw indices in command handlers. Minimum set to start with:
+- [ ] `runtime/reserved.py`: constants for the reserved vars/flags. Build the table from `andromeda-wiki/interpreter/variables-and-flags.md`; don't hardcode raw indices in command handlers. Minimum set to start with:
   - `V_CUR_ROOM = 0, V_PREV_ROOM = 1, V_EGO_BORDER = 2, V_SCORE = 3, V_OBJ_BORDER = 5, V_EGO_DIR = 6, V_MAX_SCORE = 7, V_UNKNOWN_WORD = 9, V_CYCLE_DELAY = 10, V_SECONDS = 11, V_MINUTES = 12, V_HOURS = 13, V_DAYS = 14, V_EGO_VIEW = 16, V_LAST_KEY = 19, V_WINDOW_TIMER = 21, V_MAX_INPUT_LEN = 24`
-  - `F_ON_WATER = 0, F_EGO_INVISIBLE = 1, F_HAS_INPUT = 2, F_EGO_SIGNAL = 3, F_SAID_MATCHED = 4, F_NEW_ROOM = 5, F_RESTART = 6, F_BUF_OVERFLOW = 7, F_SCRIPT_WROTE = 8, F_LOGIC0_RAN = 9, F_RESTORE = 10, F_ENTER_PRESSED = 11, F_SOUND_ON = 11, F_MENU_ENABLED = 14, F_PRINT_MODE = 15`
-  - **Verify these numeric assignments against Kelly §3 before depending on any of them.** Several cross-references disagree by ±1; the research report flagged this.
+  - `F_ON_WATER = 0, F_EGO_INVISIBLE = 1, F_HAS_INPUT = 2, F_EGO_SIGNAL = 3, F_SAID_MATCHED = 4, F_NEW_ROOM = 5, F_RESTART = 6, F_SCRIPT_BLOCKED = 7, F_JOY_SENSITIVITY = 8, F_SOUND_ON = 9, F_DEBUGGER = 10, F_LOGIC0_FIRST = 11, F_RESTORE = 12, F_INVENTORY_SELECT = 13, F_MENU_ENABLED = 14, F_PRINT_MODE = 15`
+  - These flags now follow spec chapter 2-2. `V_MAX_INPUT_LEN = 24` is unconfirmed: the spec lists `var(24)` only as `29h`.
 - [ ] `runtime/interp.py:Interpreter`:
   - `run_logic(logic_num: int)` — loads logic from cache, sets up a PC at `bytecode_start`, executes opcodes via a dispatch dict `{opcode_byte: handler}`.
   - The `if` / `else` / `goto` parser is the trickiest piece. Structure:
@@ -258,7 +258,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
     ```
     Each test term is either: `0xFD next_term` (NOT), or `0xFC ... 0xFC` (OR group), or a test opcode + fixed operands (or `said` with its variable-length list).
   - Cache decoded instruction streams per logic — don't re-parse bytes every cycle. A simple "compile once on first load" pass suffices.
-  - **`new.room(n)` must abort immediately.** Easiest Python implementation: `class NewRoomException(Exception): pass`, raise it from the handler, catch it at the top of the main cycle. Do not try to "return normally" — any code after `new.room` in the calling logic must not run.
+  - **`new.room(n)` must abort immediately.** Easiest Python implementation: `class NewRoomException(Exception): pass`, raise it from the handler, catch it at the top of the main cycle. Do not try to "return normally" — any code after `new.room` in the calling logic must not run. (Sources disagree on this timing; see the conflict in `andromeda-wiki/interpreter/event-loop.md`. Treat immediate abort as provisional.)
 - [ ] Implement agi commands in groups, starting with the ones needed for a blank-screen boot:
   1. Control flow: `return`, `call`, `new.room`, `new.room.v`
   2. State: `set`, `reset`, `toggle`, `set.v`, `reset.v`, `toggle.v`, `assignn`, `assignv`, `addn`, `addv`, `subn`, `subv`, `lindirectn`, `lindirectv`
@@ -286,7 +286,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [ ] Auto-cycler: every `cycle_time` ticks, advance `cel` per `cycle_type` (normal.cycle, end.of.loop, reverse.cycle, reverse.loop).
 - [ ] Direction-driven loop selection: for 4-loop views, loop = direction-derived (north=3, east=0, south=2, west=1 in Sierra's convention — verify); for 2-loop views, loop = east/west only.
 - [ ] Draw order: **by priority band, low-to-high** for erase, high-to-low for redraw. Mixing the two causes flicker.
-- [ ] Priority computation: if object has no explicit `set.priority`, compute from y-coordinate via the 15-band priority table (band 4 starts at y≈48, each band ~12 pixels tall — verify the exact table from Kelly spec §7 / §10).
+- [ ] Priority computation: if object has no explicit `set.priority`, compute from y-coordinate via the 15-band priority table (`y < 48` is band 4, then a new band every 12 pixels up to band 14; see `andromeda-wiki/interpreter/priority-bands.md`).
 - [ ] Implement the agi commands `animate.obj`, `unanimate.all`, `set.view`, `set.loop`, `set.cel`, `position`, `position.v`, `draw`, `erase`, `set.priority`, `release.priority`, `start.cycling`, `stop.cycling`, `start.motion`, `stop.motion`, `step.size`, `step.time`, `cycle.time`, `set.dir`, `get.dir`.
 - [ ] Mount ego (object 0) with the default SQ1 view and verify it renders in the correct spot. Hook arrow keys temporarily to write `v6` (direction) and watch ego walk.
 
@@ -299,29 +299,32 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [ ] `runtime/cycle.py:GameCycle`:
   ```
   while running:
+      sleep_to_tick_rate(v10)   # v10 is in units of 1/20s
+      clear keyboard buffer; clear f2, f4
       poll_sdl_events() → key queue, quit
       update_input_line() → input buffer, v19 = last key
       process_controllers() → check bound keys, set controller-fired bits
       advance_clock() → v11..v14
       if v21 > 0: v21 -= 1   # window timer
-      try:
-          parse_input_if_enter() → set f2, populate parser groups
-          interpreter.run_logic(0)
-      except NewRoomException:
-          handle_new_room()
-          continue
-      clear f2, f4; clear object-entered markers
-      if f5_set_this_cycle: clear f5
-      update_objects() → mover + cycler
-      render() → pic + cels + text overlay → SDL blit
-      sleep_to_tick_rate(v10)   # v10 is in units of 1/20s
+      parse_input_if_enter() → set f2, populate parser groups
+      update EGO direction; recalculate object motion; refresh status line
+      while True:
+          try:
+              interpreter.run_logic(0)
+          except NewRoomException:
+              handle_new_room()
+              continue          # re-enter LOGIC 0: no delay, no input poll
+          apply v6 to EGO; clear v4, v5, f5, f6, f12
+          update_objects() → mover + cycler
+          render() → pic + cels + text overlay → SDL blit
+          break
   ```
 - [ ] `handle_new_room()`:
   1. Stop sound
   2. Reset input line; clear parser state
   3. Discard non-sticky resources (see ResourceManager in M0 — this is why sticky bits matter)
   4. Reset sprite table — erase all, clear most flags, **keep ego view and inventory**
-  5. `v1 = v0; v0 = target; v4=v5=v9=0; v16 = ego.view`
+  5. `v1 = v0; v0 = target; v4=v5=v9=0; v16 = ego.view`; reposition ego from `v2`, then `v2 = 0`; clear f2
   6. Set f5 (new-room marker, lifetime = exactly one cycle)
   7. Return — the outer loop re-enters LOGIC 0, which sees f5 and runs init.
 - [ ] Honor `v10` for cycle delay. A common value is 2, giving ~10 Hz. Don't hardcode 50 ms.
@@ -349,12 +352,12 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
   - Expose `groups: list[int]` and `said_ok: bool` to the interpreter.
 - [ ] `said(...)` test command implementation:
   - Args are baked-in u16 group-id sequences in the bytecode.
-  - Match iff `said_ok == True` AND `f2 == True` (input this cycle).
+  - Match iff `said_ok == True` AND `f2 == True` (input this cycle) AND `f4 == False` (no earlier match this cycle).
   - Group-0 words are already removed from input; compare only against non-0 groups.
   - `1` (`anyword`) in the pattern matches any single non-0, non-9999 input id.
   - `9999` (`rol`) matches "zero or more remaining input ids" — usually terminal in the pattern.
   - No trailing `9999` in the pattern → exact-length match required.
-  - On first `said()` match in a cycle, clear `f2` so subsequent `said()` calls in the same cycle return false.
+  - On first `said()` match in a cycle, set `f4` so subsequent `said()` calls in the same cycle return false.
 
 **Exit criteria:** Typing `look at ship` in SQ1 produces a real game response.
 
@@ -378,10 +381,9 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [ ] `resource/sound.py:decode_sound(payload: bytes) -> Sound`:
   - After the 5-byte VOL header, first 8 bytes are an offset table: 4 × u16 LE, one per channel (3 tone + 1 noise). Offsets are relative to the start of the decoded payload.
   - Each channel is a stream of 5-byte notes:
-    - bytes 0-1: duration u16 LE (in 1/60s ticks)
-    - byte 2: `(byte2 & 0x0F)` = high 4 bits of 10-bit frequency divisor
-    - byte 3: `(byte3 & 0x3F)` = low 6 bits of divisor (caveat: bit layout varies between sources — verify against ScummVM `sound_pcjr.cpp` if pitches come out an octave off)
-    - byte 4: `0xE0 | (atten & 0x0F)` — volume, 0 = loudest, 0x0F = silent
+    - bytes 0-1: duration u16 LE (the vendored spec doesn't state the unit; 1/60s ticks is unconfirmed)
+    - bytes 2-3: tone divisor = `((byte2 & 0x3F) << 4) + (byte3 & 0x0F)`, per the formula in spec 7-1 Appendix 1 (verify by ear or against ScummVM `sound_pcjr.cpp`)
+    - byte 4: low 4 bits are attenuation, 0 = loudest, 0x0F = silent; the high bits are the register address
   - `duration == 0xFFFF` terminates the channel.
   - Channel 3 (noise) reinterprets byte 3: bit 2 = feedback (0=periodic, 1=white), bits 0-1 = shift-rate select (0=/512, 1=/1024, 2=/2048, 3=use channel 2 freq).
 - [ ] `audio/sn76489.py`:
@@ -390,7 +392,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 - [ ] `audio/player.py`:
   - 60 Hz tick advances all four channels' note cursors.
   - Per-sample mixing in an SDL2 audio callback. Sum and soft-clip; pre-scale each channel to ~0.25.
-  - Simple queue for "play sound N" from the `sound` agi command; honor flag 11 (sound on/off).
+  - Simple queue for "play sound N" from the `sound` agi command; honor flag 9 (sound on/off).
 - [ ] Gotcha: **attenuation 0x0F is silence, not max volume.** This is the #1 beginner mistake and every channel will be mute if inverted.
 - [ ] Gotcha: 0xFFFF terminator on duration. 0x0000 duration is legal (advance immediately).
 
@@ -452,9 +454,9 @@ Parameter runs end when the next byte is `>= 0xF0`.
 
 ### Priority band quick reference
 
-- Values **0–3** = control cells (0=obstacle, 1=water, 2=signal, 3=conditional obstacle) — verify exact mapping against Kelly Ch 7
+- Values **0–3** = control cells (0=unconditional barrier, 1=conditional barrier, 2=alarm/signal, 3=water)
 - Values **4–15** = Z-depth bands, low=deep, 15=always in front
-- Band 4 starts around y=48; each band ~12 px tall; bands 0–3 of depth are reserved for control cells so playable bands are 4–15
+- `y < 48` is band 4, band 5 starts at y=48, and each band is 12 px tall up to band 14; 15 is never y-derived for ego but is used by pictures and `set.priority`
 
 ### Resource headers
 
@@ -496,9 +498,9 @@ Put test games under `test_games/sq1/` (as the existing code already expects) an
 
 ## 7. Open questions to resolve as you go
 
-1. **Exact reserved var/flag indices** — Kelly spec and ScummVM `agi.h` disagree in a few places. Treat Kelly as canonical, cross-check against a modern ScummVM build only if a particular flag isn't behaving.
-2. **SN76489 divisor bit layout** — the research flagged that sources disagree on which nibble is which. Write a test tone and verify against a known SQ1 music sample (any YouTube recording of the opening will do as reference).
-3. **Priority band y-coordinates** — Kelly Ch 7 defines the 15-band table; verify numerically, don't guess.
+1. **Exact reserved var/flag indices** — M3's flags now follow spec chapter 2-2. Cross-check against a modern ScummVM build only if a particular flag isn't behaving.
+2. **SN76489 divisor bit layout** — M8 now follows the spec's formula, but it's untested on audio. Write a test tone and verify against a known SQ1 music sample (any YouTube recording of the opening will do as reference).
+3. **Priority band y-coordinates** — documented in `andromeda-wiki/interpreter/priority-bands.md`; still unverified against a running game.
 4. **`said()` semantics for ambiguous groups** — specifically, what happens when `anyword` or `rol` abuts a group-0 word. Test against real SQ1 behavior.
 5. **`v10 == 0` behavior** — some sources say "as fast as possible," some say "default 5." Pick a sane fallback.
 6. **Cycle-vs-tick distinction** — AGI documentation mixes 20 Hz and 60 Hz loosely. Sound uses 60 Hz ticks (see §M8); game logic uses 20 Hz / `v10` cycles. Keep them as separate concepts in the code.
@@ -535,7 +537,7 @@ Each milestone has a concrete "exit criteria" you can demo. If you find yourself
 
 ## 9. One-page summary
 
-- **Target:** Cleanroom Python reimplementation of AGI v2, playable SQ1 first.
+- **Target:** Cleanroom Python prototype of AGI v2, playable SQ1 first, ahead of a planned Rust rewrite.
 - **Stack:** Python 3.14 + PySDL2.
 - **Critical data:** opcode arity table (LOGIC), PIC opcode dispatch (0xF0–0xFF), reserved var/flag constants, the "Avis Durgan" XOR key, the SN76489 frequency constant (111860 / divisor).
 - **Critical semantics:** `new.room` aborts the cycle, `said_ok` is per-cycle state, flood fill is "visual drives priority tags along," priority values 0–3 are control cells, message offsets are 1-based, all VOL resources share a 5-byte header.

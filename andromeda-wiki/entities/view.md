@@ -2,7 +2,7 @@
 
 VIEW resources hold the bitmap sprite graphics used for animated objects, NPCs, and inventory close-ups — every on-screen actor in an AGI room is a cel from a VIEW. Unlike PICTURE resources (vector-drawn full-screen backgrounds at [[entities/picture]]), VIEWs are stored as RLE-compressed bitmaps and composited on top of the rendered visual screen at frame time. A VIEW is a three-level container: **loops** (animation cycles, e.g. walk-north) → **cels** (frames) → **RLE-encoded pixel rows**. Maximum 255 loops and 255 cels per loop [6-1-VIEW.html §Overview].
 
-This page is code-verified against [`resource/view.py`](../../resource/view.py) and [`gfx/view_render.py`](../../gfx/view_render.py), which round-trip real Sierra game data (SQ1).
+This page is code-verified against [`resource/view.py`](../../resource/view.py) and [`gfx/view_render.py`](../../gfx/view_render.py), which round-trip real Sierra game data (SQ1). A separate throwaway decoder matches them on all 238 SQ1 views and all 1,652 cels, pixel for pixel, and all 216 mirrored cels are exact flips of their source cels [SQ1 data check, log 2026-11-01].
 
 ## On-disk layout
 
@@ -60,7 +60,7 @@ bit:  7   6   5   4   3   2   1   0
 |---|---|---|
 | 7 | Mirror flag (M) | `1` = this cel is part of a mirrored loop; `0` = standalone |
 | 6,5,4 | Non-mirror loop index (L) | 0..7. When M=1, identifies which loop holds the canonical (non-flipped) cel data |
-| 3..0 | Transparent color (T) | 0..15 EGA palette index. Pixels of this color are not drawn — the background shows through [resource/view.py:89; gfx/view_render.py:19] |
+| 3..0 | Transparent color (T) | 0..15 EGA palette index. Pixels of this color are not drawn — the background shows through [resource/view.py:89; gfx/view_render.py:17] |
 
 **Decoding:** the andromeda code extracts the high nibble, then splits it: `flag = nibble_hi >> 3`, `loop_idx = nibble_hi & 7` [resource/view.py:89-90; util/byte.py]. The transparent color is just `nibble_lo` [resource/view.py:89].
 
@@ -74,7 +74,7 @@ Pixel data for each cel follows its 3-byte header. The encoding is row-major, RL
 - A `0x00` byte terminates the current row; the next byte begins the next row [6-1-VIEW.html §Cel data; resource/view.py:103-104].
 - If the last run on a row is the transparent color, the encoder may omit it — the `0x00` terminator implicitly pads to the right edge [6-1-VIEW.html §Cel data, transparency optimization].
 
-Row count = cel height. Pixel rendering doubles each chunk's pixel count horizontally to convert AGI logical width to EGA screen width [gfx/view_render.py:18, 21, 39].
+Row count = cel height. Cels are composited in logical pixels; horizontal doubling happens when the screen is converted for display [gfx/palette.py:visual_screen_to_bytes].
 
 ## Loop mirroring
 
@@ -84,9 +84,9 @@ A loop can be declared as a horizontal flip of another loop, so the artist only 
 
 1. Two entries in the view-header loop-offset table point at the same byte offset (shared cel data) [6-1-VIEW.html §View header note].
 2. Each cel header's byte 2 has the mirror flag set (bit 7) and the non-mirror-loop-index field (bits 4-6) identifying which of the two sharing loops is the *canonical* (un-flipped) one.
-3. When rendering, the runtime compares the current loop index against the non-mirror loop index. If they differ, the cel is drawn horizontally flipped [gfx/view_render.py:7, 21].
+3. When rendering, the runtime compares the current loop index against the non-mirror loop index. If they differ, the cel is drawn horizontally flipped [gfx/view_render.py:3, 18].
 
-**Sierra runtime quirk (not in andromeda).** The original Sierra interpreter mutates the cel header in-place as it renders: when it flips a cel for display in loop L, it overwrites the non-mirror-loop-index field with L itself, so subsequent renders see the cel as "already correctly oriented for loop L" and only re-flip on loop changes [6-1-VIEW.html §Mirroring, "Mirroring is done by..."]. This is why the byte stores a *loop index* rather than just a flip-or-not bit. The andromeda decoder does not perform this mutation — it parses the original byte once and re-evaluates the flip per frame [gfx/view_render.py:7].
+**Sierra runtime quirk (not in andromeda).** The original Sierra interpreter mutates the cel header in-place as it renders: when it flips a cel for display in loop L, it overwrites the non-mirror-loop-index field with L itself, so subsequent renders see the cel as "already correctly oriented for loop L" and only re-flip on loop changes [6-1-VIEW.html §Mirroring, "Mirroring is done by..."]. This is why the byte stores a *loop index* rather than just a flip-or-not bit. The andromeda decoder does not perform this mutation — it parses the original byte once and re-evaluates the flip per frame [gfx/view_render.py:3].
 
 **Reserved-space requirement.** Because the Sierra interpreter mutates cel data in place, mirrored cels must be allocated enough VOL-file space to hold both their original and flipped RLE encodings (the flipped version can be longer if it shifts trailing transparency to the start). Spec notes this constraint is enforced by interpreter 2.917 but not 2.440 [6-1-VIEW.html §Mirroring, "Leaving enough room..."]. Andromeda's read-only decoder is unaffected by either.
 
@@ -98,7 +98,7 @@ The andromeda decoder reads the description offset into `View.desc_offset` [reso
 
 ## Composition with screens
 
-VIEW cels are composited on top of the rendered visual screen at frame time. Their visibility per pixel is mediated by the priority screen — see [[concepts/screen-layers]] for the dual-screen model and [[interpreter/priority-bands]] for the y → priority band table. The transparent color from the cel header byte 2 is the alpha channel: pixels of that color are skipped during compositing [gfx/view_render.py:19; gfx/view_render.py:42].
+VIEW cels are composited on top of the rendered visual screen at frame time. Their visibility per pixel is mediated by the priority screen — see [[concepts/screen-layers]] for the dual-screen model and [[interpreter/priority-bands]] for the y → priority band table. The transparent color from the cel header byte 2 is the alpha channel: pixels of that color are skipped during compositing [gfx/view_render.py:17].
 
 The per-pixel object-vs-priority comparison rule itself is still an open item at [[concepts/screen-layers]] §"Open items at this page's level" — 6-1 documents the cel format but not the runtime occlusion procedure.
 
@@ -111,7 +111,7 @@ At each interpreter cycle, step 10 (rendering) updates all resident objects: adv
 ## Open items
 
 - Description string parsing (offset is read; string body is not).
-- Per-pixel occlusion algorithm when a VIEW cel pixel falls on a control-line pixel (priority colors 0..3); deferred to a later ingest or ScummVM cross-check.
+- Per-pixel occlusion algorithm when a VIEW cel pixel falls on a control-line pixel (priority colors 0..3); needs a ScummVM cross-check.
 
 ## Reference implementation
 
@@ -123,9 +123,9 @@ Peter Kelly's `viewview.pas` (vendored at `AGI_Specifications/Code/viewview.pas`
 | Cel header byte 2 bit 7 = mirror flag | `viewview.pas:204` (`if curbyte >= $80 then ... Mirror := TRUE`) | `resource/view.py:90` |
 | RLE chunk: high nibble = color, low nibble = run length | `viewview.pas:113-114` | `resource/view.py:106` |
 | `0x00` byte terminates row | `viewview.pas:111` | `resource/view.py:103-104` |
-| Screen width = cel width × 2 (horizontal doubling) | `viewview.pas:104-105` (`Width*2` buffer allocation) | `gfx/view_render.py:18, 39` |
+| Screen width = cel width × 2 (horizontal doubling) | `viewview.pas:104-105` (`Width*2` buffer allocation) | `gfx/palette.py:visual_screen_to_bytes` |
 
-`viewview.pas` also exhibits the Sierra-runtime in-place mutation style of mirroring at lines 127-137: when `Cel.Mirror` is set and the loop is the second occurrence of a shared loop offset (`LoopOccur[loopno] = 2`), the just-finished row is reversed in-place before advancing. Andromeda defers the flip to render time at `gfx/view_render.py:7` (`mirrored = cel.mirror and loop_idx != cel.non_mirror_idx`) — both implementations are spec-conformant; the choice is read-only vs. mutating.
+`viewview.pas` also exhibits the Sierra-runtime in-place mutation style of mirroring at lines 127-137: when `Cel.Mirror` is set and the loop is the second occurrence of a shared loop offset (`LoopOccur[loopno] = 2`), the just-finished row is reversed in-place before advancing. Andromeda defers the flip to render time at `gfx/view_render.py:3` (`mirrored = cel.mirror and loop_idx != cel.non_mirror_idx`) — both implementations are spec-conformant; the choice is read-only vs. mutating.
 
 ## See also
 

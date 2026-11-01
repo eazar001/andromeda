@@ -26,6 +26,10 @@ Priorities 0–3 are reserved for non-band uses ([[interpreter/control-lines]] r
 
 The screen is 168 pixels tall in AGI's coordinate system. The y=0..47 band (priority 4) covers the top of the screen above the horizon zone; y=156..167 (priority 14) covers the bottom strip closest to the viewer. Band heights are not uniform — the top band is 48 pixels tall, all other bands are 12 pixels tall.
 
+## Priority 15
+
+Value 15 is the band closest to the viewer: objects cannot move in front of it [5-2-PICTURE.html]. It sits outside the y-derived table, because EGO can never walk low enough to reach it [5-1-PICTURE.html]. It is in real use: SQ1 draws it in 45 of 73 pictures (15.5% of all priority pixels), and its scripts call `set.priority(n, 15)` 32 times [SQ1 data check, log 2026-11-01].
+
 ## Related commands
 
 Opcodes consuming or producing priority [4-3-Logic.html, [[interpreter/commands]]]:

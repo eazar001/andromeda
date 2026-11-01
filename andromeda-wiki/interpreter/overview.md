@@ -37,11 +37,11 @@ See [[interpreter/control-lines]] for the per-color semantics, the search-downwa
 
 ## View objects and animation
 
-All visible on-screen content — props, controllable actors, animated background elements, and inventory-item icons — is rendered from VIEW resources. A VIEW contains animation *loops* (cycles), each of which holds a sequence of *cels* (individual frames) [2-1-Interpreter.html §What are the LOGIC, PICTURE, SOUND, and VIEW data files?]. See [[interpreter/view-objects]] (screen-object model and animation timing) and [[entities/view]] (byte-level VIEW resource format — to be ingested with Group 5).
+All visible on-screen content — props, controllable actors, animated background elements, and inventory-item icons — is rendered from VIEW resources. A VIEW contains animation *loops* (cycles), each of which holds a sequence of *cels* (individual frames) [2-1-Interpreter.html §What are the LOGIC, PICTURE, SOUND, and VIEW data files?]. See [[interpreter/view-objects]] (screen-object model and animation timing) and [[entities/view]] (byte-level VIEW resource format).
 
 ## The event loop
 
-Each interpreter cycle is an ordered sequence of eleven operations: time delay, keyboard-buffer clear, transient-flag clear, input poll, EGO-direction update, object-motion recalculation, status-line refresh, LOGIC 0 execution, post-LOGIC cleanup, on-screen object update, and room-transition check [2-2-Interpreter.html §Interpreter work cycle]. The cleanup step also clears most signaling flags and per-frame variables, giving those slots strict cycle-scoped semantics. See [[interpreter/event-loop]] for the step-by-step sequence and the state-management details.
+Each interpreter cycle is an ordered sequence of eleven operations: time delay, keyboard-buffer clear, transient-flag clear, input poll, EGO-direction update, object-motion recalculation, status-line refresh, LOGIC 0 execution, post-LOGIC reset, on-screen object update, and room-transition check [2-2-Interpreter.html §Interpreter work cycle]. The much larger room-change procedure runs only when `new_room` was issued. See [[interpreter/event-loop]] for the step-by-step sequence and the state-management details.
 
 ## Input parsing
 

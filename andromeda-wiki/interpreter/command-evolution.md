@@ -24,6 +24,8 @@ The AGI command set grew across interpreter versions, and four commands changed 
 >
 > Conclusive resolution requires ScummVM source or AGI Studio cross-check. Provisional reading: 2.440 is the typo target (agidev, unverified).
 
+**SQ1 data point.** The copy tested here decodes with `quit` taking 1 argument and `print.at` taking 4. Forcing `quit` to 0 desyncs 2 LOGICs, and forcing `print.at` to 3 desyncs 1 [SQ1 data check, log 2026-11-01]. This does not settle the boundary above: the copy's file sizes (39,424 and 8,192 bytes) match the 2.915–2.936 rows of 2-8's table, past every candidate. Its highest action opcode is `$A4`. [[sources/2-7-interpreter]] lists SQ1 under several interpreter versions, so identify a copy by its files rather than its title.
+
 ## Total command count by interpreter version
 
 Each row of 2-8's version table fingerprints the opcode-index range that interpreter accepts [2-8-Interpreter.html, version table]:
@@ -42,7 +44,7 @@ A decoder encountering a command index greater than the target interpreter versi
 
 ## Unknown commands
 
-The spec states: "the last eleven we do not know the names of" [2-8-Interpreter.html]. For the final v3 release (3.002.149, 181 commands), this means roughly the last eleven opcode indices have no documented names or semantics in the AGI Specifications corpus. Unknown command #176 (with its version-conditional argument count, above) is one of these eleven. Group 3 (Logic) will need to cross-check ScummVM and AGI Studio to recover the unknown commands' identities.
+The spec states: "the last eleven we do not know the names of" [2-8-Interpreter.html]. For the final v3 release (3.002.149, 181 commands), this means roughly the last eleven opcode indices have no documented names or semantics in the AGI Specifications corpus. Unknown command #176 (with its version-conditional argument count, above) is one of these eleven. Recovering their identities needs a ScummVM or AGI Studio cross-check. SQ1 uses none of them.
 
 ## See also
 

@@ -16,7 +16,7 @@ Companion pages:
 - All opcodes are 1-byte unsigned values. Hex notation throughout.
 - Per-opcode argument count is authoritative; in the spec's HTML tables some rows carry stray cells (e.g. literal "string" in arg-slot 2 of a 1-arg command) that do not represent real arguments and are markup artifacts — ignored in the transcription below.
 - `???` denotes an argument type the spec marks as undocumented. Pending cross-check against ScummVM or AGI Studio source.
-- `(agidev, unverified)` applies to the entire catalogue at page level: there is no LOGIC decoder in the Python prototype, so every opcode listed here is unvalidated against working code.
+- **Verification.** Argument counts are confirmed for the 142 action and 15 test commands SQ1 uses: all 101 SQ1 LOGICs decode with no desyncs [SQ1 data check, log 2026-11-01]. The other 40 action commands and 3 test commands, including every `unknown*` opcode and `set.upper.left`, never occur in SQ1 and stay `(agidev, unverified)`. There is still no LOGIC decoder in `resource/`.
 - For arg type abbreviations, see [[concepts/agi-data-types]]. Quick legend:
   - `var` — variable index (8-bit)
   - `num` — numeric literal (8-bit)
@@ -191,7 +191,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 
 `load.sound` reads a SOUND resource into a playback buffer; `sound` initiates playback and signals the named flag on completion; `stop.sound` halts the current sound. See [[entities/sound]] for the SOUND resource format (four-voice PCjr-style note streams; reference playback implementations cataloged in [[sources/7-2-sound]]) and [[interpreter/variables-and-flags]] for the related runtime state (`var(22)` hardware type, `var(23)` volume, `flag(9)` on/off).
 
-**Flag-signal semantics — open item.** Whether the `flag` argument to `$63 sound` is set on completion, cleared at start, toggled, or has some other contract (e.g. clear-on-`stop.sound`) is not detailed in 7-1, and neither reference player in 7-2 implements LOGIC-level flag signaling. Resolution will require LOGIC-level reverse engineering or a ScummVM cross-check.
+**Flag-signal semantics.** The flag is set to 1 when playback finishes [4-4-Logic.html §SOUND RESOURCE MANAGEMENT COMMANDS] `(agidev, unverified)` until run in a working interpreter. Still unspecified: whether the flag is cleared when playback starts, and what `stop.sound` does to it.
 
 ### Print, display, screen (`$65..$71`)
 

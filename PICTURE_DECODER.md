@@ -38,8 +38,7 @@ For AGI v3 games: the payload may be pre-compressed (see §6 below); you run a d
 │                                                  │
 │   Priority values:                               │
 │     0..3  → control lines (barrier / alarm …)    │
-│     4..14 → depth bands (4 = front, 14 = back)   │
-│     15    → unused                               │
+│     4..15 → depth (4 = farthest, 15 = nearest)   │
 └──────────────────────────────────────────────────┘
         ↓ doubled horizontally at blit time
     320 × 200 display pixels
@@ -93,7 +92,7 @@ Implemented as a breadth-first search with a fixed 4000-entry circular queue. Th
 
 - If picture-draw is on (and the current visual color is not white): a pixel is fillable only if the visual screen holds white at that position. White is the init color — the only color that hasn't been explicitly drawn.
 - If picture-draw is off: a pixel is fillable only if the priority screen holds the init color (red, priority 4) at that position.
-- Both conditions must hold when both screens are active simultaneously.
+- When both screens are active, the visual test alone decides; priority is written along with it. (One narrow open conflict on priority writes is recorded on [[entities/picture]].)
 
 This is why the screen init colors are foundational: they define the entire universe of fillable space before any drawing happens.
 

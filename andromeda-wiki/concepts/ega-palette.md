@@ -23,13 +23,13 @@ The palette itself is not defined in `AGI_Specifications/` chapters; the AGI doc
 | 12 | `FF 55 55` | Light red | Priority band 12 |
 | 13 | `FF 55 FF` | Light magenta | Priority band 13 |
 | 14 | `FF FF 55` | Yellow | Priority band 14 |
-| 15 | `FF FF FF` | White | Initial fill of visual screen; **unused on priority screen** |
+| 15 | `FF FF FF` | White | Initial fill of visual screen; on the priority screen, the band closest to the viewer |
 
 Source for RGB values: [gfx/palette.py:6-11]. AGI-role column is cross-cut from [[concepts/screen-layers]] and [[interpreter/control-lines]].
 
 ## Why 0..3 are control colors on the priority screen
 
-The priority screen overloads 4-bit pixel values as **either** a priority-band index (4..14) **or** a control-line semantic (0..3), with 15 unused [5-1-PICTURE.html §GENERAL GUIDELINES; [[concepts/screen-layers]]]. The reservation of 0..3 for control rather than depth follows from the EGA palette itself: black/blue/green/cyan have the lowest palette indices, so a single 4-bit value can encode either a control color or a depth band without collision (and the search-downwards rule at [[interpreter/control-lines]] recovers the underlying band when a pixel is a control color).
+The priority screen overloads 4-bit pixel values as **either** a depth value (4..15) **or** a control-line semantic (0..3) [5-2-PICTURE.html; [[concepts/screen-layers]]]. The reservation of 0..3 for control rather than depth follows from the EGA palette itself: black/blue/green/cyan have the lowest palette indices, so a single 4-bit value can encode either a control color or a depth band without collision (and the search-downwards rule at [[interpreter/control-lines]] recovers the underlying band when a pixel is a control color).
 
 ## Usage in code
 
@@ -43,7 +43,7 @@ The priority screen overloads 4-bit pixel values as **either** a priority-band i
 
 ## See also
 
-- [[concepts/screen-layers]] — visual / priority dual-screen model; why indices 0..3 are control, 4..14 are bands.
+- [[concepts/screen-layers]] — visual / priority dual-screen model; why indices 0..3 are control, 4..15 are depth values.
 - [[interpreter/control-lines]] — semantics of the four control colors.
 - [[interpreter/priority-bands]] — y → priority band assignment table.
 - [[concepts/rle-encoding]] — VIEW cel byte chunks use these indices for color.

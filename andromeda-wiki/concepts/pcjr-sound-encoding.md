@@ -4,9 +4,9 @@ Shared encoding primitives for AGI SOUND resources, derived from the TI SN76496A
 
 ## Tone frequency encoding (10-bit divisor)
 
-A 10-bit divisor is split across two bytes within each tone-voice note. In storage order (little-endian; reversed relative to the T1 chip's register-write sequence):
+A 10-bit divisor is split across two bytes within each tone-voice note. In storage order (reversed relative to the T1 chip's register-write sequence):
 
-**Third byte of note (low 6 bits of divisor):**
+**Third byte of note (high 6 bits of divisor):**
 
 ```
 bit:  7   6   5   4   3   2   1   0
@@ -14,9 +14,9 @@ bit:  7   6   5   4   3   2   1   0
 ```
 - Bit 7: always 0.
 - Bit 6: ignored.
-- Bits 5–0: F0–F5 (lower 6 bits of divisor) [7-1-SOUND.html §Appendix 1].
+- Bits 5–0: F0–F5 (upper 6 bits of divisor) [7-1-SOUND.html §Appendix 1].
 
-**Fourth byte of note (high 4 bits of divisor + register):**
+**Fourth byte of note (low 4 bits of divisor + register):**
 
 ```
 bit:  7   6   5   4   3   2   1   0
@@ -24,7 +24,7 @@ bit:  7   6   5   4   3   2   1   0
 ```
 - Bit 7: always 1.
 - Bits 6–4: register address (R0R1R2 = `000`/`010`/`100` for voices 1/2/3).
-- Bits 3–0: F6–F9 (upper 4 bits of divisor) [7-1-SOUND.html §Appendix 1].
+- Bits 3–0: F6–F9 (lower 4 bits of divisor) [7-1-SOUND.html §Appendix 1].
 
 **Reconstructed divisor and frequency** [7-1-SOUND.html §Appendix 1]:
 

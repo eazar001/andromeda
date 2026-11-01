@@ -26,7 +26,7 @@ Implementation note: the spec characterizes this as a "Sierra Bresenham variant"
 - **Boundary rule** [showpic.c:237-244] — determined by which draw layer is enabled, per [[entities/picture]] §"Flood-fill target rule (`0xF8`)":
   - Visual-draw enabled, color ≠ 15: fillable iff visual-screen pixel == 15 (white).
   - Visual-draw disabled: fillable iff priority-screen pixel == 4 (red, the init color).
-  - Both: both conditions must hold.
+  - Both: fillable iff visual-screen pixel == 15; priority is not part of the test. See the conflict callout on [[entities/picture]] about priority writes.
 
 The 4000-entry queue is sized for the largest fillable region in any shipped game; running out is treated as a fatal error in showpic.c (queue-overflow does not gracefully degrade). A defensive reimplementation could grow dynamically or use a stack-based DFS, but neither matches Sierra output bit-for-bit if the games depend on the BFS order producing a specific fill pattern (e.g., for animated water).
 

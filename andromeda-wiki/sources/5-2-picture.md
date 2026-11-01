@@ -6,7 +6,7 @@ The second chapter in Group 4 (PICTURE). An **independent corroborating source**
 
 5-2 covers the same material as 5-1 but in a more compressed style with ASCII-diagram examples. It documents:
 
-- Picture and priority concepts (16 colors visual; priorities 4..14 + control colors 0..3).
+- Picture and priority concepts (16 colors visual; priorities 4..15 + control colors 0..3).
 - Color/priority set/cancel commands (`0xF0..0xF3`).
 - Polyline commands (Y-corner, X-corner, absolute) — `0xF4..0xF6`.
 - Curve / relative-polyline (`0xF7`).

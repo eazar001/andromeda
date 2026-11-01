@@ -14,9 +14,9 @@ Each interpreter cycle performs the following operations, in order:
 6. **Recalculate object motion** — for objects under `animate_obj` / `start_update` / `draw`.
 7. **Status-line refresh** — if `var(3)` (score) or `flag(9)` (sound) has changed since last cycle.
 8. **Execute LOGIC 0** — and any LOGICs it calls.
-9. **Post-LOGIC cleanup** — fixed sequence of cleanup commands and variable resets.
+9. **Post-LOGIC reset** — apply `var(6)` to EGO's direction, refresh the status line if needed, and clear `var(4)`, `var(5)`, `flag(5)`, `flag(6)`, `flag(12)`.
 10. **Update all on-screen objects** — animate next cels, reposition, redraw.
-11. **Room-transition check** — if `new_room` or `new_room_v` was issued during LOGIC, re-enter step 1 for the new room; otherwise loop back to step 1 in the current room.
+11. **Room-transition check** — if `new_room` or `new_room_v` was issued, run the room-change procedure and re-enter **step 8** directly; otherwise loop back to step 1.
 
 The cycle is described in the spec as a block diagram; the rest of this page expands each step with the state-management details.
 
@@ -57,11 +57,29 @@ If `var(3)` (score) or `flag(9)` (sound on/off) has changed since the last cycle
 
 LOGIC resource 0 is loaded at game start and remains resident for the entire session; it is the entry point for every interpreter cycle [2-2-Interpreter.html §General principles of the interpreter operation, §Interpreter work cycle]. LOGIC 0 typically dispatches to room-specific LOGICs, which may load and call further LOGICs in turn. The number of commands executed per cycle varies with the runtime state (puzzle progress, conditional branches, input flags). When LOGIC 0 returns, control flows to step 9.
 
-At the end of LOGIC 0 execution the interpreter re-checks the status-line triggers from step 7 (`var(3)` and `flag(9)`) — LOGIC may have mutated either, and the status line is redrawn if so.
+## Step 9: Post-LOGIC reset
 
-## Step 9: Post-LOGIC cleanup
+This small reset runs after every LOGIC 0 return [2-2-Interpreter.html §Interpreter work cycle]:
 
-A fixed sequence of commands runs after every LOGIC 0 return [2-2-Interpreter.html §Interpreter work cycle]:
+- EGO's direction of motion is taken from `var(6)`.
+- If `var(3)` (score) or `flag(9)` (sound) changed, the status line is redrawn.
+- `var(4) = 0`, `var(5) = 0`.
+- `flag(5) = 0`, `flag(6) = 0`, `flag(12) = 0`.
+
+## Step 10: Update all on-screen objects
+
+All screen objects (visible view objects, animated props, controllable actors) are repositioned and animated to their next cel, and the screen is redrawn [2-2-Interpreter.html §Interpreter work cycle]. This is the rendering pass; everything LOGIC set up during step 8 lands on screen here.
+
+## Step 11: Room-transition check
+
+The interpreter tests whether a `new_room` or `new_room_v` command was issued. If not, the cycle loops back to step 1 with the current room's state intact. If so, it runs the room-change procedure below and returns directly to step 8, skipping the delay, keyboard clear, and input poll [2-2-Interpreter.html §Interpreter work cycle, block diagram].
+
+> [!conflict] When `new.room` takes effect
+> The 2-2 diagram tests for `new_room` at the end of the cycle, after LOGIC 0 and the object update. [4-4-Logic.html §PROGRAM CONTROL COMMANDS] describes `new.room` as performing the procedure itself and then returning to the main loop, which reads as taking effect at the call. Neither source says whether commands after `new.room` in the same LOGIC still run. Unresolved; needs a ScummVM cross-check (agidev, unverified).
+
+### Room-change procedure
+
+This runs **only** when a room change was issued, never on an ordinary cycle [2-2-Interpreter.html §Interpreter work cycle, block diagram]. See [[interpreter/command-semantics]] §"`new.room`" for the 4-4 version of the same procedure.
 
 - `stop_update` for all animated objects
 - `unanimate_all` — reset every view object to its base cel
@@ -73,27 +91,19 @@ A fixed sequence of commands runs after every LOGIC 0 return [2-2-Interpreter.ht
 - `var(0) = n` if `new_room n` was issued, or `var(0) = var(n)` if `new_room_v n` was issued (the latter takes a variable index that is dereferenced to get the actual room number)
 - `var(4) = 0`, `var(5) = 0`, `var(9) = 0` — clear border-touch object, border-touch code, unparsed-word index
 - `var(16) = ` VIEW ID of EGO (looked up via the OBJECT resource)
-- `var(2) = 0` — clear EGO border-touch code
+- EGO's coordinates are set from `var(2)`, then `var(2) = 0`
 - `flag(2) = 0` — clear player-input-received flag
-- `flag(5) = 1` — set first-room-execution flag for the next cycle
-
-These resets enforce the discipline that signaling flags and per-frame state variables expire at cycle boundaries: if LOGIC doesn't observe an event during the cycle in which it occurs, the next cycle treats it as if it never happened (agidev, unverified — staleness semantics inferred from the clearing list; not made explicit in the spec).
-
-## Step 10: Update all on-screen objects
-
-All screen objects (visible view objects, animated props, controllable actors) are repositioned and animated to their next cel, and the screen is redrawn [2-2-Interpreter.html §Interpreter work cycle]. This is the rendering pass; everything LOGIC set up during step 8 lands on screen here.
-
-## Step 11: Room-transition check
-
-The interpreter tests whether a `new_room` or `new_room_v` command was issued during LOGIC 0 (step 8). If so, control flows back to step 1 with the new room's state active (room-resource loading timing across the transition not fully specified at this chapter's depth — agidev, unverified). Otherwise, the cycle loops back to step 1 with the current room's state intact.
+- `flag(5) = 1` — set first-room-execution flag, which LOGIC 0 sees when step 8 re-runs
+- The status line's stored score is updated from `var(3)`
 
 ## Transient-state discipline
 
 Several reserved variables and flags carry strict per-cycle semantics that derive from steps 3 and 9 above:
 
 - **Input-received flags** (`flag(2)`, `flag(4)`) signal *this* cycle's parsing results; they are cleared at the start of the next cycle.
-- **Border-touch variables** (`var(2)`, `var(4)`, `var(5)`) and `var(9)` (unparsed-word index) are cleared during post-LOGIC cleanup; their values are only valid within the cycle in which the event occurred.
-- **First-room-execution flag** (`flag(5)`) is set on the first cycle of every new room and cleared after that cycle's cleanup, so room-initialization LOGIC has exactly one frame to run.
+- **Object border-touch variables** (`var(4)`, `var(5)`) are cleared at step 9 of every cycle, so they are valid only until LOGIC 0 returns.
+- **EGO's border code and the unparsed-word index** (`var(2)`, `var(9)`) are cleared only by the room-change procedure; the diagram shows no per-cycle reset for them.
+- **First-room-execution flag** (`flag(5)`) is set by the room-change procedure and cleared at the next step 9, so room-initialization LOGIC sees it for exactly one LOGIC 0 pass.
 
 See [[interpreter/variables-and-flags]] for the complete table of reserved slots and their semantics.
 

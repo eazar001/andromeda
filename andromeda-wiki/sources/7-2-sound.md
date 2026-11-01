@@ -22,7 +22,7 @@ Bibliographically parallel to [[sources/3-4-files]], [[sources/4-6-logic]], [[so
 - **Duration time-unit is code-inferred, not spec-stated.** `play.c:107` computes `dur = (snddata[pos+0] | (snddata[pos+1]<<8)) * 6` before emitting a MIDI delta — the first concrete clue to the 16-bit duration field's units. The `* 6` is unexplained in the source, but is consistent with a duration unit of one playback tick at the interpreter's ~20 Hz frame rate scaled to MIDI's 192-PPQN convention. Resolves [[sources/7-1-sound]] open item only partially: the scale is now plausible but not authoritative.
 - **Intra-chapter frequency-base discrepancy.** `play.c:116` uses `111860.0 / freq` (matching the spec's 1/32-of-3.579-MHz claim, [[concepts/pcjr-sound-encoding]]), but `oldplay.c:91` uses `return (99320 / fileData);` — a ~12% lower constant. Two reference programs in the *same* chapter disagree; play.c corroborates the spec, oldplay.c is the outlier. Unexplained in either source.
 - **Volume-control and multi-voice handling were incomplete at sample-code vintage.** `play.c:9-10` header comment: *"This program was written before we worked out the details on the fourth voice and the volume control."* Contextualizes (but does not resolve) the [[sources/7-1-sound]] open item on `var(23)` ↔ per-note attenuation mapping.
-- **`sound` command flag-signal semantics remain unvalidated.** Neither reference player implements LOGIC-level flag signaling on completion. Open item from 7-1 is not closed by 7-2.
+- **`sound` command flag signaling is not exercised here.** Neither reference player implements it. Set-on-completion comes from 4-4 instead (see [[interpreter/commands]]).
 
 ## Validation outcome
 

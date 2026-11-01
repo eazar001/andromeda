@@ -16,19 +16,19 @@ Both screens are **160 pixels wide × 168 pixels tall** in logical AGI coordinat
 
 **Priority screen.** Invisible to the player. Each pixel stores a 4-bit value used by two distinct subsystems:
 
-- **Priority band** (values 4..14) — selects which of eleven depth bands the pixel belongs to. Drives per-pixel occlusion for screen-objects, per [[interpreter/priority-bands]].
+- **Priority band** (values 4..15) — the pixel's depth, from 4 (farthest back) to 15 (closest to the viewer). Values 4..14 are the eleven y-derived bands. Drives per-pixel occlusion for screen-objects, per [[interpreter/priority-bands]].
 - **Control line** (values 0..3) — encodes one of four control-line semantics: barrier, conditional barrier, alarm, water/surface. See [[interpreter/control-lines]].
 
-Value 15 is unused on the priority screen.
+Value 15 is the band closest to the viewer: objects cannot move in front of it [5-2-PICTURE.html]. It sits outside the y-derived table, because EGO can never walk low enough to reach it [5-1-PICTURE.html]. It is in real use: SQ1 draws it in 45 of 73 pictures (15.5% of all priority pixels), and its scripts call `set.priority(n, 15)` 32 times [SQ1 data check, log 2026-11-01].
 
-The dual role of the priority screen (depth + control) is why colors 0..3 are reserved (control), 4..14 are bands, and 15 is unused. The reservation of 0..3 specifically follows from the EGA palette: black/blue/green/cyan are the four control colors precisely because their palette indices fall below the lowest band index.
+The dual role of the priority screen (depth + control) is why colors 0..3 are reserved (control) and 4..15 are depth values. The reservation of 0..3 specifically follows from the EGA palette: black/blue/green/cyan are the four control colors precisely because their palette indices fall below the lowest band index.
 
 ## Initial state
 
 When PICTURE drawing begins for a new room, both screens are cleared:
 
 - Visual screen → all white (color 15).
-- Priority screen → all red (priority 4, the topmost band).
+- Priority screen → all red (priority 4, the farthest-back band).
 
 This initialization is foundational for [[entities/picture]] §"Flood-fill target rule (`0xF8`)" correctness: fill boundaries are defined relative to the initial color (white on visual, red on priority), so any subsequent draw operation produces a stop-pixel. Independently corroborated by 5-2's AGDS translation [5-2-PICTURE.html §I.2.1.1]: "Initially all pixels of the background are white and priority 4."
 

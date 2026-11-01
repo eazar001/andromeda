@@ -79,7 +79,7 @@ See [[interpreter/input-parsing]] for how the parser consumes these special code
 - `words.pas:86-102` — prefix-copy + XOR-decode loop. Note the Pascal expression `chr(63 + 32 - curbyte)` is arithmetically equivalent to `chr(0x7F XOR curbyte)` for `curbyte ≤ 0x7F`.
 - `words.pas:104-106` — `wordblocknum := msbyte*256 + lsbyte` confirms the **big-endian** word-number byte order from the spec.
 
-andromeda has no WORDS.TOK decoder yet; `words.pas` is currently the only validation surface for this entity page.
+andromeda has no WORDS.TOK decoder yet. Besides `words.pas`, a throwaway decoder following this page read 738 words from SQ1's file, and all 242 word codes used by SQ1's `said` tests resolve [SQ1 data check, log 2026-11-01]. It did not check each alphabet-index entry.
 
 ## See also
 

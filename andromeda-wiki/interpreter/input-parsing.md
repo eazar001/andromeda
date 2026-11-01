@@ -41,7 +41,7 @@ The remaining codes form a sequence `V(1), V(2), ..., V(m)` against which LOGIC 
 
 ### At-most-once-per-cycle semantics
 
-The `flag(4)` precondition gives `said` a "first match wins" property within a single interpreter cycle. Once any `said` test in a cycle succeeds, every subsequent `said` in the same cycle short-circuits to FALSE on the `flag(4) = 1` check [2-6-Interpreter.html]. `flag(4)` is cleared again either at the start of the next cycle (per the event-loop's flag-cleanup step, see [[interpreter/event-loop]]) or whenever the next input line is parsed successfully (the filtering step above). The spec does *not* clear `flag(4)` on a *failed* `said` match — only successes claim the input.
+The `flag(4)` precondition gives `said` a "first match wins" property within a single interpreter cycle. Once any `said` test in a cycle succeeds, every subsequent `said` in the same cycle short-circuits to FALSE on the `flag(4) = 1` check [2-6-Interpreter.html]. `flag(4)` is cleared again either at the start of the next cycle (event-loop step 3, see [[interpreter/event-loop]]) or whenever the next input line is parsed successfully (the filtering step above). The spec does *not* clear `flag(4)` on a *failed* `said` match — only successes claim the input.
 
 ## See also
 

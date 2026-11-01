@@ -33,7 +33,7 @@ In SQ2, each table entry is **43 bytes** (0x00–0x2A) [6-2-VIEW.html §VIEW TAB
 | 21 | 1 | `direction` (heading) | 8-way or 4-way direction code [6-2-VIEW.html §VIEW TABLE ENTRY offset 21]: `0 = stationary`, `1 = north`, `2 = northeast`, `3 = east`, `4 = southeast`, `5 = south`, `6 = southwest`, `7 = west`, `8 = northwest`. |
 | 22 | 1 | `motion_type` | Animation motion state [6-2-VIEW.html §VIEW TABLE ENTRY offset 22]: `0 = normal.motion`, `1 = wander`, `2 = follow.ego`, `3 = move.obj` (follow another object). |
 | 23 | 1 | `cycle_type` | Animation cel-sequencing mode [6-2-VIEW.html §VIEW TABLE ENTRY offset 23]: `0 = normal.cycle`, `1 = end.of.loop`, `2 = reverse.loop`, `3 = reverse.cycle`. |
-| 24 | 1 | `priority` | Priority band 0–14 for depth-sorting against the PICTURE background. See [[interpreter/priority-bands]] [6-2-VIEW.html §VIEW TABLE ENTRY offset 24]. |
+| 24 | 1 | `priority` | Priority value for depth-sorting against the PICTURE background; scripts set values up to 15 [SQ1 data check, log 2026-11-01]. See [[interpreter/priority-bands]] [6-2-VIEW.html §VIEW TABLE ENTRY offset 24]. |
 | 25–26 | 2 | `view_flags` (LE bitfield) | Runtime state flags; see layout below [6-2-VIEW.html §VIEW TABLE ENTRY offset 25-26]. |
 | 27 | 1 | ?? | Purpose unknown; "storage for some view related command parameters" per spec [6-2-VIEW.html §VIEW TABLE ENTRY offset 27]. |
 | 28 | 1 | ?? | Purpose unknown; same as offset 27 [6-2-VIEW.html §VIEW TABLE ENTRY offset 28]. |

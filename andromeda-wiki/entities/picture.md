@@ -2,7 +2,7 @@
 
 > **Verification status:** Most byte-level claims on this page are corroborated by Lance Ewing's reference PICTURE decoder at [`AGI_Specifications/Code/showpic.c`](../../AGI_Specifications/Code/showpic.c) (referenced by the 5-3 "Sample Code" chapter). Per-claim citations distinguish code-verified claims from claims that remain `(agidev, unverified)`. Note that showpic.c is also agidev-corpus material (same source archive as the prose chapters); ScummVM cross-check is still the path to fully-external validation.
 
-The PICTURE resource encodes a single room's background imagery as a sequence of drawing opcodes rather than a raw pixel grid. A bytecode interpreter walks the stream and writes pixels into two parallel framebuffers — the **visual screen** (what the player sees) and the **priority screen** (depth + control-line layer) — both in 160×168 logical coordinates per [[concepts/screen-layers]] [5-1-PICTURE.html §GENERAL GUIDELINES]. PICTURE composition is invoked from LOGIC via `$7A add.to.pic` / `$7B add.to.pic.v` (see [[interpreter/commands]] and [[interpreter/command-semantics]] §`add.to.pic`); the LOGIC opcodes are distinct from the PICTURE bytecode opcodes documented below.
+The PICTURE resource encodes a single room's background imagery as a sequence of drawing opcodes rather than a raw pixel grid. A bytecode interpreter walks the stream and writes pixels into two parallel framebuffers — the **visual screen** (what the player sees) and the **priority screen** (depth + control-line layer) — both in 160×168 logical coordinates per [[concepts/screen-layers]] [5-1-PICTURE.html §GENERAL GUIDELINES]. LOGIC draws a PICTURE with `$19 draw.pic` and composites VIEW cels onto it with `$7A add.to.pic` / `$7B add.to.pic.v` (see [[interpreter/commands]] and [[interpreter/command-semantics]] §`add.to.pic`); the LOGIC opcodes are distinct from the PICTURE bytecode opcodes documented below.
 
 ## File framing
 
@@ -45,9 +45,12 @@ The AGDS manual (5-2-PICTURE.html) uses alternate terminology for the same opcod
 
 - **Visual-draw enabled, color ≠ 15 (white):** Fill the closed white-pixel region containing the argument point on the visual screen. The fill stops at any non-white pixel.
 - **Visual-draw disabled (cancelled):** Fill the closed priority-4 region containing the argument point on the priority screen. The fill stops at any pixel whose priority is not 4.
-- **Both screens enabled:** Fill respects boundaries on both layers simultaneously.
+- **Both screens enabled:** The visual screen decides: the fill covers the white region and also writes the priority color [showpic.c:okToFill]. Requiring priority 4 as well is wrong: it leaves SQ1's title screen white instead of black and changes 13 of 73 pictures [SQ1 data check, log 2026-11-01].
 
-Consequences: it is impossible to repaint non-white pixels on the visual screen via `0xF8`, and impossible to overwrite a priority value other than 4. These constraints are why the screen-init colors (white visual, red priority-4) are foundational — they define the "fillable" region for every subsequent `0xF8` call.
+> [!conflict] Priority writes during a both-screens fill
+> `showpic.c` writes priority at every filled pixel. [5-1-PICTURE.html §0xF8] says the priority fill "not only looks for its own boundary", which reads as writing priority only where it is still 4. The visual result is identical; the priority screens differ in 2 of 73 SQ1 pictures, by 183 and 11 pixels [SQ1 data check, log 2026-11-01]. Unresolved; needs a ScummVM cross-check.
+
+Consequences: it is impossible to repaint non-white pixels on the visual screen via `0xF8`, and a priority-only fill cannot overwrite a priority value other than 4. These constraints are why the screen-init colors (white visual, red priority-4) are foundational — they define the "fillable" region for every subsequent `0xF8` call.
 
 ## Coordinate encoding
 
@@ -73,6 +76,8 @@ bit:   7   6 5 4   3   2 1 0
 - Bits 2–0 (`|Δy|`): magnitude 0..7.
 
 So each displacement spans `(−7..+7, −7..+7)`. Example: byte `0xCC` = `1100 1100` → `Δx = −4`, `Δy = −4`. Code-verified against [showpic.c:369-372] (sign extracted via `disp & 0x80` / `disp & 0x08`; magnitude via `disp & 0x70 >> 4` / `disp & 0x07`).
+
+**SQ1 check.** All 73 SQ1 PICTUREs parse and render without out-of-range drawing; the rooms inspected by eye look correct. SQ1 has no `0xF9` and one `0xFA`, so pens and splatter are untested on this game [SQ1 data check, log 2026-11-01].
 
 ## Pen-style encoding (argument to `0xF9`)
 
@@ -137,7 +142,7 @@ The chapter notes that bit-position wrap is at **255 rather than 256**, "possibl
 
 ## Screen initialization
 
-When PICTURE drawing begins, the visual screen initializes to white (color 15) and the priority screen initializes to red (priority 4 — the topmost band) [5-1-PICTURE.html §IMPLEMENTING ALL THIS]. Fill-boundary correctness depends on this initial state; see [[interpreter/control-lines]] §"Flood fill" for the rules.
+When PICTURE drawing begins, the visual screen initializes to white (color 15) and the priority screen initializes to red (priority 4 — the farthest-back band) [5-1-PICTURE.html §IMPLEMENTING ALL THIS]. Fill-boundary correctness depends on this initial state; see [[interpreter/control-lines]] §"Flood fill" for the rules.
 
 ## Version differences
 
@@ -148,7 +153,7 @@ In AGI v2, `0xF0` and `0xF2` consume a full byte for the color argument (high ni
 A faithful decoder needs four things to match Sierra output pixel-for-pixel:
 
 1. The exact line-drawing rounding rule (Sierra's Bresenham variant — see [[concepts/picture-rendering]] §"Line drawing").
-2. Flood-fill boundary tests that respect cross-screen masking when both picture-draw and priority-draw are enabled — see [[concepts/picture-rendering]] §"Flood fill".
+2. Flood-fill boundary tests that follow the target rule above, including the visual-decides case when both screens are enabled — see [[concepts/picture-rendering]] §"Flood fill".
 3. Precomputed brush bitmaps for every `(shape, size)` combination matching the diagrams in [5-1-PICTURE.html §BRUSH STYLE].
 4. The wrap-at-255 quirk of splatter texture indexing — see [[concepts/picture-rendering]] §"Splatter rendering".
 

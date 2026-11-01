@@ -31,7 +31,7 @@ Specifies the AGI v2+ SOUND resource format as a four-voice container designed t
 - Time-unit scale of the 16-bit duration field (per-frame? milliseconds? interpreter ticks?).
 - AGI v1.12 voice-identification and selective-byte-recording algorithm.
 - Mapping between `var(23)` (sound volume, 0x0–0xF) and the per-note attenuation byte sent to the T1 chip — are they multiplied, OR'd, or independent layers?
-- Exact semantics of the `sound` command's flag argument (set-on-completion vs. clear-on-start; interaction with `stop.sound`). May be addressed in 7.2-SOUND.
+- Exact semantics of the `sound` command's flag argument. Set-on-completion is stated by 4-4 (see [[interpreter/commands]]); clear-on-start and `stop.sound` interaction remain open.
 
 ## Related sources
 

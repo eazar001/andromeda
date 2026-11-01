@@ -45,15 +45,15 @@ Variables and flags share a single global namespace across every loaded LOGIC re
 | `flag(1)` | Set when EGO is completely obscured (invisible on screen). |
 | `flag(2)` | Set when the player has entered a command line *and* the interpreter has successfully parsed every word against the vocabulary [2-6-Interpreter.html]. If any word fails to parse, `flag(2)` is left unset and `var(9)` reports the failure position. Cleared at the start of each cycle. See [[interpreter/input-parsing]]. |
 | `flag(3)` | Set when EGO's baseline touches a signal-line pixel (priority = 2). |
-| `flag(4)` | Set when a `said` test command has successfully matched player input [2-6-Interpreter.html]. Cleared at the start of each cycle (event-loop cleanup step) and re-cleared each time input preprocessing succeeds. Once set within a cycle, all subsequent `said` tests in that cycle short-circuit to FALSE on the `flag(4) = 1` precondition — at-most-once-per-cycle `said` semantics. The spec does *not* clear `flag(4)` on a failed `said` match. See [[interpreter/input-parsing]]. |
-| `flag(5)` | Set on the very first cycle a room is entered; cleared by the interpreter after that cycle's cleanup. Set by step 10 of the `new.room` procedure [4-4-Logic.html §PROGRAM CONTROL COMMANDS, emphasized as "VERY IMPORTANT"] — see [[interpreter/command-semantics]] §"`new.room`". |
-| `flag(6)` | Set when `restart_game` has been executed; cleared after the current cycle completes. |
+| `flag(4)` | Set when a `said` test command has successfully matched player input [2-6-Interpreter.html]. Cleared at the start of each cycle (event-loop step 3) and re-cleared each time input preprocessing succeeds. Once set within a cycle, all subsequent `said` tests in that cycle short-circuit to FALSE on the `flag(4) = 1` precondition — at-most-once-per-cycle `said` semantics. The spec does *not* clear `flag(4)` on a failed `said` match. See [[interpreter/input-parsing]]. |
+| `flag(5)` | Set when a room is entered; cleared at the next event-loop step 9, after one LOGIC 0 pass. Set by step 10 of the `new.room` procedure [4-4-Logic.html §PROGRAM CONTROL COMMANDS, emphasized as "VERY IMPORTANT"] — see [[interpreter/command-semantics]] §"`new.room`". |
+| `flag(6)` | Set when `restart_game` has been executed; cleared at event-loop step 9. |
 | `flag(7)` | If set, writing to the script/log buffer is blocked. |
 | `flag(8)` | If set, `var(15)` controls joystick sensitivity. |
 | `flag(9)` | Sound on/off state. The interpreter monitors this flag to redraw the on-screen status line. |
 | `flag(10)` | Built-in debugger activation (also accessible via ALT-D in most shipped games; see [[interpreter/debug-modes]]). |
 | `flag(11)` | Set during the very first execution of LOGIC 0; distinguishes cold-start initialization from subsequent cycles. |
-| `flag(12)` | Set when `restore_game` has been executed; cleared after the current cycle. |
+| `flag(12)` | Set when `restore_game` has been executed; cleared at event-loop step 9. |
 | `flag(13)` | If set, the `status` command lets the player select inventory items. |
 | `flag(14)` | If set, the menu system is enabled. |
 | `flag(15)` | Print-window mode: `1` = window persists until the user dismisses it; `0` = window closes on Enter/Esc, or automatically after `0.5 × var(21)` seconds if `var(21) ≠ 0`. |

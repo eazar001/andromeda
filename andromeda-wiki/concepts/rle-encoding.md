@@ -23,7 +23,7 @@ The andromeda decoder extracts both nibbles in one pass via the `nibble()` helpe
 
 A `0x00` byte marks end-of-row. The next byte begins the next row. Total rows per cel = cel header byte 1 (height) [6-1-VIEW.html §Cel data; resource/view.py:103-104].
 
-Note that `0x00` is unambiguous as a terminator because a chunk with `N = 0` (zero-length run) carries no information and would never be emitted — every real chunk has `N ≥ 1`. The renderer at [gfx/view_render.py:13] treats `(color == 0 && num_pixels == 0)` as the sentinel after the parser splits the byte into a `(color, count)` tuple.
+Note that `0x00` is unambiguous as a terminator because a chunk with `N = 0` (zero-length run) carries no information and would never be emitted — every real chunk has `N ≥ 1`. The renderer at [gfx/view_render.py:9] treats `(color == 0 && num_pixels == 0)` as the sentinel after the parser splits the byte into a `(color, count)` tuple.
 
 ## Transparency padding
 
@@ -33,16 +33,16 @@ The renderer doesn't need to know about the omission specifically — the unwrit
 
 ## Rendering steps
 
-The andromeda renderer at [gfx/view_render.py:5-22] (SDL draw) and [gfx/view_render.py:26-46] (visual-screen composite) implements:
+The andromeda compositor [gfx/view_render.py:composite_cel] implements:
 
 1. Read next `(color, count)` tuple from the parsed cel data.
 2. If `count == 0 && color == 0`: end of row — reset `x = 0`, increment `y`, continue.
-3. Otherwise, draw `count × 2` screen pixels starting at column `x`. The ×2 doubles AGI logical-pixel width to EGA screen-pixel width.
+3. Otherwise, cover `count` logical pixels starting at column `x`.
 4. If `color == cel.alpha` (transparent), skip the actual pixel writes — the underlying screen content is preserved.
-5. If the cel is mirrored relative to the current loop, flip the x coordinate: `cel.width - 1 - x` [gfx/view_render.py:21, 43].
-6. Advance `x` by `count × 2`. Loop until `y >= cel.height`.
+5. If the cel is mirrored relative to the current loop, flip the x coordinate: `cel.width - 1 - x` [gfx/view_render.py:18].
+6. Advance `x` by `count`. Stop when `y >= cel.height`.
 
-The horizontal ×2 doubling is shared with the visual-screen renderer at [gfx/palette.py:13-34] (`visual_screen_buffer_to_texture`), which doubles every visual-screen pixel column when blitting to the 320-wide SDL surface.
+Compositing works in logical pixels. Horizontal doubling happens only when the finished screen is converted for SDL [gfx/palette.py:visual_screen_to_bytes].
 
 ## Worked example
 
@@ -53,25 +53,15 @@ A 12-pixel-wide × 2-pixel-tall cel where:
 With cel header byte 2's low nibble = 0 (transparency index 0), the encoded bytes are:
 
 ```
-hex:  43 00 19 00
+hex:  43 00 1C 00
 ```
 
 - `0x43` → row 0: 3 pixels of color 4 (red)
 - `0x00` → end of row 0; remaining 9 transparent pixels not encoded
-- `0x19` → row 1: 9 pixels of color 1 (blue)? — no, wait
+- `0x1C` → row 1: 12 pixels of color 1 (blue)
+- `0x00` → end of row 1
 
-Correction: width = 12 logical AGI pixels, and each chunk's N is 1..15, so 12 blue pixels fits in one chunk: `0x1C` (12 pixels of color 1, since 0xC = 12). Then:
-
-```
-hex:  43 00 1C 00
-```
-
-- `0x43` → 3 red
-- `0x00` → end row 0
-- `0x1C` → 12 blue
-- `0x00` → end row 1
-
-Total: 4 bytes for a 24 EGA-pixel-wide × 2-pixel-tall cel.
+Total: 4 bytes for a 12-pixel-wide × 2-pixel-tall cel.
 
 ## See also
 

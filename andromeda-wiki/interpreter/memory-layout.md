@@ -18,8 +18,8 @@ The AGI interpreter organizes its state on a single linear heap. This page docum
 | Encryption string | 12 bytes | The string `"Avis Durgan"` (11 chars + zero terminator) embedded in the heap [2-4-Interpreter.html]. Used as the repeating XOR key for OBJECT-file decryption (`resource/objects.py`) and v2 LOGIC text-message sections — see [[entities/object]] §Encryption and [[entities/logic]] §Text section for details. |
 | AGIDATA.OVL remainder | unspecified | Remaining bytes of the `AGIDATA.OVL` overlay (the interpreter's main code/data segment) [2-4-Interpreter.html]. |
 | Unknown | unspecified | Second region labeled "unknown" [2-4-Interpreter.html]. |
-| WORDS.TOK | variable | Loaded parser dictionary [2-4-Interpreter.html]. Entity page deferred to Group 7 ingest (`8-2-WORDS_TOK.html`). |
-| OBJECT file | variable | Loaded inventory table [2-4-Interpreter.html]. Entity page deferred to Group 7 ingest (`8-1-OtherData.html`). |
+| WORDS.TOK | variable | Loaded parser dictionary [2-4-Interpreter.html]. See [[entities/words-tok]]. |
+| OBJECT file | variable | Loaded inventory table [2-4-Interpreter.html]. See [[entities/object]]. |
 | VIEW object table | variable | Runtime table of active screen-object instances — each an instance of a VIEW resource, controllable or non-controllable [2-4-Interpreter.html]. See [[interpreter/view-objects]] for the 43-byte SQ2 entry structure with per-object properties [6-2-VIEW.html §VIEW TABLE ENTRY]. |
 | LOGIC.0 | variable | The root LOGIC resource, loaded once at startup and resident for the entire session [2-4-Interpreter.html]. |
 | Other loaded resources | variable | Dynamically loaded room-specific LOGICs and other resources, swapped in and out as gameplay progresses [2-4-Interpreter.html]. |

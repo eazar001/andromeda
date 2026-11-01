@@ -19,7 +19,7 @@ Bytes 3–4:  Length      (little-endian, 16-bit)
 ```
 
 - **Signature** — Always `0x12 0x34` (read big-endian as `0x1234`). Acts as a magic number marking the start of a resource [3-2-Files.html §VOL File Format; resource/header.py:13].
-- **VOL number** — The number of the VOL file containing this resource (0–15) [3-2-Files.html §VOL File Format; resource/header.py:14]. This duplicates the VOL number already encoded in the directory entry; the working code in [resource/volume.py] does not validate the two against each other, so the rationale (corruption check? error recovery?) is unclear (agidev, unverified).
+- **VOL number** — The number of the VOL file containing this resource (0–15) [3-2-Files.html §VOL File Format; resource/header.py:14]. This duplicates the VOL number already encoded in the directory entry; the working code in [resource/volume.py] does not validate the two against each other, so the rationale (corruption check? error recovery?) is unclear (agidev, unverified). On all 462 SQ1 resources the signature is `0x1234` and the VOL number matches the directory entry [SQ1 data check, log 2026-11-01].
 - **Length** — Byte count of the resource payload that follows the header, *not* including the 5 header bytes [3-2-Files.html §VOL File Format; resource/header.py:15].
 
 Code reference: [resource/header.py:ResourceHeader.parse] parses this header; [resource/volume.py:VolumeReader.read_resource] returns the parsed header and the payload bytes.
