@@ -24,9 +24,9 @@ vol    = (b0 >> 4) & 0xF
 offset = ((b0 & 0xF) << 16) | (b1 << 8) | b2
 ```
 
-If the decoded pair is `(0xF, 0xFFFFF)` — i.e., all three bytes `0xFF` — the entry signals a nonexistent resource; see [[entities/dir-file#Resource nonexistence]].
+In AGI 2.917, any entry with `vol = 0xF` is absent, whatever its offset bits hold. The spec names only `FF FF FF`. See [[entities/dir-file#Resource nonexistence]].
 
-Code reference: [resource/directory.py:read_byte_triplet] implements this exactly.
+The interpreter reads the same bytes the same way [AGI 2.917 1000:2E6E, 1000:2EBD]. Code reference: [resource/directory.py:read_byte_triplet] implements this decoding.
 
 ## Where it appears
 
@@ -34,4 +34,4 @@ Currently documented for: directory entries ([[entities/dir-file]]). Other AGI s
 
 ## Design rationale
 
-20-bit offsets give each VOL up to ~1 MB of resource storage; the 4-bit VOL field supports 16 VOL files per game — together enough headroom for the largest commercial AGI titles (agidev, unverified).
+20-bit offsets give each VOL up to about 1 MB of resource storage, and the 4-bit VOL field has room for 16 numbers. 2.917 opens only `vol.0`–`vol.4`; see [[entities/vol-file]] §"How AGI 2.917 reads a resource".

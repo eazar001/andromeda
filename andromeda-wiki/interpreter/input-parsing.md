@@ -32,7 +32,7 @@ The parser clears the list, then repeats lookups until the buffer ends or 10 wor
 
 After a normal finish, `flag(2)` is set if at least one word was stored. A line of only filler or punctuation leaves `flag(2)` clear, and the old word count stays in memory, which is harmless because `said` checks the flag first. Words past the tenth are ignored without error.
 
-Scripts can display the stored text through message `%w` codes; that formatting is unread.
+Scripts display the stored text with `%w<n>`, numbered from 1, or copy it with `word.to.string`, numbered from 0. See [[interpreter/command-semantics]] §"Strings".
 
 ## The `said` test
 

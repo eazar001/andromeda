@@ -10,8 +10,8 @@ _(Highest-traffic pages will be promoted here once content lands.)_
 
 Resource types and on-disk file formats. One page per resource.
 
-- [[entities/dir-file]] — VOL/DIR addressing: v2 and v3 directory file layouts, entry decoding, sparse-numbering sentinel.
-- [[entities/vol-file]] — VOL container format: 5-byte resource header (signature, VOL number, length) and payload structure.
+- [[entities/dir-file]] — VOL/DIR addressing: v2 and v3 directory file layouts, entry decoding, absent-entry rule (high nibble `F`), and how 2.917 uses directories.
+- [[entities/vol-file]] — VOL container format: 5-byte resource header (signature, VOL number, length), payload structure, and how 2.917 reads a resource, including wrong-disk checks and retries.
 - [[entities/logic]] — LOGIC resource bytecode format: 7-byte header (5-byte VOL header + 2-byte text offset), `$FF/$FE/$FD/$FC` control-flow opcodes, AGIDATA.OVL argument dispatch, and Avis-Durgan-XOR'd text-message section.
 - [[entities/picture]] — PICTURE resource bytecode format: drawing-opcode catalogue `0xF0..0xFF`, dual-screen dispatch, sign-magnitude `0xF7` displacements, pen-style and splatter-texture encoding.
 - [[entities/view]] — VIEW resource format: loop/cel hierarchy, RLE-compressed bitmap cel data, code-verified byte-2 mirror/transparency packing, loop mirroring with in-place Sierra-runtime mutation note.

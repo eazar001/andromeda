@@ -1087,3 +1087,39 @@ Static reading, plus a data check on all 101 SQ1 LOGICs and on `WORDS.TOK`. See 
 **New.** Short-circuit rules for `if`. Message numbers start at 1. The 10-word limit. Filler handling of "a" and "i". `parse` ignores strings 12 and up. Flag bit order. A stray `$FC` or `$FD` hangs the interpreter. `call` of an unloaded LOGIC resets the heap top.
 
 **Changed.** `entities/logic`, `interpreter/input-parsing`, `interpreter/command-semantics`, `interpreter/commands`, `interpreter/variables-and-flags`, `concepts/agi-data-types`, `sources/agi-2917-binary`.
+
+## [2026-11-01] file | Audit slice 2, part 2: text output and strings
+
+Static reading, plus a survey of format codes in all SQ1 messages. See `WIKI_AUDIT_PLAN.md`.
+
+**Contradicted.** The spec's `%0` is `%o`, and it reads the item number from a variable. `word.to.string` takes string first, word second, with words numbered from 0. `flag(15)` and `var(21)` are one-shot: the next `print` clears them. `flag(15)` doesn't wait for the player at all. In graphics mode, background and clear colors are only zero or non-zero. The first coordinate in `print.at`, `get.string` and `clear.text.rect` is the row.
+
+**Resolved.** A message number above the count gives a null pointer: `print` shows a minimal box with uninitialized text, and `%m` skips it. Strings 12 to 23 work everywhere except `parse`; the table holds exactly 24. `var(21)` units of 0.5 seconds are confirmed.
+
+**Confirmed.** `set.game.id` compares and exits on a mismatch; SQ1's binary expects `SQ`. String 0 is the prompt. The cursor character is at `DS:05D7`.
+
+**New.** Full format code table, backslash escape, and recursive expansion. Wrapping rules and a stale-space quirk. 20-line limit and the "too verbose" message. Window position, size and colors. The `get.string` and `get.num` editor. Output never scrolls. `get.num` truncates to a byte. The clock runs during `print` waits.
+
+**Unread.** Driver entries `9743` and `9746` for mode switching. The inverted glyph path. Hercules prompts. The condition for the 24-line path.
+
+**Runtime only.** The `0xFF` clear fill appearing white. Window pixel geometry on screen.
+
+**Changed.** `interpreter/command-semantics`, `interpreter/commands`, `interpreter/variables-and-flags`, `interpreter/event-loop`, `interpreter/input-parsing`, `concepts/agi-data-types`, `entities/logic`, `sources/agi-2917-binary`.
+
+## [2026-11-01] file | Audit slice 4, part 1: sound, OBJECT, WORDS.TOK, DIR, VOL
+
+Static reading, plus data checks on all SQ1 directories, 50 SOUNDs, 101 LOGICs, `WORDS.TOK` and `OBJECT`. Nothing was run. See `WIKI_AUDIT_PLAN.md`.
+
+**Contradicted.** An absent directory entry is any entry with high nibble `F`, not just `FF FF FF`; this explains SQ1's `SNDDIR` slot 0. 2.917 opens only `vol.0`–`vol.4`, not 16 files. `flag(11)` is not a first-run flag: it is set at startup and restore on machines other than type 0, and SQ1 doesn't use it. `var(23)` is added attenuation, so higher is quieter.
+
+**Resolved.** Note durations are 60 Hz ticks. `sound` clears its flag and first stops any playing sound. The VOL byte and signature are a wrong-disk check. `oldplay.c`'s 99320 constant is approximately the speaker's 99,432, which comes from a timer divisor of 12 times the tone divisor.
+
+**New.** A 67-step attenuation envelope on voices 1–3. Clearing `flag(9)` ends a sound within a tick. Machine types 0, 1, 2, 8, with the switches `-p`, `-t`, `-s`. Sounds end on voice 1 alone on the speaker. Item bounds error `0x17`. Object slots are the OBJECT header byte plus 1. WORDS.TOK ends with a stray `0` byte that the search relies on. Disk retry behavior.
+
+**Corrected.** `entities/object` cited the wrong opcodes for `get` and `drop`.
+
+**Still unread.** What the allocator does when memory runs out, `print` behavior in the prompts (assumed to return Enter or Esc), the rest of the `status` screen, and monitor types 1 and 4.
+
+**Runtime only.** All sound timing and pitch, and the speaker cut-off after the envelope.
+
+**Changed.** `entities/sound`, `entities/object`, `entities/words-tok`, `entities/dir-file`, `entities/vol-file`, `concepts/offset-encoding`, `concepts/pcjr-sound-encoding`, `interpreter/variables-and-flags`, `interpreter/event-loop`, `sources/agi-2917-binary`, `index`.

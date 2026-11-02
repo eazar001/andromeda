@@ -22,7 +22,7 @@ Byte 2: [PPPPPPPP]  (low byte of offset)
 
 Where:
 
-- **V** (4 bits) — VOL number, range 0–15 [3-1-Files.html §Version 2 directories]
+- **V** (4 bits) — VOL number, range 0–15 by format [3-1-Files.html §Version 2 directories]. 2.917 can read only 0–4, and treats 15 as absent. See "How AGI 2.917 uses directories".
 - **P** (20 bits) — byte offset into that VOL file, big-endian within the 3-byte span [3-1-Files.html §Version 2 directories]
 
 The decoding algorithm is documented under [[concepts/offset-encoding]] and implemented in [resource/directory.py:read_byte_triplet].
@@ -52,15 +52,24 @@ The `LOGDIR` offset is always 8 (encoded as bytes `08 00` little-endian), since 
 
 ## Resource nonexistence
 
-An entry value of `FF FF FF` (all three bytes `0xFF`) signals that the resource slot is unused — distinct from a resource that exists with zero length. The directory reserves the numbering slot but no VOL storage is allocated [3-1-Files.html §Version 2 directories].
+In AGI 2.917, an entry is absent when the high nibble of its first byte is `F`. The other 20 bits are ignored [AGI 2.917 1000:434E].
 
-This enables sparse numbering: a game can define `PICTURE.5` without `PICTURE.0`–`PICTURE.4`, with the unused entries marked `FF FF FF`. [resource/directory.py:read_dir] filters these entries out, which also loses the numbering: list position no longer equals resource number. On SQ1, 61 of 101 LOGIC, 73 of 73 PICTURE, 228 of 238 VIEW, and 46 of 51 SOUND entries sit at the wrong position [SQ1 data check, log 2026-11-01]. LOGIC addresses resources by number, so a reader must key entries by slot.
+> [!conflict] What marks an absent resource
+> **Refined:** the spec names only `FF FF FF` [3-1-Files.html §Version 2 directories]. On SQ1 that form accounts for 86 of the 87 absent entries. The other is `SNDDIR` slot 0, `FF 23 C1`, which earlier looked like an invalid entry pointing at `VOL.15`. The interpreter's rule covers it [SQ1 data check, log 2026-11-01].
 
-**Other invalid entries exist.** SQ1's `SNDDIR` slot 0 holds `FF 23 C1`, which decodes to VOL 15 although the game has no `VOL.15`. No literal `load.sound` in SQ1 refers to it [SQ1 data check, log 2026-11-01]. Do not treat `FF FF FF` as the only sign of an absent resource.
+This enables sparse numbering: a game can define `PICTURE.5` without `PICTURE.0`–`PICTURE.4`. [resource/directory.py:read_dir] filters out only `FF FF FF`, which also loses the numbering: list position no longer equals resource number. On SQ1, 61 of 101 LOGIC, 73 of 73 PICTURE, 228 of 238 VIEW, and 46 of 51 SOUND entries sit at the wrong position [SQ1 data check, log 2026-11-01]. LOGIC addresses resources by number, so a reader must key entries by slot and apply the high-nibble rule.
+
+SQ1's counts of absent slots are 23 of 124 in `LOGDIR`, 32 of 105 in `PICDIR`, 16 of 254 in `VIEWDIR` and 16 of 66 in `SNDDIR` [SQ1 data check, log 2026-11-01].
+
+## How AGI 2.917 uses directories
+
+- **Loading:** the files `logdir`, `viewdir`, `picdir` and `snddir` are read whole into memory at startup. A missing file shows "Can't find" with a prompt: Enter retries and Esc quits [AGI 2.917 1000:4305, 1000:3113].
+- **Lookup:** the resource number times 3 indexes the loaded file, with no check against the file's size [AGI 2.917 1000:4371, 1000:43A5, 1000:43D9, 1000:440D]. A number past the end reads whatever follows in memory. A reimplementation should treat it as absent.
+- **Absent resources are fatal:** the interpreter shows `logic`, `view`, `picture` or `sound`, then "%d not found", and exits. This doesn't go through `var(17)` [AGI 2.917 1000:4441].
 
 ## Design notes
 
-The encoding supports 16 VOL files (0–15) and up to ~1 MB offset per file (20-bit addressing), matching the file-size norms of 1990s DOS systems (agidev, unverified).
+The format has room for 16 VOL numbers and about 1 MB per file (20-bit addressing). See [[entities/vol-file]] §"How AGI 2.917 reads a resource" for what the interpreter actually opens.
 
 ## Standalone files not indexed by DIR
 

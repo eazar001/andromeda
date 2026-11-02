@@ -28,6 +28,9 @@ Do not commit without the user's approval. The user writes all project code; age
 - Describe behavior in prose. Never paste disassembly or translate routines line by line.
 - Pages stay spec-organized for now; the build document gets its own structure later.
 - Static reading is not proof. Queue anything load-bearing for the runtime pass.
+- REA refuses this DOS MZ target on Windows, so analysis uses headless Ghidra. See `andromeda-wiki/sources/agi-2917-binary.md`.
+- When agents run in parallel, give each its own git worktree and its own copy of the Ghidra project, because Ghidra locks a project while it's open.
+- Before committing subagent findings, spot-check the riskiest claims against the binary or game data.
 
 ## Progress
 
@@ -46,7 +49,7 @@ Left for later slices: the direction-key lookup (`46B6`, slice 2 with input), th
 ### Slice 2: the LOGIC VM
 
 - [x] `entities/logic`: header, entry point, `goto` offset base, message decryption, LOGIC load and discard
-- [ ] Remaining action handlers, by group. Done: arithmetic, flags, indirect commands, `call`, `load.logics`, scan start, `parse`, and all 19 tests
+- [ ] Remaining action handlers, by group. Done: arithmetic, flags, indirect commands, `call`, `load.logics`, scan start, `parse`, all 19 tests, and text output and strings (`print` family, `display` family, formatter, clears, screen modes, status line, `configure.screen`, input enable, cursor character, `set.string`, `get.string`, `word.to.string`, `get.num`, `set.game.id`, `close.window`)
 - [x] `interpreter/input-parsing` and `said`
 - [ ] `interpreter/variables-and-flags`: every reserved slot
 
@@ -59,9 +62,9 @@ Left for later slices: the direction-key lookup (`46B6`, slice 2 with input), th
 
 ### Slice 4: sound, data files, and memory
 
-- [ ] `entities/sound`, `concepts/pcjr-sound-encoding`: playback timing and voices
-- [ ] `entities/object`, `entities/words-tok`
-- [ ] `entities/dir-file`, `entities/vol-file`, `concepts/offset-encoding`
+- [x] `entities/sound`, `concepts/pcjr-sound-encoding`: playback timing and voices
+- [x] `entities/object`, `entities/words-tok`
+- [x] `entities/dir-file`, `entities/vol-file`, `concepts/offset-encoding`
 - [ ] `interpreter/memory-layout`, resource auto-discard
 - [ ] `interpreter/debug-modes`, save and restore
 

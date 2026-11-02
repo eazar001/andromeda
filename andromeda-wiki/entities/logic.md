@@ -149,7 +149,7 @@ The text section is always present (possibly with zero messages). Layout [4-1-Lo
 
 **Message access via LOGIC.** The `print` command (and similar) takes a 1-byte message number — e.g. `65 08` is `print(message #8)` [4-1-Logic.html §THE TEXT SECTION]. Numbers start at 1, because slot 0 of the pointer table is the end pointer [AGI 2.917 1000:21F0]. So message `n` uses the pointer at section byte `1 + 2n`.
 
-In 2.917, a number above the message count produces a null text pointer, and what `print` does with it is unread. A slot holding 0 raises error `0x0E` with the number in `var(18)` [AGI 2.917 1000:21F0]. Message 0 resolves to the end of the text section.
+In 2.917, a number above the message count produces a null text pointer. `print` then draws a minimal empty box at row 10, column 20 and prints whatever its uninitialized buffer holds, then waits as usual; `display`, `get.string` and `get.num` print the same kind of garbage [AGI 2.917 1000:1F54]. `set.string` and `set.cursor.char` read the zero bytes at `DS:0000` instead, giving an empty string and no cursor. `%m` and `%g` skip such a message. A reimplementation should treat it as an error or as empty text. A slot holding 0 raises error `0x0E` with the number in `var(18)` [AGI 2.917 1000:21F0]. Message 0 resolves to the end of the text section.
 
 ## Loading and running
 

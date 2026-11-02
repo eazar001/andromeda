@@ -219,7 +219,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 |--------|----------|------|-----------|
 | `$72` | `set.string` | 2 | string, message |
 | `$73` | `get.string` | 5 | string, message, num, num, num |
-| `$74` | `word.to.string` | 2 | word, string |
+| `$74` | `word.to.string` | 2 | string, word |
 | `$75` | `parse` | 1 | string |
 | `$76` | `get.num` | 2 | message, var |
 | `$77` | `prevent.input` | 0 | — |

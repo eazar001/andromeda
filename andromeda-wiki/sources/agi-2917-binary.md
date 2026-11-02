@@ -44,6 +44,34 @@ Code is `1000:xxxx` and data is `DS:xxxx`, where `DS` is segment `19F5`, filled 
 | `1000:1A6B` | Vocabulary lookup for one word |
 | `1000:095C` | `said` test |
 | `1000:744A` | Flag byte and bit mask |
+| `1000:1F54`, `1000:1F93` | Message formatter and wrapping |
+| `1000:1CE8`, `1000:1D96` | Print a window and wait; build and draw it |
+| `1000:1F2B` | Close the window |
+| `1000:2390`, `1000:29F6` | Formatted output; output one character |
+| `1000:0DA9` | Line editor for `get.string` and `get.num` |
+| `1000:770E`, `1000:773C` | Set the text attribute |
+| `1000:54C8` | Draw a window box |
+| `DS:020D` | String table, 40 bytes per string |
+| `DS:0129` | 32-bit tick count at 20 Hz, never paused |
+| `1000:00C4`, `1000:40B2` | Command-line switches, machine and monitor detection |
+| `1000:0F4E` | Startup loading of directories, `words.tok`, `object`, LOGIC 0 |
+| `1000:0FA5` | OBJECT load and object-table setup |
+| `1000:3113` | Load a whole file by name |
+| `1000:4305` | Load the four directories |
+| `1000:434E` | Directory entry check |
+| `1000:4371`, `1000:43A5`, `1000:43D9`, `1000:440D` | LOGIC, VIEW, PICTURE, SOUND directory lookup |
+| `1000:2E32`, `1000:2E56` | Read a resource from a VOL file, with retries |
+| `1000:3080`, `1000:30D6` | Open and close the VOL files |
+| `1000:401D` | Disk error prompt |
+| `1000:505E` | `load.sound` core |
+| `1000:7ECF` | Start a sound |
+| `1000:7F55` | 60 Hz sound step |
+| `1000:7FFA` | Silence output and finish a sound |
+| `1000:802C`, `1000:809B` | Write a tone, write an attenuation |
+| `1000:7546`, `1000:759C` | Item number and item variable to entry, with bounds check |
+| `1000:3203` | Build the `status` item list |
+| `DS:17AE` | Attenuation envelope table |
+| `DS:0EFC` | VOL file handles |
 | `1000:516C` | Stop sound |
 | `1000:3FE8` | Error routine, setting `var(17)` and `var(18)` |
 | `1000:8D44` | Command trace display |
@@ -53,7 +81,7 @@ Code is `1000:xxxx` and data is `DS:xxxx`, where `DS` is segment `19F5`, filled 
 
 ## Informs
 
-[[interpreter/commands]], [[interpreter/event-loop]], [[interpreter/command-semantics]], [[interpreter/variables-and-flags]], [[interpreter/view-objects]], [[interpreter/command-evolution]], [[interpreter/input-parsing]], [[entities/logic]], [[concepts/agi-data-types]].
+[[interpreter/commands]], [[interpreter/event-loop]], [[interpreter/command-semantics]], [[interpreter/variables-and-flags]], [[interpreter/view-objects]], [[interpreter/command-evolution]], [[interpreter/input-parsing]], [[entities/logic]], [[entities/sound]], [[entities/object]], [[entities/words-tok]], [[entities/dir-file]], [[entities/vol-file]], [[concepts/agi-data-types]], [[concepts/offset-encoding]], [[concepts/pcjr-sound-encoding]].
 
 ## Notes
 

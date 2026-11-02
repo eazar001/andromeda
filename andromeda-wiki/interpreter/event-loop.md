@@ -37,7 +37,7 @@ Input arrives through a 20-entry ring queue of events, each with a type and a va
 
 The keyboard poll sends each key through a direction lookup first: a direction key becomes a type 2 event, and anything else becomes type 1 [AGI 2.917 1000:467F]. The lookup itself (`46B6`) is unread.
 
-The pump reads events until the queue is empty. On the way out, each type 1 key is checked against the `set.key` table, and a match turns it into a type 3 event. A key bound to a controller therefore never reaches `var(19)` or the input line [AGI 2.917 1000:4566]. With the `-t` command-line switch, a second table can turn keys into directions [AGI 2.917 1000:46E8].
+The pump reads events until the queue is empty. On the way out, each type 1 key is checked against the `set.key` table, and a match turns it into a type 3 event. A key bound to a controller therefore never reaches `var(19)` or the input line [AGI 2.917 1000:4566]. On a Tandy, detected or forced with the `-t` switch, a second table can turn keys into directions [AGI 2.917 1000:46E8, 1000:40E5].
 
 The pump then handles each event [AGI 2.917 1000:357C]:
 
@@ -54,7 +54,7 @@ The input line handles keys as follows [AGI 2.917 1000:3652]:
 - **Enter (13):** if the line isn't empty, saves it as the previous line, parses it, then clears it. An empty line does nothing.
 - **Anything else:** appended if the line is under its limit.
 
-The limit is the smaller of `var(24)` and 40 minus the prompt's length, or the smaller of `var(24)` and 36 when `DS:0D07` is set. It's one less while `DS:05D7` is set, which appears to be the cursor character.
+The limit is the smaller of `var(24)` and 40 minus the prompt's length, or the smaller of `var(24)` and 36 while a text window is open (`DS:0D07`). It's one less while a cursor character is set (`DS:05D7`) [AGI 2.917 1000:1F1F, 1000:38B4].
 
 ## Where the spec differs
 

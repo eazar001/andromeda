@@ -35,7 +35,9 @@ frequency = 111860 / divisor
 
 The base frequency 111,860 Hz is reported as 1/32 of the PCjr system clock (3.579 MHz) [7-1-SOUND.html §The Tone Generators]. (agidev, unverified — clock rate not independently corroborated.)
 
-**Code corroboration and outlier.** `play.c:116` (vendored at `AGI_Specifications/Code/play.c`) uses `111860.0 / freq`, matching the spec. `oldplay.c:91` (same chapter, [[sources/7-2-sound]]) uses `99320 / fileData` instead — a ~12% lower constant, unexplained in either source. Two reference implementations in the same sample-code chapter disagree; the spec value is corroborated by `play.c` and is the recommended constant.
+**Code corroboration.** `play.c:116` (vendored at `AGI_Specifications/Code/play.c`) uses `111860.0 / freq`, matching the spec.
+
+**PC speaker constant.** On the speaker, 2.917 programs the PC timer with `divisor × 12` [AGI 2.917 1000:8115, 1000:8068]. With the timer's 1,193,180 Hz clock, that gives `99,432 / divisor`, about 11% lower than the sound chip. This explains the outlier in `oldplay.c:91` ([[sources/7-2-sound]]), which uses `99320 / fileData`: it's the speaker's constant, approximately. A reimplementation should pick the constant by the machine it emulates. Runtime only.
 
 ## Noise frequency encoding (2-bit selector)
 
@@ -48,7 +50,7 @@ The noise voice has no continuous frequency divisor; instead, a 2-bit field (NF0
 | 1 | 0 | 1,193,180 / 2048 = 583 Hz |
 | 1 | 1 | Voice 3 tone frequency (dynamic coupling) |
 
-A separate FB bit selects noise mode: `1` = white noise (hiss), `0` = periodic noise (steady tone).
+A separate FB bit selects noise mode: `1` = white noise (hiss), `0` = periodic noise (steady tone). All 153 SQ1 noise notes use white noise with selectors 0–2, and none borrow from voice 3, so periodic noise and borrowing are untested on this game [SQ1 data check, log 2026-11-01]. Byte 3 is 0 on all of them, and 2.917 never sends it [AGI 2.917 1000:8048].
 
 ## Attenuation / volume encoding (4-bit)
 
@@ -63,7 +65,7 @@ Every voice's fifth byte holds 4 attenuation bits in positions 3–0 of the byte
 
 When all four bits are set (`1111`), the voice is muted ("Volume off") [7-1-SOUND.html §Appendix 1, lines 234–240].
 
-The spec's table only lists single-bit-set rows plus the all-set mute row. Whether intermediate values combine additively (e.g., A1+A3 = 10 dB) is not stated explicitly. (agidev, unverified — additivity inferred from the table's structure but not corroborated by independent sources or working AGI sound code in this wiki.)
+The spec's table only lists single-bit-set rows plus the all-set mute row. 2.917 treats the nibble as a plain number, adding to it and clamping it to 0–15 [AGI 2.917 1000:80E1], which fits 2 dB per step but doesn't prove the chip's response. The full rules, including the envelope and `var(23)`, are in [[entities/sound]] §"Attenuation envelope".
 
 ## See also
 

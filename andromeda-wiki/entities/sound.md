@@ -9,7 +9,7 @@ The PCjr's sound chip implements four independent voices [7-1-SOUND.html §Sound
 - **Voices 1, 2, 3** — tone generators, each with independently selectable frequency (10-bit divisor) and volume (4-bit attenuation).
 - **Voice 4 (noise)** — noise source with 4-bit attenuation, mode selection (periodic or white noise), and three pre-selected frequencies or frequency borrow from voice 3.
 
-On IBM PC compatibles without the PCjr sound hardware, only voice 1 (the melody) is rendered to the PC speaker; the other three voices are still present in the resource but are discarded at playback time [7-1-SOUND.html §Introduction, §Playing the Sounds on a Sound Card].
+On a machine without the sound chip, only voice 1 (the melody) is played on the PC speaker, and the other three voices are never read [7-1-SOUND.html §Introduction, §Playing the Sounds on a Sound Card; AGI 2.917 1000:7F0E].
 
 ## AGI v2+ SOUND format
 
@@ -32,7 +32,7 @@ Each voice's data section is a sequence of 5-byte note entries, terminated by tw
 
 | Byte | Field |
 |---|---|
-| 1–2 | Duration (low byte then high byte) — 16-bit little-endian. (agidev, unverified — time-unit scale not specified in the chapter.) |
+| 1–2 | Duration (low byte then high byte) — 16-bit little-endian, in ticks of the 60 Hz timer, so 1/60 second each [AGI 2.917 1000:7F77, 1000:8469]. `FF FF` here ends the voice. A duration of 0 wraps to 65,535 ticks; SQ1 has none. |
 | 3 | Tone: high 6 bits of 10-bit frequency divisor. Noise: `0x00`. |
 | 4 | Tone: register address + low 4 bits of frequency divisor. Noise: register address + FB + NF0/NF1. |
 | 5 | Attenuation (register address + 4 attenuation bits) — same layout for all four voices. |
@@ -43,8 +43,8 @@ Each voice's data section is a sequence of 5-byte note entries, terminated by tw
 bit:  7   6   5   4   3   2   1   0
       0   X   F0  F1  F2  F3  F4  F5
 ```
-- Bit 7: Always 0 [7-1-SOUND.html §Appendix 1].
-- Bit 6: Unused, ignored.
+- Bit 7: Always 0 [7-1-SOUND.html §Appendix 1]. Holds on all 3,534 SQ1 tone notes [SQ1 data check, log 2026-11-01].
+- Bit 6: Unused, ignored. It is set on 1,449 SQ1 tone notes, so a decoder must mask it [SQ1 data check, log 2026-11-01; AGI 2.917 1000:811C].
 - Bits 5–0: F0–F5, upper 6 bits of the 10-bit frequency divisor.
 
 #### Third byte — noise voice
@@ -70,7 +70,7 @@ bit:  7   6   5   4   3   2   1   0
 F = 111860 / (((Byte-3 AND 0x3F) * 16) + (Byte-4 MOD 16))
 ```
 
-The formula makes byte 3 the high-order part, and [play.c:108] agrees. On SQ1 tone voices it gives a median of 254 Hz; the reverse reading gives 1,776 Hz with 16% of notes above 5 kHz [SQ1 data check, log 2026-11-01]. No audio has been produced yet.
+The formula makes byte 3 the high-order part, and [play.c:108] agrees, as does 2.917's speaker path [AGI 2.917 1000:8115]. On SQ1 tone voices it gives a median of 254 Hz; the reverse reading gives 1,776 Hz with 16% of notes above 5 kHz [SQ1 data check, log 2026-11-01]. No audio has been produced yet. The speaker plays lower, by the different constant in [[concepts/pcjr-sound-encoding]].
 
 The constant 111,860 Hz is reported as 1/32 of the PCjr system clock (3.579 MHz) [7-1-SOUND.html §The Tone Generators]. (agidev, unverified — hardware clock rate not independently corroborated in this wiki.)
 
@@ -122,7 +122,7 @@ When all four bits are set (`1111`), the voice is muted ("Volume off"). The spec
 
 ## Byte-order note
 
-The note data is stored in little-endian byte order in the SOUND resource: the 16-bit duration field is low-byte-first, and bytes 3–4 carry the frequency divisor as its high 6 bits, then its low 4 bits. The chapter notes this is **reversed** relative to the sequential order in which bytes would be sent to the T1 chip's register interface [7-1-SOUND.html §Appendix 1, §Playing the Sounds on a Sound Card]. Lance Ewing's prose around this point is imprecise ("the two bytes are around the other way", "opposite from the order that would be output to the T1 sound chip"); Appendix 1's bit tables are unambiguous and authoritative.
+The note data is stored in little-endian byte order in the SOUND resource: the 16-bit duration field is low-byte-first, and bytes 3–4 carry the frequency divisor as its high 6 bits, then its low 4 bits. On the sound chip, 2.917 writes byte 4 first and then byte 3, and writes only byte 4 for noise notes [AGI 2.917 1000:8044]. That is the reversal the chapter describes [7-1-SOUND.html §Appendix 1, §Playing the Sounds on a Sound Card].
 
 ## AGI v1.12 SOUND format (legacy)
 
@@ -132,34 +132,82 @@ The exact voice-identification and byte-selection algorithm for v1.12 is not ful
 
 ## Playback
 
-A playback routine maintains four independent pointers, one per voice, tracking the current note in each section. All four voices are played simultaneously; notes in each voice finish at independent times and are succeeded by the next note in that voice's stream [7-1-SOUND.html §Playing the Sounds on a Sound Card]. When all voices have consumed their data (each reaching the dual-`0xFF` terminator), playback stops.
+### Starting and stopping
 
-On PC-speaker hardware (most IBM PC compatibles), only voice 1 is rendered. PCjr and some compatibles with the TI chip can render all four [7-1-SOUND.html §Introduction, §Playing the Sounds on a Sound Card].
+- **`load.sound(n)`:** does nothing if the sound is loaded. Otherwise it reads the resource and records pointers to its voices; notes are not converted [AGI 2.917 1000:505E]. A missing directory entry is fatal.
+- **`sound(n, f)`:** stops any sound already playing, which sets that sound's flag. It then clears `flag(f)`, and raises error 9 with `n` in `var(18)` if the sound isn't loaded [AGI 2.917 1000:510B]. This settles the earlier question: the flag is cleared at the start.
+- **`stop.sound`:** if a sound is playing, sets its flag and silences the output. If none is playing, it changes nothing [AGI 2.917 1000:516C].
+- **Finishing:** sets the flag from the timer interrupt, so a script sees it change between any two commands [AGI 2.917 1000:7FFA]. To silence output, the sound chip gets maximum attenuation on all four voices, and the speaker is turned off.
+
+### The 60 Hz step
+
+The timer interrupt steps a playing sound on every tick [AGI 2.917 1000:8462]. The step does the following [AGI 2.917 1000:7F55]:
+
+1. **Check `flag(9)`.** If it's clear, the sound ends now, with its flag set. So with sound turned off, `sound` still completes, within one tick.
+2. **Step each active voice.** Decrement its duration. Each duration starts at 1, so the first note loads on the first tick.
+    - **Still counting:** update attenuation only.
+    - **Reached 0:** read the next note. `FF FF` marks the voice finished, and it's muted. Otherwise write the new tone, then the attenuation.
+3. **End the sound** when no active voices remain. That means all four on the sound chip, or just voice 1 on the speaker.
+
+SQ1's sound 41 has no voice 1 notes, so on the speaker it ends at once [SQ1 data check, log 2026-11-01].
+
+### Attenuation envelope
+
+The spec doesn't mention this. On voices 1–3, a note's attenuation changes with time. Each new note restarts a 67-step table in `DS:17AE`, advanced once per tick, about 1.1 seconds in all [AGI 2.917 1000:80B7, 1000:7F82]:
+
+`-2 -3 -2 -1 0 0 1 1 1 1`, then 2 ×8, 3 ×7, 4 ×4, 5 ×4, 6 ×5, 7 ×4, 8 ×4, 9 ×4, 10 ×4, 11 ×6, 12 ×6, 13 ×1.
+
+While the table runs, the value sent to the chip is built as follows:
+
+1. Add the table entry to the note's attenuation, and clamp to 0–15.
+2. Add `var(23)`, and cap at 15.
+3. On a Tandy only, add 2 if the result is below 8.
+
+When the table ends, the last value from step 1 replaces the note's attenuation until the next note, and `var(23)` no longer applies. The Tandy step still applies. A note with attenuation 15 skips the table. The noise voice never uses the table, so it stays at its stored attenuation.
+
+The high nibble of a note's fifth byte is not sent. The interpreter uses its own register values for each voice, so a stored voice number can't redirect the write [AGI 2.917 1000:810A, DS:17F2]. The tone byte is sent as stored, though. In SQ1 both match the voice on all 3,687 notes [SQ1 data check, log 2026-11-01].
+
+### Machine types
+
+Startup sets a machine type, from a command-line switch or by detecting the hardware [AGI 2.917 1000:00C4, 1000:40E5, 1000:4125]:
+
+| Type | Machine | Switch | Detected by | Output |
+|---|---|---|---|---|
+| 0 | IBM PC and compatibles | `-p` | Default | Speaker, voice 1 |
+| 1 | PCjr | | BIOS model byte `FD` | Sound chip, 4 voices |
+| 2 | Tandy | `-t` | "Tandy" in the ROM at `C000:0000`–`C000:03FF` | Sound chip, 4 voices |
+| 8 | Model byte `FA`, which is taken as a VGA machine | `-s` | BIOS system configuration call | Speaker, voice 1 |
+
+### PC speaker
+
+The speaker has one voice and no volume. A note's attenuation matters only at 15, which silences it [AGI 2.917 1000:8054, 1000:809B]. The speaker's frequency comes from the same tone bytes with a different constant; see [[concepts/pcjr-sound-encoding]].
+
+One edge case on type 0: when the envelope table ends, the note's attenuation is replaced even though the speaker has no volume. A base of 2 or more becomes 15, which turns the speaker off for the rest of the note. That needs a note longer than 67 ticks, and SQ1 has none among its 1,068 audible voice 1 notes [SQ1 data check, log 2026-11-01]. Runtime only.
+
 
 ## Reference implementations
 
 Two playback programs are vendored under `AGI_Specifications/Code/` and indexed by [7.2-SOUND.html]: `oldplay.c` (Lance Ewing) does direct Adlib/PC-speaker playback; `play.c` (Jens Christian Restemeier, Lance Ewing edits) transcodes to MIDI. See [[sources/7-2-sound]] for detailed citations. Two findings from those sources flow into this entity page:
 
-- **Duration field — time-unit clue.** `play.c:107` multiplies the 16-bit duration field by 6 before emitting a MIDI delta. This is the only concrete code-level clue to the duration field's time unit; the spec does not state it. (agidev, unverified — `* 6` is undocumented in the source.)
+- **Duration field.** `play.c:107` multiplies the 16-bit duration by 6 before emitting a MIDI delta, which is undocumented in the source. The binary gives the unit directly: 1/60 second.
 - **Multi-voice / volume-control vintage caveat.** `play.c:9-10` notes the program "was written before we worked out the details on the fourth voice and the volume control." Earlier reference code may not fully reflect the v2+ four-voice and `var(23)` volume semantics.
 
-All 50 SQ1 SOUNDs have voices whose 5-byte notes reach an `FF FF` terminator, which checks framing only [SQ1 data check, log 2026-11-01]. SOUND remains the AGI resource type with the weakest code-validation coverage; andromeda has no SOUND decoder yet, and cross-check against ScummVM `engines/agi/sound_pcjr.cpp` is recommended before treating any byte-level claim on this page as production-ready.
+All 50 SQ1 SOUNDs have voices whose 5-byte notes reach an `FF FF` terminator, with 3,687 notes in all. Voice 1 runs from 0 to 48 seconds at 60 Hz, with a median of about 1 second [SQ1 data check, log 2026-11-01]. Andromeda has no SOUND decoder yet, and all of the above comes from reading code, so the timing and the sound itself are Runtime only.
 
 ## Related runtime state
 
 The interpreter reserves the following [[interpreter/variables-and-flags]] entries for sound:
 
-- `var(22)` — Sound generator type: `1` = PC speaker, `3` = Tandy.
-- `var(23)` — Sound volume (Tandy only), range `0x0`–`0xF`.
-- `flag(9)` — Sound on/off state.
+- `var(22)` — Set to 1 on machine type 0, otherwise 3, at startup and after a restore. No read found in the interpreter, and SQ1 never tests it [AGI 2.917 1000:10AD; SQ1 data check, log 2026-11-01]. Type 8 gets 3 even though it uses the speaker.
+- `var(23)` — Added to attenuation during the envelope, so higher is quieter. No effect on the speaker, and no range check beyond the cap at 15 [AGI 2.917 1000:80F3].
+- `flag(9)` — Sound on. Set at startup, and restart appears to keep it [AGI 2.917 1000:0F97, 1000:24AB]. Clearing it ends a playing sound on the next tick.
 
 Three LOGIC commands control playback (see [[interpreter/commands]]):
 
-- `load.sound` (`$62`, 1 arg) — Load a SOUND resource by number into a playback buffer.
-- `sound` (`$63`, 2 args: `num`, `flag`) — Initiate playback of the loaded sound and signal the named flag at completion.
-- `stop.sound` (`$64`, 0 args) — Halt the current sound.
+- `load.sound` (`$62`, 1 arg) — See "Starting and stopping".
+- `sound` (`$63`, 2 args: `num`, `flag`) — See "Starting and stopping".
+- `stop.sound` (`$64`, 0 args) — See "Starting and stopping".
 
-The flag is set to 1 when playback finishes [4-4-Logic.html §SOUND RESOURCE MANAGEMENT COMMANDS] `(agidev, unverified)`. Still unspecified: whether it is cleared when playback starts, and what `stop.sound` does to it.
 
 ## See also
 

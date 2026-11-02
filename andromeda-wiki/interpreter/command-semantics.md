@@ -197,9 +197,117 @@ PICTURE bytecode has no VIEW-composition opcodes ([[entities/picture]]), so `add
 
 ## `set.game.id` — interpreter identification
 
-[4-4-Logic.html §INITIALIZATION COMMANDS]: `set.game.id(n)` reads message `n` and compares it with the interpreter binary's internal identifier. On mismatch the interpreter exits. The chapter notes "For AGDS interpreter the identifier is 'TQ'" — i.e. the *AGDS* fork carries its own identifier distinct from Sierra's. The mechanism protects an interpreter binary from running incompatible game data.
+[4-4-Logic.html §INITIALIZATION COMMANDS]: `set.game.id(n)` reads message `n` and compares it with the interpreter binary's internal identifier. On mismatch the interpreter exits. **Confirmed** for 2.917: it copies up to 6 characters to `DS:0002`, compares them with the terminator against a value in the code, case-sensitively, and exits on the first difference [AGI 2.917 1000:0E7E, 1000:5A81, 1000:02AE]. In the SQ1 binary that value is `SQ`, at `1000:5AA4`. The chapter notes "For AGDS interpreter the identifier is 'TQ'" — i.e. the *AGDS* fork carries its own identifier distinct from Sierra's. A reimplementation that runs many games shouldn't enforce a single value.
 
 The runtime / loader-side counterpart is covered in [[sources/2-5-interpreter]] (the chapter on interpreter-binary loading and game IDs). 4-4 supplies only the LOGIC-side call form.
+
+## Text output and strings
+
+Everything here comes from AGI 2.917 [AGI 2.917 1000:0C44–1000:0E7D, 1000:1C06–1000:2315, 1000:7603–1000:7884]. Rows and columns are text cells on a 40x25 grid, and the first coordinate is always the row, whatever the spec calls it.
+
+### Formatting a message
+
+`print`, `display`, `get.string`, `get.num` and the input line's prompt all pass text through one formatter [AGI 2.917 1000:1F54, 1000:1F93]. It copies text to a buffer, expands codes, and wraps to a given width.
+
+| Code | Inserts | Notes |
+|---|---|---|
+| `%v<n>` | Decimal value of `var(n)` | `%v<n>\|<w>` pads with leading zeros to width `w`. The `\|` must follow the digits directly, as in SQ1's `%v12\|2`. |
+| `%m<n>` | Message `n` of the current LOGIC | Skipped if `n` is above the message count. |
+| `%g<n>` | Message `n` of LOGIC 0 | Nested `%m` codes also resolve in LOGIC 0. |
+| `%s<n>` | String `n` | No bounds check. |
+| `%w<n>` | Word `n` of the player's input | Numbered from 1. Skipped if `n` is 0 or above the word count. |
+| `%o<n>` | Name of the inventory item whose number is in `var(n)` | |
+
+Inserted text is expanded in turn, including text the player typed. Numbers are plain digits; with none, `n` is 0. Any other character after `%` is dropped along with the `%`, and digits after it print as text. A backslash makes the next character literal and is itself dropped, so `\%` gives a percent sign, as in SQ1 LOGIC 71.
+
+The finished buffer then goes to a printf-style output routine, which treats `%s`, `%d`, `%u`, `%x` and `%c` as codes with no arguments behind them. A literal `%` followed by one of those letters therefore prints garbage, and a reimplementation should print it as text [AGI 2.917 1000:2390].
+
+> [!conflict] Format codes in the spec
+> [4-4-Logic.html §TEXT MANAGEMENT COMMANDS] differs from 2.917 as follows.
+>
+> - **Contradicted:** the spec's `%0` is the letter `o`. `%0` is dropped as an unknown code. SQ1 uses neither.
+> - **Contradicted:** the spec says the code takes "the item with the given number". 2.917 reads the item number from `var(n)`.
+> - **Refined:** the spec shows spaces, as in `%m <number>` and `%v34 | 2`. 2.917 accepts none, so `%m 8` means `%m0` followed by " 8".
+
+### Wrapping
+
+Width is counted per line, and a newline byte (`0x0A`) starts a new one. When a line reaches the width, it breaks at the last space, dropping that space and any after it, and the rest of the word moves down. With no space to break at, it breaks mid-word [AGI 2.917 1000:2191].
+
+The remembered space is only cleared by a wrap, not by a newline. A line that follows a newline and overflows before its own first space therefore breaks at a space from an earlier line, which corrupts the width count. This is a quirk a valid message shouldn't reach.
+
+Formatting stops once 20 lines are finished. A `print` that reaches 20 lines or more gets a replacement message instead: `Message too verbose:`, the first 20 bytes of the raw message, and `Press ESC to continue.` [AGI 2.917 1000:1E0C, DS:0CCB, DS:0D09]. So the longest normal window has 19 lines. One display-specific path sets the limit to 24 and the line height to 7 pixels [AGI 2.917 1000:42CD]; its condition is unread.
+
+### `print` windows
+
+`print` and `print.v` first close any open window, then save the text attribute and format at a width of 30 [AGI 2.917 1000:1D96]. The window is sized to its text, with `lines` lines and `width` columns in the widest line:
+
+- **Row:** `(19 - lines) / 2 + 1`, plus the first `configure.screen` value.
+- **Column:** `(40 - width) / 2`.
+- **Box:** `width * 4 + 10` units wide and `lines * 8 + 10` pixels high, with its left edge at `column * 4 - 5`.
+- **Colors:** color 15 fill with a color 4 border inset from the edge, and text in black on white [AGI 2.917 1000:1EF0, 1000:54C8].
+
+`print.at(n, row, col, width)` and `print.at.v` set the row, column and width for one call. A width of 0 means 30. Nothing checks that the window fits on screen [AGI 2.917 1000:1C96].
+
+What happens next depends on `flag(15)` and `var(21)`, checked in that order [AGI 2.917 1000:1CE8]:
+
+| State | Behavior | Afterward |
+|---|---|---|
+| `flag(15)` set | Returns at once and leaves the window open until the next `print` or `close.window` | Clears `flag(15)` |
+| `var(21)` non-zero | Waits `var(21) * 10` ticks of 20 Hz, or until Enter or Esc | Closes the window and clears `var(21)` |
+| Neither | Clears queued input, then waits for Enter or Esc | Closes the window |
+
+The game clock keeps running during the wait, since the paused state isn't set. Other keys and events are discarded. See [[interpreter/event-loop]] §"Timer".
+
+`close.window` removes an open window and does nothing otherwise [AGI 2.917 1000:1F2B].
+
+### `display`
+
+`display(row, col, n)` moves the cursor, formats at a width of 40, prints with the current attribute, then restores the cursor. A newline returns to column 0, not to the starting column. `display.v` takes all three from variables [AGI 2.917 1000:2250, 1000:22A7]. Display rows are absolute, so the first `configure.screen` value doesn't shift them.
+
+Output never scrolls: on row 24, a newline stays on that row. Past column 39 it moves to the next row [AGI 2.917 1000:29F6].
+
+### Attributes and clearing
+
+`set.text.attribute(fg, bg)` behaves differently by mode [AGI 2.917 1000:770E, 1000:773C]:
+
+- **Text mode:** both colors apply.
+- **Graphics mode:** `bg` is only zero or non-zero. Non-zero draws inverted text and ignores `fg`, which is how the status line gets black on white. How inverted glyphs reach the screen varies by display and is unread.
+
+`clear.lines(first, last, color)` and `clear.text.rect(row1, col1, row2, col2, color)` also don't use a real color. In graphics mode a non-zero value fills with `0xFF`, which should appear white, and 0 fills black. In text mode they always fill black [AGI 2.917 1000:764D, 1000:768C, 1000:77E6].
+
+> [!conflict] Colors and coordinates in the spec
+> **Contradicted:** [4-4-Logic.html §TEXT MANAGEMENT COMMANDS] says these commands use the given colors, and it labels `clear.text.rect`'s and `print.at`'s coordinates `x` then `y`. In 2.917, graphics mode reduces the colors as above, and the first coordinate is the row.
+
+### Screen and status line
+
+- **`text.screen`** sets the text-mode state that also stops object updates, and clears all 25 rows with the current attribute [AGI 2.917 1000:7603].
+- **`graphics`** leaves that state, restores the screen, and redraws the status and input lines [AGI 2.917 1000:7804]. The mode switch and restore are in driver entries `9743` and `9746`, which are unread.
+- **`configure.screen(top, input, status)`** sets the play area's top row, the input row and the status row [AGI 2.917 1000:7829]. `top` also shifts the picture by `top * 8` pixels. It redraws nothing itself. The spec's "a = 1" is only the usual value.
+- **`status.line.on`** fills the status row and prints `Score:<var 3> of <var 7>` at column 1 and `Sound:on ` or `Sound:off` at column 30, using `flag(9)` [AGI 2.917 1000:34BD, DS:0F77]. **`status.line.off`** clears the row to black [AGI 2.917 1000:355C].
+- **`prevent.input`** disables input and clears the input row. **`accept.input`** enables it and redraws the row [AGI 2.917 1000:386F, 1000:3898].
+- **`set.cursor.char(n)`** stores the first byte of message `n` as the cursor character at `DS:05D7`. A value of 0 means no cursor [AGI 2.917 1000:38B4, 1000:37F7].
+
+### Strings
+
+Strings live in a table at `DS:020D`, 40 bytes each. The next variable starts at `DS:05CD`, which leaves room for exactly 24.
+
+| Command | Behavior |
+|---|---|
+| `set.string(s, m)` | Copies message `m`, up to 39 characters plus the terminator [AGI 2.917 1000:0D37]. |
+| `word.to.string(s, w)` | Copies input word `w`, **numbered from 0**, with the same limit. An empty slot gives an empty string, because it reads the zero bytes at `DS:0000` [AGI 2.917 1000:0D70, 1000:18C8]. |
+| `get.string(s, m, row, col, len)` | Empties the string, prints the formatted prompt, and reads up to `len` characters, at most 39 [AGI 2.917 1000:0C44]. A row of 25 or more keeps the current cursor position. |
+| `get.num(m, v)` | Prints the prompt on the input row at column 0 and reads up to 3 characters. Leading spaces are skipped, digits are read up to the first non-digit, and the low byte goes in `var(v)`, so 300 becomes 44 [AGI 2.917 1000:7126, 1000:4DC6]. |
+| `parse(s)` | Ignores strings 12 and up. See [[interpreter/input-parsing]]. |
+
+**Bounds.** Only `parse` checks a string number. `set.string`, `word.to.string`, `get.string`, `compare.strings` and `%s` accept any value, so 12 to 23 work and 24 and up overwrite later data. A reimplementation should provide 24 and treat higher numbers as errors.
+
+**Line editing.** `get.string` and `get.num` share an editor [AGI 2.917 1000:0DA9]. Backspace removes one character. Ctrl-C and Ctrl-X clear the field. Enter accepts it. Esc abandons it, which leaves `get.string` with an empty string and `get.num` with 0, so a script can't tell Esc from empty input. It blocks the game cycle while it waits.
+
+**Prompt.** There is no prompt command beyond string 0, which the input line formats at each redraw, so a prompt can contain format codes [AGI 2.917 1000:38D7].
+
+**Word numbering.** `%w` counts from 1 and `word.to.string` from 0, so `%w1` and `word.to.string(s, 0)` give the same word.
+
+**Hercules.** `get.string` and `get.num` take a separate prompt path on Hercules [AGI 2.917 1000:0CF3, 1000:718F], which is unread.
 
 ## `said` test command — algorithm
 

@@ -22,7 +22,7 @@ See [[interpreter/variables-and-flags]] for the reserved-flag assignment table (
 
 A **string** is a 40-character buffer, including the zero terminator. String 0 is conventionally the input prompt (e.g., `">"` or `"]"`) [2-3-Interpreter.html §(3) String].
 
-The number of strings available varies by interpreter version, and the spec itself flags uncertainty about whether the larger allocations are actually usable [2-3-Interpreter.html §(3) String]. In 2.917 the `parse` command ignores strings 12 and up [AGI 2.917 1000:1981]; the other string commands are unread.
+The number of strings available varies by interpreter version, and the spec itself flags uncertainty about whether the larger allocations are actually usable [2-3-Interpreter.html §(3) String]. In 2.917 the table has room for exactly 24, and only `parse` stops at 12. See [[interpreter/command-semantics]] §"Strings".
 
 | Interpreter version | Strings available |
 |---|---|
@@ -64,7 +64,7 @@ A **message** is a text string stored in the message section appended to the end
 
 Messages in LOGIC 0 are global and can be referenced from any LOGIC via the format code `%g<n>`, where `<n>` is the message number in LOGIC 0. Messages in non-zero LOGICs are local to that LOGIC and only addressable from within it [2-3-Interpreter.html §(7) Message].
 
-Example: `print("Message 34 in LOGIC.0 is %g34.")` references message 34 of LOGIC 0 from any LOGIC [2-3-Interpreter.html §(7) Message].
+Example: `print("Message 34 in LOGIC.0 is %g34.")` references message 34 of LOGIC 0 from any LOGIC [2-3-Interpreter.html §(7) Message]. See [[interpreter/command-semantics]] §"Formatting a message" for all format codes.
 
 Messages are consumed by `$65 print`, `$67 display`, `$76 get.num`, `$8F set.game.id`, `$90 log`, `$9C set.menu`, `$9D set.menu.item`, and the `print.at` / `print.at.v` family — see [[interpreter/commands]] for the full opcode catalogue.
 
