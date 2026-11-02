@@ -45,9 +45,9 @@ Left for later slices: the direction-key lookup (`46B6`, slice 2 with input), th
 
 ### Slice 2: the LOGIC VM
 
-- [ ] `entities/logic`: header, entry point, `goto` offset base, message decryption, LOGIC load and discard
-- [ ] Remaining action handlers, by group: arithmetic edge cases first, since `command-semantics` lists them as open
-- [ ] `interpreter/input-parsing` and `said`
+- [x] `entities/logic`: header, entry point, `goto` offset base, message decryption, LOGIC load and discard
+- [ ] Remaining action handlers, by group. Done: arithmetic, flags, indirect commands, `call`, `load.logics`, scan start, `parse`, and all 19 tests
+- [x] `interpreter/input-parsing` and `said`
 - [ ] `interpreter/variables-and-flags`: every reserved slot
 
 ### Slice 3: objects and drawing

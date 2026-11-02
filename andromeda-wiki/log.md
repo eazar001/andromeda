@@ -1075,3 +1075,15 @@ Static reading only. See `WIKI_AUDIT_PLAN.md`.
 **New.** 60 Hz timer with sound stepping at that rate. 20-entry event queue. `set.key` lookup when events leave the queue, with 39 slots. Input line rules. Exact `var(2)` reposition values. Pause freezes the clock and delay counter. Stack guard check.
 
 **Changed.** `interpreter/event-loop`, `interpreter/command-semantics`, `interpreter/variables-and-flags`, `interpreter/commands`, `sources/agi-2917-binary`.
+
+## [2026-11-01] file | Audit slice 2, part 1: LOGIC format, arithmetic, tests, input parsing
+
+Static reading, plus a data check on all 101 SQ1 LOGICs and on `WORDS.TOK`. See `WIKI_AUDIT_PLAN.md`.
+
+**Contradicted.** The LOGIC text offset counts from the first bytecode byte, not the VOL header (101 of 101 against 0 of 101). An unknown word sets `flag(2)`. `var(9)` counts kept words, not original positions. The parser does not clear `flag(4)`. `compare.strings` ignores case and some punctuation. `$00` inside an `if` is a false test, not a terminator. The interpreter never looks for `else`. `right.posn` is `$12`.
+
+**Resolved.** `addn`, `addv`, `subn`, `subv` wrap at 8 bits. `mul.n`, `mul.v` keep the low byte. Division by zero is unchecked and goes to DOS. Vocabulary lookup is longest match and spans spaces.
+
+**New.** Short-circuit rules for `if`. Message numbers start at 1. The 10-word limit. Filler handling of "a" and "i". `parse` ignores strings 12 and up. Flag bit order. A stray `$FC` or `$FD` hangs the interpreter. `call` of an unloaded LOGIC resets the heap top.
+
+**Changed.** `entities/logic`, `interpreter/input-parsing`, `interpreter/command-semantics`, `interpreter/commands`, `interpreter/variables-and-flags`, `concepts/agi-data-types`, `sources/agi-2917-binary`.

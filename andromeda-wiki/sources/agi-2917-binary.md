@@ -38,6 +38,12 @@ Code is `1000:xxxx` and data is `DS:xxxx`, where `DS` is segment `19F5`, filled 
 | `1000:4566` | Applies the `set.key` table to a queued key |
 | `1000:3652` | Input line editor |
 | `1000:119A` | LOGIC load, including message decryption |
+| `1000:21F0` | Message number to text pointer |
+| `1000:18AC` | Parse a string into word codes |
+| `1000:199D` | Input preprocessing |
+| `1000:1A6B` | Vocabulary lookup for one word |
+| `1000:095C` | `said` test |
+| `1000:744A` | Flag byte and bit mask |
 | `1000:516C` | Stop sound |
 | `1000:3FE8` | Error routine, setting `var(17)` and `var(18)` |
 | `1000:8D44` | Command trace display |
@@ -47,7 +53,7 @@ Code is `1000:xxxx` and data is `DS:xxxx`, where `DS` is segment `19F5`, filled 
 
 ## Informs
 
-[[interpreter/commands]], [[interpreter/event-loop]], [[interpreter/command-semantics]], [[interpreter/variables-and-flags]], [[interpreter/view-objects]], [[interpreter/command-evolution]], [[entities/logic]].
+[[interpreter/commands]], [[interpreter/event-loop]], [[interpreter/command-semantics]], [[interpreter/variables-and-flags]], [[interpreter/view-objects]], [[interpreter/command-evolution]], [[interpreter/input-parsing]], [[entities/logic]], [[concepts/agi-data-types]].
 
 ## Notes
 

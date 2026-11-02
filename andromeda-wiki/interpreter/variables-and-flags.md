@@ -19,7 +19,7 @@ Variables and flags share a single global namespace across every loaded LOGIC re
 | `var(6)` | Direction of EGO's motion. Compass mapping: `0` = motionless, `1` = N, `2` = NE, `3` = E, `4` = SE, `5` = S, `6` = SW, `7` = W, `8` = NW. Before LOGIC 0, program control copies EGO's direction into this slot and player control copies this slot to EGO. After LOGIC 0 it is always copied to EGO [AGI 2.917 1000:017B, 1000:01EA]. See [[interpreter/event-loop]]. |
 | `var(7)` | Maximum achievable score. |
 | `var(8)` | Free memory: number of 256-byte pages still available in the interpreter's heap. See [[interpreter/memory-layout]]. |
-| `var(9)` | 1-indexed position of the first word the input parser failed to match in the player's input; 0 if all words parsed successfully. Set only when vocabulary lookup fails [2-6-Interpreter.html; 4-4-Logic.html §TEST COMMANDS, `said`]. The 2-2 phrasing ("if = 0, it is the number of the word ... that was not found") reads as inverted but is semantically consistent with this once read as "if non-zero, gives the unparsed-word position; if zero, all words parsed." 4-4 corroborates 2-6 verbatim (both are Bykov AGDS translations). Cleared at the start of input handling every cycle, and again on a room change [AGI 2.917 1000:3586, 1000:01C9]. See [[interpreter/input-parsing]] and [[interpreter/command-semantics]] §"`said` test command — algorithm". |
+| `var(9)` | Position of the first unknown word in the player's input, or 0 if there was none. It counts only the words kept so far, plus 1, so filler words don't count. That contradicts the spec's position "in the original input" [AGI 2.917 1000:190C; 2-6-Interpreter.html]. The 2-2 phrasing ("if = 0, it is the number of the word ... that was not found") is inverted. Cleared at the start of input handling every cycle, and again on a room change [AGI 2.917 1000:3586, 1000:01C9]. See [[interpreter/input-parsing]]. |
 | `var(10)` | Minimum time per cycle, in 1/20-second units (50 ms per unit). Time spent on the cycle counts toward it [AGI 2.917 1000:7EB1, 1000:7E4E]. Games typically set this to 2–4. |
 | `var(11)`–`var(14)` | Interpreter's internal clock: seconds, minutes, hours, days respectively. Rolls over at 60, 60 and 24, and stops during `pause`, `save.game` and `restore.game` [AGI 2.917 1000:7E35]. |
 | `var(15)` | Joystick sensitivity, used when `flag(8) = 1`. |
@@ -43,9 +43,9 @@ Variables and flags share a single global namespace across every loaded LOGIC re
 |---|---|
 | `flag(0)` | Set when EGO's baseline is completely on water-surface pixels (priority = 3). |
 | `flag(1)` | Set when EGO is completely obscured (invisible on screen). |
-| `flag(2)` | Set when the player has entered a command line *and* the interpreter has successfully parsed every word against the vocabulary [2-6-Interpreter.html]. If any word fails to parse, `flag(2)` is left unset and `var(9)` reports the failure position. Cleared at the start of each cycle. See [[interpreter/input-parsing]]. |
+| `flag(2)` | Set when a parsed line contained an unknown word or at least one non-filler word. It stays clear only for a line of nothing but filler or punctuation. An unknown word does set it, which contradicts [2-6-Interpreter.html] [AGI 2.917 1000:1948]. Cleared at the start of each cycle. See [[interpreter/input-parsing]]. |
 | `flag(3)` | Set when EGO's baseline touches a signal-line pixel (priority = 2). |
-| `flag(4)` | Set when a `said` test command has successfully matched player input [2-6-Interpreter.html]. Cleared at the start of each cycle (event-loop step 3) and re-cleared each time input preprocessing succeeds. Once set within a cycle, all subsequent `said` tests in that cycle short-circuit to FALSE on the `flag(4) = 1` precondition — at-most-once-per-cycle `said` semantics. The spec does *not* clear `flag(4)` on a failed `said` match. See [[interpreter/input-parsing]]. |
+| `flag(4)` | Set when a `said` test matches, after which every later `said` is false until it clears. Cleared at the start of each cycle (event-loop step 3) and by the `parse` command [AGI 2.917 1000:09AB, 1000:1958]. A failed `said` leaves it alone. See [[interpreter/input-parsing]]. |
 | `flag(5)` | Set when a room is entered; cleared at the next event-loop step 9, after one LOGIC 0 pass. Set by step 10 of the `new.room` procedure [4-4-Logic.html §PROGRAM CONTROL COMMANDS, emphasized as "VERY IMPORTANT"] — see [[interpreter/command-semantics]] §"`new.room`". |
 | `flag(6)` | Set when `restart_game` has been executed; cleared at event-loop step 9. |
 | `flag(7)` | If set, writing to the script/log buffer is blocked. |
@@ -60,7 +60,7 @@ Variables and flags share a single global namespace across every loaded LOGIC re
 
 ## Spec ambiguities
 
-Two reserved-variable descriptions in the spec read with apparently-inverted logic (`var(9)` and `var(17)`, both quoted above) and are flagged with translator's notes in the source HTML. The wiki preserves the spec's phrasing verbatim and tags the entries `(agidev, unverified)`; cross-check against ScummVM's AGI interpreter when validating against a real game.
+The spec's `var(9)` and `var(17)` descriptions read as inverted, and the source HTML flags them with translator's notes. Both are now settled for 2.917 in the table above.
 
 ## See also
 

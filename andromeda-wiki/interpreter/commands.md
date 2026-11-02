@@ -52,7 +52,7 @@ Companion pages:
 | `$11` | `center.posn` | 5 | S obj, num, num, num, num |
 | `$12` | `right.posn` | 5 | S obj, num, num, num, num |
 
-The spec's outer condition range from [4-1-Logic.html §TEST CONDITIONS] is `$00..$12`; `$00` is not used as a test opcode — it doubles as the action-command `return`. The 2.917 test table does have a 0-argument entry for `$00`; its handler is unread.
+**`$00` inside an `if`.** The spec's outer condition range from [4-1-Logic.html §TEST CONDITIONS] is `$00..$12`. In 2.917, `$00` there is a real 0-argument test that is always false, not a terminator [AGI 2.917 1000:09D8].
 
 **Loose bound in 2.917.** The test dispatcher only rejects opcodes `$26` and up, but the table ends after `$12`. Opcodes `$13..$25` would read unrelated bytes as handler addresses [AGI 2.917 1000:07EB]. A reimplementation should treat them as errors, since no valid game can rely on them.
 
@@ -64,7 +64,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 
 | Opcode | Mnemonic | Args | Signature |
 |--------|----------|------|-----------|
-| `$00` | `return` | 0 | — (also terminator inside `$FF` if-blocks) |
+| `$00` | `return` | 0 | — |
 | `$01` | `increment` | 1 | var |
 | `$02` | `decrement` | 1 | var |
 | `$03` | `assignn` | 2 | var, num |

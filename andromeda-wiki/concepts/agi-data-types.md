@@ -22,7 +22,7 @@ See [[interpreter/variables-and-flags]] for the reserved-flag assignment table (
 
 A **string** is a 40-character buffer, including the zero terminator. String 0 is conventionally the input prompt (e.g., `">"` or `"]"`) [2-3-Interpreter.html §(3) String].
 
-The number of strings available varies by interpreter version, and the spec itself flags uncertainty about whether the larger allocations are actually usable [2-3-Interpreter.html §(3) String]:
+The number of strings available varies by interpreter version, and the spec itself flags uncertainty about whether the larger allocations are actually usable [2-3-Interpreter.html §(3) String]. In 2.917 the `parse` command ignores strings 12 and up [AGI 2.917 1000:1981]; the other string commands are unread.
 
 | Interpreter version | Strings available |
 |---|---|

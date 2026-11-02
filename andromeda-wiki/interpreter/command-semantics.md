@@ -13,16 +13,45 @@ Companion pages:
 - No LOGIC decoder in `resource/`; every behavioral claim is `(agidev, unverified)` against working code. SQ1 confirms argument counts only, not behavior (see [[interpreter/commands]]).
 - 4-4 is an AGDS manual chapter. AGDS surface syntax (`if_`, `else_`, `not_`, `or_` — keywords with trailing underscores) differs from the AGI Studio syntax in [[sources/4-2-logic]] (`if () { }`, `else { }`, `&&`, `||`, `!`). Both compile to the same `$FC..$FF` bytecode control-flow opcodes; the underscore-suffixed mnemonics are AGDS authoring conventions, not bytecode-level distinctions.
 
-## Arithmetic edge cases (unresolved)
+## Arithmetic edge cases
 
-The chapter explicitly flags four behaviors as unspecified, all preserved by translator's-note brackets [VB] (Vassili Bykov) in the HTML [4-4-Logic.html §ARITHMETIC COMMANDS]:
+The chapter flags four behaviors as unspecified, marked with translator's-note brackets [VB] (Vassili Bykov) [4-4-Logic.html §ARITHMETIC COMMANDS]. AGI 2.917 settles them [AGI 2.917 1000:728E–1000:73BC]:
 
-1. **`addn` / `addv` overflow** — spec asks: "is 250 + 10 == 4 or 250 + 10 == 255?" Wrap or saturate? Unanswered.
-2. **`subn` / `subv` underflow** — spec asks: "is 1 - 2 == 255 or 1 - 2 == 0?" Wrap or saturate? Unanswered.
-3. **`muln` / `mulv` overflow** — unspecified.
-4. **`divn` / `divv` division by zero** — unspecified.
+1. **`addn` / `addv` overflow** — wraps at 8 bits, so 250 + 10 = 4.
+2. **`subn` / `subv` underflow** — wraps at 8 bits, so 1 - 2 = 255.
+3. **`mul.n` / `mul.v` overflow** — keeps the low 8 bits of the product.
+4. **`div.n` / `div.v` by zero** — the interpreter neither checks for it nor installs a handler for the CPU's divide error, so control passes to DOS [AGI 2.917 1000:7395, 1000:8369]. The result on real hardware is Runtime only. A reimplementation should treat it as a fatal error. Division is unsigned and keeps the quotient.
 
-All four are `(agidev, unverified)` — resolution requires ScummVM `engines/agi/op_cmd.cpp` cross-check or instrumented testing. `increment` / `decrement` (`$01`, `$02`) are specified differently: they **saturate** at boundaries (255 stays 255, 0 stays 0) per [4-4-Logic.html §ARITHMETIC COMMANDS]. Whether `addn(var, 1)` is equivalent to `increment(var)` at the boundary is therefore part of the unresolved question.
+`increment` and `decrement` saturate at 255 and 0 [4-4-Logic.html §ARITHMETIC COMMANDS; AGI 2.917 1000:728E, 1000:72A1], so `addn(var, 1)` is not the same as `increment(var)` at the boundary.
+
+The indirect commands read as follows, with no bounds checks since every index is one byte [AGI 2.917 1000:7314, 1000:732D, 1000:733E]:
+
+- `lindirectv(a, b)`: `var(var(a)) = var(b)`
+- `lindirectn(a, n)`: `var(var(a)) = n`
+- `rindirect(a, b)`: `var(a) = var(var(b))`
+
+## Tests
+
+All comparisons are unsigned 8-bit [AGI 2.917 1000:0823–1000:089A]. `lessn` and `lessv` are strict, as are `greatern` and `greaterv`.
+
+**Flags.** Flag `n` is the bit `0x80 >> (n & 7)` of the byte at `DS:0109 + n / 8`, so the highest bit of each byte comes first [AGI 2.917 1000:744A]. This matters only for anything that reads the flag bytes as a block, such as a saved game.
+
+**Position tests.** `posn`, `obj.in.box`, `center.posn` and `right.posn` all take `(obj, x1, y1, x2, y2)` and test inclusively against the object's baseline `y`. They differ in which x values must be in range [AGI 2.917 1000:08C6–1000:0917]:
+
+| Test | `x >= x1` applies to | `x <= x2` applies to |
+|---|---|---|
+| `posn` | left edge | left edge |
+| `obj.in.box` | left edge | right edge (`x + width - 1`) |
+| `center.posn` | center (`x + width / 2`, rounded down) | center |
+| `right.posn` | right edge | right edge |
+
+**`has` and `obj.in.room`.** `has(i)` is true when item `i`'s room byte is 255. `obj.in.room(i, v)` is true when it equals `var(v)` [AGI 2.917 1000:08AD, 1000:093B].
+
+**`controller`.** Reads entry `n` of the 50-entry controller table, with no bounds check [AGI 2.917 1000:0931]. See [[interpreter/event-loop]].
+
+**`have.key`.** True at once if `var(19)` is non-zero. Otherwise it empties the event queue until it finds a key, stores that key in `var(19)` and returns true, or returns false once the queue is empty. It doesn't wait, and it discards any direction or controller events it passes [AGI 2.917 1000:09BE, 1000:459E]. Joystick button codes become Enter or Esc on this path [AGI 2.917 1000:4634].
+
+**`compare.strings`.** More forgiving than the spec's "string(s1) = string(s2)" [4-4-Logic.html §TEST COMMANDS]. Both strings are lowercased and stripped of space, tab, and the characters `. , ; : ' ! -` before comparing, so "Hello, World" equals "helloworld" [AGI 2.917 1000:0EAC, 1000:0EF8, DS:0943].
 
 ## Resource loading and unloading
 
@@ -137,8 +166,8 @@ The two tables differ only for directions 1 and 5: 4+ loops uses dedicated up (l
 | `$03` | `assignn` | `assign` |
 | `$14` | `load.logics` | `load.logic` |
 | `$15` | `load.logics.v` | `load.logic.v` |
-| `$11` | `right.posn` | `right.position` (test command) |
-| `$11` (different opcode, test space) | `center.posn` | `center.position` |
+| `$12` | `right.posn` | `right.position` (test command) |
+| `$11` | `center.posn` | `center.position` (test command) |
 | `$9B` | `set.upper.left` | `upper.left` |
 
 The wiki uses the **4-3 forms** as canonical (they match AGI Studio and ScummVM conventions). 4-4's variants are recorded here for cross-reference.
@@ -174,16 +203,9 @@ The runtime / loader-side counterpart is covered in [[sources/2-5-interpreter]] 
 
 ## `said` test command — algorithm
 
-[4-4-Logic.html §LOGICAL COMMANDS §TEST COMMANDS, `said(n, W(i))`] specifies the matching algorithm. **This is the same algorithm as [2-6-Interpreter.html]** — both 4-4 and 2-6 are AGDS-manual chapters translated from Russian by Vassili Bykov. 4-4 corroborates 2-6's wording verbatim.
+The spec's algorithm is at [4-4-Logic.html §LOGICAL COMMANDS §TEST COMMANDS, `said(n, W(i))`], which repeats [2-6-Interpreter.html]; both are AGDS-manual chapters translated by Vassili Bykov. It is wrong in places for 2.917. See [[interpreter/input-parsing]], which holds the checked procedure.
 
-Steps:
 
-1. Preprocessing — remove punctuation, lowercase-fold, collapse multi-space.
-2. Vocabulary lookup — starting with the first word, find the longest character sequence matching a vocabulary entry. If unsuccessful: Var(9) ← failing-word position, halt processing.
-3. On successful lookup: drop all zero-code words (vocabulary entries with code 0 are ignored — these are AGI's "filler" words like articles). Set Flag(2) ← 1 (input received), Flag(4) ← 0 (`said` has not yet matched this cycle).
-4. Test predicate: if Flag(2) = 0 OR Flag(4) = 1, return FALSE without comparing.
-5. Compare parameters W(i) against the post-filter input codes V(i): W(i) = 1 matches any single V(i); W(i) = 9999 matches the entire remaining input V(i)..V(m); otherwise W(i) must equal V(i).
-6. If all match, Flag(4) ← 1 and return TRUE; else return FALSE.
 
 The bytecode-level encoding of the parameter list is documented in [[entities/logic]] §"The `said` test command" (count-prefixed array of 2-byte little-endian vocabulary codes). The runtime hooks (Var(9), Flag(2), Flag(4)) are reflected in [[interpreter/variables-and-flags]].
 
