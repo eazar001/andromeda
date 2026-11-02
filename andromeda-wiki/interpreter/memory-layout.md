@@ -70,7 +70,7 @@ Resources are read in two steps: a small record, then the data at its full lengt
 
 Lists are singly linked, and a new record goes at the tail. A failed read rolls next-free back to where the read began, then retries [AGI 2.917 1000:2FE0, 1000:2E32].
 
-**Object save areas stay on top.** Save areas for animated objects live above all resources. Every load, discard, and other permanent change first releases them, newest first, then makes its change, then rebuilds them [AGI 2.917 1000:698D, 1000:69C7]. That is how a stack-only heap can gain a new resource while objects are on screen. From the call structure, the release restores the background under each object and the rebuild saves it and draws the object; the driver entries themselves are unread [AGI 2.917 1000:0307, 1000:045E]. `set.menu` and `set.menu.item` allocate without this bracket, so a menu built while save areas exist would land above them and be overwritten at the next release. Runtime only.
+**Object save areas stay on top.** Save areas for animated objects live above all resources. Every load, discard, and other permanent change first releases them, newest first, then makes its change, then rebuilds them [AGI 2.917 1000:698D, 1000:69C7]. That is how a stack-only heap can gain a new resource while objects are on screen. The release restores the background under each object, and the rebuild saves it and draws the object [AGI 2.917 1000:0307, 1000:045E, 1000:9CF9, 1000:9D38, 1000:9D75]. `set.menu` and `set.menu.item` allocate without this bracket, so a menu built while save areas exist would land above them and be overwritten at the next release. Runtime only.
 
 ## Releasing memory
 
@@ -125,7 +125,7 @@ Not recorded: the `call` auto-load, LOGIC 0's startup load, and `show.obj`, whic
 
 `$AB` saves the count to `DS:05E1`, and `$AC` restores it and moves the write position to match [AGI 2.917 1000:70C4, 1000:70D6]. There's one level of saving, with no stack. [[interpreter/commands]] lists them as `push.script` and `pop.script`.
 
-**Replay** resets the lists, turns recording off, releases the heap to the mark, and walks the entries from the start up to the saved count, dispatching each to the same routines used at run time. Code 5 reads its three extra entries. Unknown codes above 8 are skipped. A code 0 entry also restores that LOGIC's scan start, and a code 1 entry forces a reread if the view is already loaded. Recording then goes back on [AGI 2.917 1000:6755, 1000:7068, 1000:7085, 1000:684E]. Save and restore themselves are covered with the save and restore audit.
+**Replay** resets the lists, turns recording off, releases the heap to the mark, and walks the entries from the start up to the saved count, dispatching each to the same routines used at run time. Code 5 reads its three extra entries. Unknown codes above 8 are skipped. A code 0 entry also restores that LOGIC's scan start, and a code 1 entry forces a reread if the view is already loaded. Recording then goes back on [AGI 2.917 1000:6755, 1000:7068, 1000:7085, 1000:684E]. See [[interpreter/save-restore]].
 
 **SQ1** never uses `script.size`: walking all its LOGICs finds no `$8E` [SQ1 data check, memory unit, log 2026-11-01]. So its buffer holds the default 50 entries, 100 bytes, allocated at the first `new.room`.
 
@@ -141,7 +141,7 @@ The spec lists regions in order from the start of the data area [2-4-Interpreter
 | Flags | 32 bytes | `DS:0109`, zeroed at setup [AGI 2.917 1000:7463] | Confirmed |
 | Timers and special variables | unspecified | `DS:0129` onward, including the tick count and the control state | Refined; individual slots are in [[interpreter/variables-and-flags]] and [[interpreter/event-loop]] |
 | Strings | 12×40 or 24×40 | `DS:020D`, 24×40 for 2.917 | Refined; see [[concepts/agi-data-types]] |
-| Unknown | unspecified | `DS:05CD`–`DS:05E2`, partly identified: the cursor character at `DS:05D7`, and the `$AB` save at `DS:05E1` | Unread for the rest |
+| Unknown | unspecified | `DS:05CD`–`DS:05E2`: text attributes, input and status state, and the `$AB` save, mapped in [[interpreter/save-restore]] §"Save file layout" | Refined |
 | UI strings | unspecified | First at `DS:05E3`, with most after the tables from `DS:09F5` | Refined: they fall on both sides of the tables |
 | Command jump table | unspecified | Action table `DS:061D`, 174 entries; test table `DS:08F5`. The spec's ~181 and ~18 are other versions' counts | Refined |
 | Encryption string | 12 bytes | `DS:08E9`, between the two tables | Confirmed |
@@ -151,7 +151,7 @@ The spec lists regions in order from the start of the data area [2-4-Interpreter
 | Other resources | variable | Heap row 9 | Confirmed; the mechanism is above |
 
 > [!conflict] 2-4 vs. AGI 2.917: the first two regions
-> The spec gives a 2-byte header holding "the length of the first data area" and an 8-byte signature, which would put variables at offset 10. In 2.917 variables are at `DS:0009`. `DS:0000` holds the stack base, read by the guard check in the timer [AGI 2.917 1000:008C, 1000:849E]. `set.game.id` copies up to 7 characters to `DS:0002` [AGI 2.917 1000:0E9D]. Saved games start their first block at `DS:0002` [AGI 2.917 1000:25D6], so the spec's header may describe a save-file length word instead of memory; that is unconfirmed here.
+> The spec gives a 2-byte header holding "the length of the first data area" and an 8-byte signature, which would put variables at offset 10. In 2.917 variables are at `DS:0009`. `DS:0000` holds the stack base, read by the guard check in the timer [AGI 2.917 1000:008C, 1000:849E]. `set.game.id` copies up to 6 characters and a terminator to `DS:0002` [AGI 2.917 1000:0E9D]. Saved games start their first block at `DS:0002` [AGI 2.917 1000:25D6], so the spec's header may describe a save-file length word instead of memory; that is unconfirmed here.
 
 > [!conflict] 2-4 vs. AGI 2.917: one arena
 > The earlier reading of the spec was a single-arena model where "code, fixed state, … and dynamically loaded resources all share one heap". In 2.917 code is in its own segment and the screen buffer in its own DOS block. Fixed data and the heap share only the `DS` segment, at separate addresses. The older note that heap direction and growth "would need to be recovered from a real DOS binary" is now answered: it grows upward, by bump allocation.

@@ -1,6 +1,6 @@
 # Screen Layers
 
-> **Verification status:** Buffer layout, initial state, enable flags, and the path to the display are read from AGI 2.917 and its driver overlays, and describe 2.917 only. The rules for how screen objects are drawn belong to the view and drawing audit. Nothing about the actual picture on a monitor has been observed; see "Open items".
+> **Verification status:** Buffer layout, initial state, enable flags, and the path to the display are read from AGI 2.917 and its driver overlays, and describe 2.917 only. The rules for how screen objects are drawn are on [[interpreter/priority-bands]] and [[interpreter/control-lines]]. Nothing about the actual picture on a monitor has been observed; see "Open items".
 
 A rendered AGI room consists of two logical layers, the **visual screen** and the **priority screen**. They share the same `(x, y)` coordinates [5-1-PICTURE.html §GENERAL GUIDELINES].
 
@@ -18,7 +18,7 @@ Screen-object pixels are written into this same buffer [AGI 2.917 1000:5631].
 
 ## Dimensions
 
-*(Applies to AGI v2/v3. AGI v1 used a CGA-native display model; see [[concepts/ega-palette]] §"CGA / Hercules / Tandy".)*
+*(Applies to AGI v2/v3. AGI v1 used a CGA-native display model; see [[concepts/ega-palette]] §"Out-of-scope variants".)*
 
 Both layers are **160 × 168**. EGA displays them at 320×200, with each pixel doubled horizontally [AGI 2.917 EGA_GRAF.OVL +0x15, +0x85].
 
@@ -32,7 +32,7 @@ Both layers are **160 × 168**. EGA displays them at 320×200, with each pixel d
 **Priority screen.** Invisible except through `show.pri.screen`. Each pixel stores a 4-bit value used by two distinct subsystems:
 
 - **Priority band** (values 4..15) — the pixel's depth, from 4 (farthest back) to 15 (closest to the viewer). Values 4..14 are the eleven y-derived bands. Drives per-pixel occlusion for screen-objects, per [[interpreter/priority-bands]].
-- **Control line** (values 0..3) — encodes one of four control-line semantics: barrier, conditional barrier, alarm, water/surface. See [[interpreter/control-lines]].
+- **Control line** (values 0..3) — encodes one of four control-line semantics: barrier, conditional barrier, alarm, water/surface. See [[interpreter/control-lines]]. Cel drawing treats only 0..2 as special, and compares 3 like any other priority [AGI 2.917 1000:9DE7].
 
 Value 15 is the band closest to the viewer: objects cannot move in front of it [5-2-PICTURE.html]. It sits outside the y-derived table, because EGO can never walk low enough to reach it [5-1-PICTURE.html]. It is in real use: SQ1 draws it in 45 of 73 pictures (15.5% of all priority pixels), and its scripts call `set.priority(n, 15)` 32 times [SQ1 data check, log 2026-11-01].
 
@@ -92,11 +92,9 @@ It doesn't use a separate priority image. It swaps the two nibbles of every byte
 
 ## Composition with screen-objects
 
-Screen-objects (ego, NPCs, props — sourced from VIEW resources) are composited on top of the rendered visual screen. Their visibility per pixel is determined by comparing the object's priority value against the priority-screen pixel at the same position: an object pixel with priority `p` is occluded by any priority-screen pixel with value `> p`. Object priority is set explicitly (`set.priority`) or assigned from the y → priority table when in release mode (`release.priority`); see [[interpreter/priority-bands]] for the band table and [[interpreter/command-semantics]] §`add.to.pic` for the related LOGIC-side composition opcode.
+Screen-objects (ego, NPCs, props, sourced from VIEW resources) share the one buffer. Each cel pixel is compared with the priority already there: see [[interpreter/priority-bands]] §"How a cel pixel is compared" and [[interpreter/control-lines]] §"Search-downwards rule". An object's priority is set explicitly or assigned from the y table, and [[interpreter/command-semantics]] §`add.to.pic` covers the LOGIC-side composition.
 
-This section's rules are **not audited here**; they belong to the drawing audit. What's established here is only that object pixels share the one buffer, and that `draw.pic` and `overlay.pic` take objects out of the buffer before drawing and put them back after [AGI 2.917 1000:698D, 1000:69C7].
-
-The full per-pixel occlusion algorithm — including how object cells interact with the search-downwards rule when a control-line pixel sits at the object's position — is **not pinned down on this page**. See [[interpreter/view-objects]].
+`draw.pic` and `overlay.pic` take objects out of the buffer before drawing and put them back after [AGI 2.917 1000:698D, 1000:69C7].
 
 ## SCI divergence
 
@@ -104,8 +102,6 @@ SCI splits this two-screen model into three independent layers (visual / priorit
 
 ## Open items at this page's level
 
-- **Per-pixel occlusion algorithm** — deferred to the drawing audit.
-- **Object-vs-control-line interaction** — deferred to the drawing audit.
 - **On-screen result** — the display path above comes from reading code only. Runtime pass: capture each display type's output for one picture, including `show.pri.screen`.
 
 ## See also

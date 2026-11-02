@@ -195,7 +195,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 
 `load.sound` reads a SOUND resource into a playback buffer; `sound` initiates playback and signals the named flag on completion; `stop.sound` halts the current sound. See [[entities/sound]] for the SOUND resource format (four-voice PCjr-style note streams; reference playback implementations cataloged in [[sources/7-2-sound]]) and [[interpreter/variables-and-flags]] for the related runtime state (`var(22)` hardware type, `var(23)` volume, `flag(9)` on/off).
 
-**Flag-signal semantics.** The flag is set to 1 when playback finishes [4-4-Logic.html §SOUND RESOURCE MANAGEMENT COMMANDS] `(agidev, unverified)` until run in a working interpreter. `stop.sound` also sets it if a sound is playing, and does nothing otherwise. So do room changes and errors, which stop sound the same way [AGI 2.917 1000:516C, 1000:1797, 1000:3FED]. Still unread: whether the flag is cleared when playback starts.
+**Flag-signal semantics.** The flag is cleared when playback starts and set when it finishes [AGI 2.917 1000:510B, 1000:7FFA; 4-4-Logic.html §SOUND RESOURCE MANAGEMENT COMMANDS]. `stop.sound` also sets it if a sound is playing, and does nothing otherwise. So do room changes and errors, which stop sound the same way [AGI 2.917 1000:516C, 1000:1797, 1000:3FED]. See [[entities/sound]] §"Starting and stopping".
 
 ### Print, display, screen (`$65..$71`)
 
@@ -240,7 +240,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | Opcode | Mnemonic | Args | Signature |
 |--------|----------|------|-----------|
 | `$7C` | `status` | 0 | — |
-| `$7D` | `save.game` | 0 | — always continues to the next command. See [[interpreter/command-semantics]] §"Save, restore and restart" [AGI 2.917 1000:2753] |
+| `$7D` | `save.game` | 0 | — always continues to the next command. See [[interpreter/save-restore]] [AGI 2.917 1000:2753] |
 | `$7E` | `restore.game` | 0 | — ends all running LOGICs on success, and continues on cancel or a file that won't open [AGI 2.917 1000:2512] |
 | `$7F` | `init.disk` | 0 | — no-op in 2.917: the handler just continues to the next command [AGI 2.917 1000:4F8A] |
 | `$80` | `restart.game` | 0 | — prompts unless `flag(16)` is set; ends all running LOGICs if it goes ahead [AGI 2.917 1000:2472] |
@@ -332,7 +332,5 @@ The spec's eleven match the [2-8-Interpreter.html] note "the last eleven we do n
 **Argument-type prefixes from 4-2.** [[sources/4-2-logic]] documents source-syntax prefixes (`v`, `f`, `m`, `o`, `i`, `s`, `w`, `c`) that compilers/decoders display. The bytecode itself is untyped. In 2.917 each handler hard-codes which arguments it dereferences; the AGIDATA.OVL type byte does not drive this (see [[entities/logic]] §"Argument dispatch").
 
 **Spec table markup artifacts.** The HTML table in 4-3 contains stray cells (literal `string` text) in argument slots beyond the declared count for many rows from `$3E..$71`. These do not appear to encode anything — the declared argument count is correct, and the stray cells are markup noise (possibly an editing accident with rowspan / colspan). All entries in the tables above were validated against the declared argument count, ignoring stray cells.
-
-**Coverage of dangling forward-references.** This page resolves [[interpreter/commands]] — previously forward-referenced from [[interpreter/overview]] §"The LOGIC virtual machine", [[concepts/agi-data-types]] §"Message", and [[interpreter/command-evolution]] §"See also". The remaining dangling forward-refs from overview (`priority-bands`, `control-lines`, `view-objects`, `debug-modes`) are not resolved here — they're runtime-state subsystems, distinct from this opcode dispatch table.
 
 **Semantics not specified.** 4-3 lists opcode signatures only; behavioral semantics (what `animate.obj` actually does to the screen-object table, the exact pixel-priority rules for `set.priority`, how `random` seeds its RNG, etc.) are documented separately in [[interpreter/command-semantics]] from [4-4-Logic.html], which covers high-value items (multi-step procedures, edge cases, conflicts) — for full per-opcode prose, refer directly to `AGI_Specifications/Specifications/4-4-Logic.html`. This page is a dispatch reference, not a behavior reference.

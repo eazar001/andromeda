@@ -138,13 +138,12 @@ Two lists exist, static objects and updating objects, and the updating list is t
 
 Each loaded VIEW resource is bound to one or more VIEW *objects* — runtime instances that track animation and motion state. The interpreter maintains a heap-resident table of active objects, with one 43-byte entry per object in SQ2 (size may vary by interpreter version). 2.917 also uses 43 bytes [AGI 2.917 1000:0573, 1000:0B34]. See [[interpreter/view-objects]] for the full table entry structure, including position, animation cel index, direction, flags, and priority [6-2-VIEW.html §VIEW TABLE ENTRY].
 
-At each interpreter cycle, step 10 (rendering) updates all resident objects: advancing animation cels per `cycle_time`, repositioning per motion state, and compositing visible cels to the visual screen — see [[interpreter/event-loop]] [6-2-VIEW.html §overview].
+2.917 updates objects in two passes each cycle, one before LOGIC 0 and one after; see [[interpreter/view-objects]] §"What happens each cycle".
 
 ## Open items
 
 - Description string parsing in the project's decoder (offset is read; string body is not).
 - `1000:5857`, called when a view loads, passes the view to the graphics-driver entry at `1000:9777`. It does this only when `DS:1126` is 0 and `DS:1128` is neither 2 nor 3. The driver entry is unread.
-- Horizontal doubling in 2.917 happens in the graphics driver, which this audit didn't read.
 - The comparison with `viewview.pas` below is carried over and wasn't repeated.
 
 ## Reference implementation

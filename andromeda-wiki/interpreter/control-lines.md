@@ -31,7 +31,7 @@ The test reads one row: the object's `y`, from `x` to `x + width - 1`, left to r
 4. If the scan finishes, the whole baseline being cyan fails an object with `object.on.land` set. Anything else fails an object with `object.on.water` set. Otherwise the test passes [AGI 2.917 1000:564C–1000:5660].
 5. For object 0 only, `flag(3)` and `flag(0)` are written from what the scan saw, whether or not the test passed [AGI 2.917 1000:5663–1000:5682].
 
-So `object.on.water` needs every baseline pixel to be cyan, and `object.on.land` is blocked only by a baseline that is entirely cyan. A partly cyan baseline satisfies land and fails water. `object.on.anything` clears both flag bits [AGI 2.917 1000:7DAA]. Object 0 also has both bits cleared at the end of any cycle's screen update in which at least one object was updating, so on EGO these commands last one cycle unless LOGIC repeats them [AGI 2.917 1000:0610, 1000:0635–1000:0639].
+So `object.on.water` needs every baseline pixel to be cyan, and `object.on.land` is blocked only by a baseline that is entirely cyan. A partly cyan baseline satisfies land and fails water. `object.on.anything` clears both flag bits [AGI 2.917 1000:7DAA]. Object 0 also has both bits cleared at the end of any cycle's screen update in which at least one object was active, so on EGO these commands last one cycle unless LOGIC repeats them [AGI 2.917 1000:0610, 1000:0635–1000:0639].
 
 Two consequences of the scan stopping early:
 

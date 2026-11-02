@@ -1,5 +1,7 @@
 # Source: 5-3-PICTURE.html
 
+> **Historical record.** This page describes the wiki at ingest. The 2.917 audit has since found that `showpic.c` isn't byte-exact; see [[concepts/picture-rendering]].
+
 The third and final chapter in Group 4 (PICTURE). **A reference-implementation pointer chapter, not specification prose.** The HTML body is a single table indexing two vendored C files at `AGI_Specifications/Code/`; the actual content lives in the code.
 
 ## Scope

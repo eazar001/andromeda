@@ -1,6 +1,6 @@
 # Source: AGI 2.917 interpreter binary
 
-Static analysis of the interpreter shipped with the local SQ1 copy. It is the top-ranked source for what 2.917 does and says nothing about other versions [WIKI.md §Source-reliability rules]. Everything here comes from reading code, not from running it, except the PICTURE routine, which was also run alone in an x86 emulator; see [[concepts/picture-rendering]].
+Static analysis of the interpreter shipped with the local SQ1 copy. It is the top-ranked source for what 2.917 does and says nothing about other versions [WIKI.md §Source-reliability rules]. Everything here comes from reading code, not from running it, except the PICTURE routine, which was also run alone in an x86 emulator with `tools/picture_emu/`; see [[concepts/picture-rendering]].
 
 ## Identity
 
@@ -193,7 +193,7 @@ Code is `1000:xxxx` and data is `DS:xxxx`, where `DS` is segment `19F5`, filled 
 
 ## Informs
 
-[[interpreter/commands]], [[interpreter/event-loop]], [[interpreter/command-semantics]], [[interpreter/variables-and-flags]], [[interpreter/view-objects]], [[interpreter/command-evolution]], [[interpreter/input-parsing]], [[entities/logic]], [[entities/sound]], [[entities/object]], [[entities/words-tok]], [[entities/dir-file]], [[entities/vol-file]], [[concepts/agi-data-types]], [[concepts/offset-encoding]], [[concepts/pcjr-sound-encoding]], [[entities/view]], [[entities/picture]], [[concepts/rle-encoding]], [[concepts/picture-rendering]], [[concepts/screen-layers]], [[concepts/ega-palette]], [[interpreter/control-lines]], [[interpreter/priority-bands]], [[interpreter/memory-layout]], [[interpreter/debug-modes]].
+[[interpreter/commands]], [[interpreter/event-loop]], [[interpreter/command-semantics]], [[interpreter/variables-and-flags]], [[interpreter/view-objects]], [[interpreter/command-evolution]], [[interpreter/input-parsing]], [[entities/logic]], [[entities/sound]], [[entities/object]], [[entities/words-tok]], [[entities/dir-file]], [[entities/vol-file]], [[concepts/agi-data-types]], [[concepts/offset-encoding]], [[concepts/pcjr-sound-encoding]], [[entities/view]], [[entities/picture]], [[concepts/rle-encoding]], [[concepts/picture-rendering]], [[concepts/screen-layers]], [[concepts/ega-palette]], [[interpreter/control-lines]], [[interpreter/priority-bands]], [[interpreter/memory-layout]], [[interpreter/debug-modes]], [[interpreter/save-restore]].
 
 ## Notes
 

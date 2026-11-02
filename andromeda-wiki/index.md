@@ -4,7 +4,7 @@ Distilled AGI-format knowledge base. Start here for any byte-level format questi
 
 ## Quick refs
 
-_(Highest-traffic pages will be promoted here once content lands.)_
+- [[conflicts]] — index of every `> [!conflict]` callout, by page.
 
 ## Entities
 
@@ -44,10 +44,11 @@ The LOGIC VM and runtime model: opcode tables, event loop, priority bands, objec
 - [[interpreter/input-parsing]] — player-input preprocessing (punctuation/case/space normalization, vocabulary lookup) and `said` test pattern matching (wildcards `1` and `9999`, equality, at-most-once-per-cycle semantics).
 - [[interpreter/command-evolution]] — version-conditional command argument-count rules for LOGIC bytecode decoding (`quit`, `print.at`, `print.at.v`, unknown #176) plus command-count summary by interpreter version.
 - [[interpreter/commands]] — full opcode catalogue: 18 test commands (`$01..$12`) and 182 action commands (`$00..$B5`) with argument counts and per-argument types.
-- [[interpreter/command-semantics]] — behavioral semantics audited against 2.917: arithmetic, tests, resources, `new.room`, objects, `add.to.pic`, `show.obj`, text output, save/restore/restart with the save-file layout, inventory, menus, miscellaneous commands, and the former unknowns `$AA..$AD`.
+- [[interpreter/command-semantics]] — behavioral semantics audited against 2.917: arithmetic, tests, resources, `new.room`, objects, `add.to.pic`, `show.obj`, text output, inventory, menus, miscellaneous commands, and the former unknowns `$AA..$AD`.
 - [[interpreter/priority-bands]] — y → priority table and the per-pixel occlusion rule for cels, audited against 2.917.
 - [[interpreter/control-lines]] — black/blue/green/cyan control values, the baseline test, and the search-downwards rule, audited against 2.917.
 - [[interpreter/view-objects]] — object table layout and flags, per-cycle motion, cycling and collision, audited against 2.917.
+- [[interpreter/save-restore]] — `save.game`, `restore.game`, `restart.game` in 2.917: save-file layout, slots, named saves, and the rebuild by script replay.
 - [[interpreter/debug-modes]] — the command trace (Scroll Lock, `flag(10)`) and per-game debug scripts; 2.917 has no other built-in debugger.
 
 ## Sources
@@ -75,7 +76,7 @@ One page per ingested AGI Specification chapter, with a short summary and links 
 - [[sources/4-6-logic]] — Bibliographic reference table for five Lance Ewing / Peter Kelly source files at `AGI_Specifications/Code/` (`logic.c`/`.h`, `agifiles.c`/`.h`, `agicommands.pas`). Sources-only ingest; **closes Group 3 (Logic)**.
 - [[sources/5-1-picture]] — PICTURE resource bytecode format chapter: drawing opcodes `0xF0..0xFF`, dual-screen model, control-line color semantics, search-downwards priority recovery, sign-magnitude `0xF7` displacements, pen-style and splatter-texture encodings. **Opens Group 4 (PICTURE)**. Lance Ewing, IA, 5 December 1997.
 - [[sources/5-2-picture]] — AGDS-manual translation covering the same PICTURE format from a Russian-language source. Corroborates 5-1's init colors, control-line color mapping, and opcode catalogue; refines `0xF8` flood-fill target rule. Independent source, no new specification surface. Vassili Bykov (translator), AGDS, IA, 27 January 1998. **Fourth Bykov/AGDS chapter in the corpus.**
-- [[sources/5-3-picture]] — "Sample Code" chapter pointing at two reference C implementations vendored at `AGI_Specifications/Code/`: `showpic.c` (working PICTURE viewer, ~650 lines) and `picv3-v2.c` (v3→v2 transcoder, 67 lines). Resolves `0xF7` sign-bit polarity, wrap-at-255 splatter quirk, `0xFB..0xFE` reserved-range; surfaces a 4-position conflict in the splatter offset table between 5-1 prose and showpic.c. Page-level `(agidev, unverified)` tags downgraded across PICTURE pages — showpic.c is now the validation surface. Lance Ewing, IA. **Closes Group 4 (PICTURE).**
+- [[sources/5-3-picture]] — "Sample Code" chapter pointing at two reference C implementations vendored at `AGI_Specifications/Code/`: `showpic.c` (working PICTURE viewer, ~650 lines) and `picv3-v2.c` (v3→v2 transcoder, 67 lines). Resolves `0xF7` sign-bit polarity, wrap-at-255 splatter quirk, `0xFB..0xFE` reserved-range; surfaces a 4-position conflict in the splatter offset table between 5-1 prose and showpic.c. At ingest, `showpic.c` became the validation surface; the 2.917 audit has since replaced it (see [[concepts/picture-rendering]]). Lance Ewing, IA. **Closes Group 4 (PICTURE).**
 - [[sources/6-1-view]] — VIEW resource format chapter: three-level container, RLE cel encoding, loop mirroring, optional close-up descriptions. Validation-case ingest cross-checked against `resource/view.py` and `gfx/view_render.py`; spec's cel-header byte-2 wording (ambiguous nibble ordering + a "Bit 1" typo) was overridden by the code-verified layout. Peter Kelly, IA, 5 October 1997. **Opens Group 5 (VIEW).**
 - [[sources/6-2-view]] — VIEW *object* table and runtime sprite state: 43-byte SQ2 entry structure (per-object position, animation, motion, priority, 16-bit flags) and four collision-test commands (`posn`, `right.posn`, `center.posn`, `obj.in.box`) referencing the object hot-spot pixel. Entry size is interpreter-version-specific; many bytes and flag bits marked "??" in the spec (unknown purpose). Lance Ewing, IA, 31 August 1997. **Second of three VIEW chapters.**
 - [[sources/6-3-view]] — "Sample Code" chapter: single-row pointer at `viewview.pas` (Peter Kelly, Borland Pascal 7, from AGIhack 2.0) vendored at `AGI_Specifications/Code/`. No new specification surface; the code independently verifies cel-header byte-2 nibble layout, RLE chunk structure, `0x00` row termination, and horizontal-doubling display width as documented on [[entities/view]]. Mirroring style differs (in-place mutation in `viewview.pas` vs. deferred per-render in andromeda); both spec-conformant. **Closes Group 5 (VIEW).**

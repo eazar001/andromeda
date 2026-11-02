@@ -1251,3 +1251,41 @@ The six entries above came from parallel agents in separate worktrees. The coord
 **Settled across units.** The overlay loader's table names each file and gives its segment, which removes the assumption behind the `1000:9740` and `1000:9CF0` bases. `flag(1)` has a setter in `IBM_OBJS`, which the objects unit couldn't see. Where the objects and draw units differed on `flag(0)`, draw's wording matches the bytes: a black stop keeps it, a blue one clears it. Saves don't hold `DS:1707` or `DS:1526`.
 
 **Unchanged.** Runtime only items stay queued in `WIKI_AUDIT_PLAN.md`. The `variables-and-flags` audit item stays open: this merge applied the handoffs' edits, but every reserved slot hasn't been checked yet.
+
+## [2026-11-01] file | Save and restore page, PICTURE harness moved into the repo
+
+At the user's direction, `interpreter/save-restore` is a new page holding what `interpreter/command-semantics` had under "Save, restore and restart", with `obj.status.v` left behind. The content is unchanged.
+
+The PICTURE emulation harness is now `tools/picture_emu/`, rewritten with tests. It reproduced the earlier results: no rules-model difference on all 73 SQ1 pictures or on any synthetic family; `showpic` as shipped differs in 8 pictures (7,592 priority pixels), and the literal 5-1 fill reading in 2 (194).
+
+## [2026-11-01] lint | full-wiki
+
+Coverage: read in full, every page outside `sources/`. `sources/` got the mechanical checks and a search for overturned claims only, since those pages are historical ingest records.
+
+**Findings.**
+
+1. Contradictions:
+   - **Error, null message pointers.** `entities/logic` and `interpreter/command-semantics` (`word.to.string`) say a null text pointer reads "the zero bytes at `DS:0000`", giving an empty string or no cursor. Startup writes the stack base there [AGI 2.917 1000:008C], as `interpreter/memory-layout` says. The result depends on that base's low byte, predicted `0x80`. Runtime only.
+   - **Wording, game ID.** `interpreter/memory-layout` says `set.game.id` copies "up to 7 characters". The limit of 7 includes the terminator, so 6 characters, as `command-semantics` says [AGI 2.917 1000:0E86].
+   - **Stale against the audit.** `entities/view` has objects updating at "step 10"; `interpreter/variables-and-flags` has `flag(5)` clearing at step 9, where the cycle says step 12; `interpreter/commands` calls clearing the sound flag at start unread, where `entities/sound` settles it; `interpreter/overview` still gives the spec's cycle, input flags, built-in debug mode and a deferred occlusion algorithm; `concepts/screen-layers` still has unaudited occlusion text that omits the 0 to 2 rule; `interpreter/command-semantics` still has a table headed "4+ loops" and page caveats calling all behavior unverified.
+   - **Stale "unread" notes, now read elsewhere.** `interpreter/priority-bands` (`position` handlers), `interpreter/memory-layout` (object overlay entries), `interpreter/view-objects` (caller at `2DF5`), `interpreter/command-semantics` (driver entries `9743`, `9746`), `entities/view` (horizontal doubling), `entities/vol-file` (out-of-memory), `entities/logic` (type byte, execution semantics), `interpreter/save-restore` (`$AA`'s name), and `entities/sound` (`flag(9)` across a restart).
+2. Orphans: none.
+3. Broken links: none. One stale section anchor: `concepts/screen-layers` cites `concepts/ega-palette` §"CGA / Hercules / Tandy", which is now "Out-of-scope variants".
+4. Stale deferrals: `concepts/screen-layers` lines on occlusion and object-vs-control-line. The hits on `sources/` and `index.md` are historical "Group" notes, left as records.
+5. Conflict callouts: 46 outside `log.md`, far above the ~6 threshold.
+
+**Changes applied.** None yet. The skill's process needs the user's confirmation first.
+
+**Open items carried forward.** The fixes above. Whether to change the threshold rule in `WIKI.md`: the audit's own rule keeps each spec claim in a callout beside what it contradicts, so moving them would separate them from their context. The proposal is to keep them inline and add a one-line-per-callout `conflicts.md` as an index. `sources/5-3-picture` still calls `showpic.c` the validation surface, and its `index.md` line repeats that.
+
+## [2026-11-01] lint | Fixes from the full-wiki pass applied
+
+At the user's confirmation, applied every finding from the lint entry above.
+
+**Corrected.** Null message pointers read the stack base at `DS:0000`, not zeros: `entities/logic`, `interpreter/command-semantics`. While making this fix, a raw read also found that parsing clears the word codes at `DS:0C73` but not the text pointers at `DS:0C87`, so a `word.to.string` slot past the current line's words keeps a stale pointer rather than giving an empty string. `set.game.id` is 6 characters and a terminator. Runtime only: what these reads produce on a real machine.
+
+**Updated.** Stale text on `entities/view`, `entities/vol-file`, `entities/sound`, `interpreter/commands`, `interpreter/variables-and-flags`, `interpreter/priority-bands`, `interpreter/memory-layout`, `interpreter/view-objects`, `interpreter/save-restore`, `interpreter/control-lines`, `interpreter/overview`, `concepts/screen-layers`, `sources/5-3-picture`, `index`.
+
+**Conflict rule.** New `conflicts.md`, indexing all 46 callouts. Callouts stay inline. `WIKI.md` and the lint command's check 5 now say this. Older log entries that discuss a threshold are left as written.
+
+**Open.** The `variables-and-flags` audit item, then the plan's remaining items.

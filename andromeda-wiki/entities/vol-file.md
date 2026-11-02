@@ -66,7 +66,7 @@ Static reading, not run [AGI 2.917 1000:2E32, 1000:2E56, 1000:3080].
 
 The disk number shown is the entry's VOL number, or for VOL 0 the last non-zero one, or else 1. So VOL 0 is treated as present on every disk.
 
-**Low memory.** `show.obj` and `show.obj.v` set a mode where the read gives up and returns nothing if the resource is larger than free memory, and the command then shows a message instead of the object [AGI 2.917 1000:2F8E, 1000:5E3A]. In every other case the allocator decides; see [[interpreter/memory-layout]], where the out-of-memory behavior is still unread.
+**Low memory.** `show.obj` and `show.obj.v` set a mode where the read gives up and returns nothing if the resource is larger than free memory, and the command then shows a message instead of the object [AGI 2.917 1000:2F8E, 1000:5E3A]. In every other case, running out of memory ends the game; see [[interpreter/memory-layout]] §"The allocator".
 
 A reimplementation with no disk swapping can treat all of these as fatal errors.
 

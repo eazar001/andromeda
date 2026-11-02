@@ -4,7 +4,7 @@ A LOGIC resource holds the bytecode program for a single room. Each room has one
 
 This page documents the on-disk format. Execution semantics (opcode behavior, VM cycle integration) live under [[interpreter/overview]] and its detail pages.
 
-The Python prototype in `resource/` has no LOGIC decoder, so these claims are unverified against project code. A throwaway walker did decode all 101 SQ1 LOGICs with no desyncs or bad branch targets, which confirms the control-flow bytes, argument counts, and text-section layout on that game [SQ1 data check, log 2026-11-01]. Execution semantics remain `(agidev, unverified)`.
+The Python prototype in `resource/` has no LOGIC decoder, so these claims are unverified against project code. A throwaway walker did decode all 101 SQ1 LOGICs with no desyncs or bad branch targets, which confirms the control-flow bytes, argument counts, and text-section layout on that game [SQ1 data check, log 2026-11-01]. Execution semantics are on the interpreter pages, audited against 2.917.
 
 ## Format overview
 
@@ -122,7 +122,7 @@ The argument-type byte encodes which arguments are variable references vs. liter
 - `0x60` — arguments 2 and 3 are variables, the rest are numbers.
 
 > [!conflict] What the type byte does in AGI 2.917
-> **Contradicted:** the type byte does not control execution. Every handler read so far hard-codes which arguments it dereferences, and no code in the disassembled part of the program reads the byte directly. The table reaches only the trace display as a whole [AGI 2.917 1000:8CDC, 1000:8D44], so the byte probably exists just for debugger output. Disassembly is incomplete, so this stays open until the remaining code is read.
+> **Contradicted:** the type byte does not control execution. Every handler hard-codes which arguments it dereferences. The only reader found is the trace display, which uses the byte to show variable arguments' current values [AGI 2.917 1000:8CDC, 1000:8EEF, 1000:8F26], so as far as the code read shows, it exists for debugger output.
 >
 > **The byte is also wrong for some commands.** `$5F put` (`0x00`) and `$60 put.v` (`0x40`) understate their variable arguments, and `$A2 show.obj.v` has `0x01` where `0x80` would be expected [AGI 2.917 1000:74C5, 1000:74F0, 1000:5DD3]. A decoder can use the table's argument count, but should not trust this byte for execution.
 >
@@ -149,7 +149,7 @@ The text section is always present (possibly with zero messages). Layout [4-1-Lo
 
 **Message access via LOGIC.** The `print` command (and similar) takes a 1-byte message number — e.g. `65 08` is `print(message #8)` [4-1-Logic.html §THE TEXT SECTION]. Numbers start at 1, because slot 0 of the pointer table is the end pointer [AGI 2.917 1000:21F0]. So message `n` uses the pointer at section byte `1 + 2n`.
 
-In 2.917, a number above the message count produces a null text pointer. `print` then draws a minimal empty box at row 10, column 20 and prints whatever its uninitialized buffer holds, then waits as usual; `display`, `get.string` and `get.num` print the same kind of garbage [AGI 2.917 1000:1F54]. `set.string` and `set.cursor.char` read the zero bytes at `DS:0000` instead, giving an empty string and no cursor. `%m` and `%g` skip such a message. A reimplementation should treat it as an error or as empty text. A slot holding 0 raises error `0x0E` with the number in `var(18)` [AGI 2.917 1000:21F0]. Message 0 resolves to the end of the text section.
+In 2.917, a number above the message count produces a null text pointer. `print` then draws a minimal empty box at row 10, column 20 and prints whatever its uninitialized buffer holds, then waits as usual; `display`, `get.string` and `get.num` print the same kind of garbage [AGI 2.917 1000:1F54]. `set.string` and `set.cursor.char` read from `DS:0000` instead, which holds the stack base after startup rather than zeros [AGI 2.917 1000:008C, 1000:0D37, 1000:38B4]. So `set.cursor.char` takes that base's low byte, and `set.string` copies its two bytes and then the game ID. If the base is `DS:1E80`, as [[interpreter/memory-layout]] predicts, neither gives an empty result. Runtime only. `%m` and `%g` skip such a message. A reimplementation should treat it as an error or as empty text. A slot holding 0 raises error `0x0E` with the number in `var(18)` [AGI 2.917 1000:21F0]. Message 0 resolves to the end of the text section.
 
 ## Loading and running
 
@@ -174,7 +174,7 @@ FF 0E 01 1E 01 FF                  ; if (said("marble"))      — 1 word: vocab 
 FF 0E 02 37 02 73 00 FF            ; if (said("open", "door")) — 2 words: 0x0237, 0x0073
 ```
 
-The byte immediately following `$0E` is the count of 2-byte little-endian word codes that follow. Word codes are looked up against [[entities/words-tok]]. For the preprocessing pipeline that produces the parsed-word vector against which `said` matches, see [[interpreter/input-parsing]] (the AGDS chapter, 2-6, references `4-3-Logic.html` for the matching algorithm — that ingest will likely supersede or extend this summary).
+The byte immediately following `$0E` is the count of 2-byte little-endian word codes that follow. Word codes are looked up against [[entities/words-tok]]. For the preprocessing pipeline that produces the parsed-word vector against which `said` matches, see [[interpreter/input-parsing]].
 
 ## How the interpreter decodes LOGIC
 

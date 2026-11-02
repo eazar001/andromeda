@@ -119,7 +119,7 @@ The horizon comparison is against the word at `DS:012D`. `set.horizon` stores it
 
 ### Position fixer
 
-This routine makes a position legal [AGI 2.917 1000:5872]. `draw`, the reposition commands and a refused step all call it. A routine at `1000:2DF5`, near `add.to.pic`, also calls it, and that caller wasn't read.
+This routine makes a position legal [AGI 2.917 1000:5872]. `draw`, `add.to.pic`, the reposition commands and a refused step all call it.
 
 First, an object at or above the horizon that doesn't ignore it moves to `horizon + 1`. If the position is then legal, the routine stops. Otherwise it walks an outward square spiral, starting left 1, down 1, right 2, up 2, left 3, and so on, stopping at the first legal position [AGI 2.917 1000:58C5–1000:5929, 1000:593E].
 
@@ -137,7 +137,7 @@ The second object needn't be updating, so a static object still blocks.
 
 ### The control check
 
-`1000:55F0` decides whether the object's baseline may be at its current position, and it's also where automatic priority is set. For a non-fixed-priority object it first sets offset `24` from the y-to-priority table at `DS:1270`. See [[interpreter/control-lines]] and [[interpreter/priority-bands]] for the pixel rules. Those pages belong to a separate audit.
+`1000:55F0` decides whether the object's baseline may be at its current position, and it's also where automatic priority is set. For a non-fixed-priority object it first sets offset `24` from the y-to-priority table at `DS:1270`. See [[interpreter/control-lines]] and [[interpreter/priority-bands]] for the pixel rules.
 
 ### The block box
 
@@ -205,7 +205,7 @@ All four test `y` for the vertical. The values are computed and compared as unsi
 
 - **`animate.obj`** sets flags to `0x70`, overwriting everything, and clears direction, motion type and cycle type. It does nothing if the object is already animated, and it leaves position, view and timings alone [AGI 2.917 1000:0521].
 - **`new.room`** clears bits 0 and 6, sets bit 4, clears the view and cel pointers and offset `14`, and sets both step bytes, both cycle bytes and the step size to 1, for every entry [AGI 2.917 1000:17B6]. It leaves direction, motion type, cycle type and position as they were.
-- **Restore** rebuilds objects from saved state. Offsets `02`/`03` hold temporary values during that rebuild, and `follow.ego`'s retreat byte is reset to `0xFF` [AGI 2.917 1000:6766–1000:68FB]. The save and restore audit owns the details.
+- **Restore** rebuilds objects from saved state. Offsets `02`/`03` hold temporary values during that rebuild, and `follow.ego`'s retreat byte is reset to `0xFF` [AGI 2.917 1000:6766–1000:68FB]. See [[interpreter/save-restore]].
 
 The spec's "every frame during step 10 (rendering)" is wrong for 2.917, which has two passes as above. Its note that an interpreter doesn't have to copy this layout stands [6-2-VIEW.html §NOTE after table], with one exception: anything a saved game must round-trip depends on it. The shared parameters also behave differently if separated.
 

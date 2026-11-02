@@ -18,7 +18,7 @@ Variables and flags are two of seven semantic data types that AGI commands consu
 
 ## Screen objects and priority bands
 
-The visible screen consists of *screen objects* — controllable view objects (ego, NPCs) and non-controllable ones (animated props, scenery elements) — each with position `(x, y)`, view/loop/cel animation state, and a priority value. The screen is divided into eleven horizontal priority bands (indices 4..14) [2-1-Interpreter.html §What are the priority bands?, 4-4-Logic.html §OBJECT DESCRIPTION COMMANDS]; an object's vertical position determines its band per the y → priority table in [[interpreter/priority-bands]]. The dual-screen model (visual + priority) and per-screen init colors are documented in [[concepts/screen-layers]]; the per-pixel priority screen carried by PICTURE resources controls occlusion so objects appear behind trees, rocks, and other scenery. The full per-pixel occlusion algorithm (how an object's priority value is compared against the priority screen pixel-by-pixel) is still deferred — 5-1 documents the screen layers and the [[interpreter/control-lines]] search-downwards rule but not the object-vs-screen comparison procedure.
+The visible screen consists of *screen objects* — controllable view objects (ego, NPCs) and non-controllable ones (animated props, scenery elements) — each with position `(x, y)`, view/loop/cel animation state, and a priority value. The screen is divided into eleven horizontal priority bands (indices 4..14) [2-1-Interpreter.html §What are the priority bands?, 4-4-Logic.html §OBJECT DESCRIPTION COMMANDS]; an object's vertical position determines its band per the y → priority table in [[interpreter/priority-bands]]. The dual-screen model (visual + priority) and per-screen init colors are documented in [[concepts/screen-layers]]; the per-pixel priority screen carried by PICTURE resources controls occlusion so objects appear behind trees, rocks, and other scenery. The per-pixel comparison is in [[interpreter/priority-bands]] §"How a cel pixel is compared".
 
 ## Control lines
 
@@ -41,26 +41,15 @@ All visible on-screen content — props, controllable actors, animated backgroun
 
 ## The event loop
 
-Each interpreter cycle is an ordered sequence of eleven operations: time delay, keyboard-buffer clear, transient-flag clear, input poll, EGO-direction update, object-motion recalculation, status-line refresh, LOGIC 0 execution, post-LOGIC reset, on-screen object update, and room-transition check [2-2-Interpreter.html §Interpreter work cycle]. The much larger room-change procedure runs only when `new_room` was issued. See [[interpreter/event-loop]] for the step-by-step sequence and the state-management details.
+Each interpreter cycle waits for the timer, clears the controller table and transient flags, drains queued input, syncs EGO's direction, updates object motion, runs LOGIC 0, redraws the status line if needed, and updates objects on screen. Input is polled by a timer routine and queued, not read once per cycle. A room change takes effect straight after LOGIC 0. The spec's eleven-step version differs in several places; see [[interpreter/event-loop]].
 
 ## Input parsing
 
-When the player enters a command line (step 4 of the event loop), the interpreter preprocesses the input — punctuation removal, lowercase normalization, multi-space collapsing — then performs vocabulary lookup to convert each surviving word into a numeric code. `var(9)` reports the position of any unparsed word; `flag(2)` signals that the input line parsed successfully; `flag(4)` signals that a `said` test has already consumed the input this cycle. The `said` test command matches the resulting word-code sequence against patterns with two wildcards: `1` matches any single word, `9999` matches the rest of the input [2-6-Interpreter.html]. See [[interpreter/input-parsing]].
+When the player presses Enter on a command line, the interpreter preprocesses the input, then looks each word up in the vocabulary to get a numeric code. `var(9)` reports the position of any unknown word, `flag(2)` signals that the line produced an unknown word or at least one kept word, and `flag(4)` signals that a `said` test has already matched. The `said` test matches the word codes against patterns with two wildcards: `1` matches any single word, and `9999` matches the rest of the input. See [[interpreter/input-parsing]].
 
 ## Debug modes
 
-Most shipped games left debug mode active. It is activated via ALT-D or a per-game magic phrase (e.g., "bird man" in Gold Rush, "rats ass" in Kings Quest 3, "stink bug" in Police Quest) [2-1-Interpreter.html §What are the debug modes?]. Standard debug commands include:
-
-- `TP` — teleport to another room.
-- `GET OBJECT` / `GIMME GIMME` — acquire inventory items.
-- `SHOW PRIORITY` / `SHOW FLAG` / `SHOW VAR` — inspect game state.
-- `SET FLAG` / `SET VAR` — mutate game state.
-- `POSITION` / `SHOW POSITION` — inspect or move ego.
-- `OBJECT NUMBER` / `OBJECT ROOM` — list inventory or locate items.
-- `ROOM` — show current room number.
-- `SET PRIORITY` / `RELEASE PRIORITY` — adjust ego's priority band.
-
-Most games also support a command-trace mode (Scroll-Lock) that single-steps through executed test commands, displaying the LOGIC index, parameter values, and the boolean result [2-1-Interpreter.html §What are the debug modes?]. See [[interpreter/debug-modes]].
+In 2.917 the interpreter's own debugging features are a command trace, which Scroll Lock toggles while `flag(10)` is set, and a few commands such as `show.mem` and `obj.status.v`. The spec describes a built-in debugger with ALT-D and typed commands, but in SQ1 those are ordinary LOGIC script, written per game. See [[interpreter/debug-modes]].
 
 ## Resource types
 

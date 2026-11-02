@@ -32,7 +32,7 @@ Refined from "whenever `y` changes". Priority is reset from the table only insid
 
 So the value follows `y` through motion steps and placement, but not at once:
 
-- `position` and `position.v` aren't among the callers of the placement search, so `get.priority` straight after them should return the old value. The handlers themselves weren't read. Marked Runtime only.
+- `position` and `position.v` only write the coordinates [AGI 2.917 1000:7B53, 1000:7B90], so `get.priority` straight after them should return the old value. Marked Runtime only.
 - Objects that aren't updating, such as those under `stop.update`, keep their value until something tests them again.
 
 ## How a cel pixel is compared

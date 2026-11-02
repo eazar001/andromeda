@@ -12,6 +12,7 @@ Scope is strictly **byte-level formats and the LOGIC VM**: layouts, encodings, o
 andromeda-wiki/
 ├── index.md         # categorized catalog of every page; entry point for all queries
 ├── log.md           # chronological log of ingest / query / lint operations
+├── conflicts.md     # one-line index of every conflict callout
 ├── entities/        # one page per resource type (VIEW, PIC, LOG, SND, OBJECT, WORDS.TOK, VOL, *DIR)
 ├── concepts/        # shared primitives (rle, nibble-packing, offset-encoding, ega-palette, xor-key, ...)
 ├── interpreter/     # VM model, opcode tables, event loop, priority bands
@@ -34,7 +35,7 @@ Empty subdirectories carry a `.gitkeep` until they hold real pages.
   > [!conflict] agidev vs. ScummVM
   > agidev.com claims X. ScummVM treats it as Y. Ground truth: Y, per [resource/view.py] which round-trips Y correctly on sq1.
   ```
-  If `> [!conflict]` callouts proliferate (more than ~6 across the wiki), consolidate to `andromeda-wiki/conflicts.md` (per Phase C lint rule).
+  Callouts stay inline, beside the claim they contradict, however many there are. `andromeda-wiki/conflicts.md` indexes them with one line per callout, so update it when adding or removing one.
 - **No orphans.** Every page is linked from `index.md` and reachable in ≤2 hops. Every new page adds an `index.md` entry in the same edit.
 
 ## Source-reliability rules

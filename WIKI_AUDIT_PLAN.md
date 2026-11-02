@@ -27,7 +27,7 @@ Do not commit without the user's approval. The user writes all project code; age
 - Facts apply to 2.917 unless another version is checked. Use ScummVM for cross-version questions.
 - Describe behavior in prose. Never paste disassembly or translate routines line by line.
 - Pages stay spec-organized for now; the build document gets its own structure later.
-- Static reading is not proof. Queue anything load-bearing for the runtime pass.
+- Static reading is not proof. Queue anything load-bearing for the runtime pass. For PICTURE behavior, `tools/picture_emu/` runs the interpreter's own routine, so check new claims there first.
 - REA refuses this DOS MZ target on Windows, so analysis uses headless Ghidra. See `andromeda-wiki/sources/agi-2917-binary.md`.
 - When agents run in parallel, give each its own git worktree and its own copy of the Ghidra project, because Ghidra locks a project while it's open. Give each agent exclusive pages and have it hand off edits to shared pages, which a coordinator merges. Worktrees don't contain `test_games/`, so point agents at the main checkout's copy.
 - Before committing subagent findings, spot-check the riskiest claims against the binary or game data.
@@ -92,9 +92,3 @@ The six agents' full handoffs, with per-opcode verdicts and addresses to re-chec
 ### Still unread
 
 `HGC_OBJS.OVL` and the rest of the Hercules driver. Driver entries `9777` (view load hook) and `97D9`. Replay caller `1000:6826`. Joystick routine `635E`. The lookup `46B6`. Restart's sub-clears `396D`, `5004`, `49DC`. Drive checks in `5B15`, `5D39`, `5D76`. A fill with an unmasked color byte such as `0x1F`. Other games' debug phrases.
-
-### Open decisions for the user
-
-- Move "Save, restore and restart" out of `interpreter/command-semantics` into a new `interpreter/save-restore` page, as the persist agent proposed.
-- Keep the PICTURE emulation harness under `tools/`. It is in `C:\Users\ebrah\tools\andromeda-re\audit_2026-11-01\picture_harness\`, needs `capstone` and `unicorn`, holds no game data, and hasn't been written to the `software-architect` standard.
-- Consolidate conflict callouts into `conflicts.md`, which is still deferred although the count is well above the ~6 threshold in `WIKI.md`.

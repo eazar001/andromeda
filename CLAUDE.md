@@ -18,7 +18,7 @@ uv sync
 uv run python -m main
 ```
 
-There are no tests or lint configurations currently.
+The game code has no tests or lint configuration yet. `tools/picture_emu/` has its own tests; see its README.
 
 ## Directory Structure
 
@@ -29,6 +29,7 @@ There are no tests or lint configurations currently.
 ├── resource/            # AGI resource decoding
 ├── util/                # Byte and XOR helpers
 ├── tools/ghidra/        # Headless Ghidra scripts for interpreter analysis
+├── tools/picture_emu/   # Runs the interpreter's PICTURE routine under emulation, with tests
 ├── andromeda-wiki/      # Distilled, cited AGI format knowledge base
 ├── AGI_Specifications/  # Vendored AGI spec and sample code (see below)
 ├── test_games/          # Local game data, gitignored

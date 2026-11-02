@@ -8,7 +8,7 @@ Run all five. Read files in batches (entities → concepts → interpreter → s
 2. **Orphan pages.** Every `.md` file under `andromeda-wiki/` (excluding `index.md` and `log.md`) must appear in `andromeda-wiki/index.md`. Report any that don't.
 3. **Missing link targets.** Scan all pages for `[[...]]` wiki-links. Report any target that doesn't correspond to an existing file.
 4. **Stale deferrals.** Grep all pages for `not yet ingested`, `to be added when`, `Group [0-9]`, `(not yet`, `deferred to`. These are maintenance debt from Phase B; resolve them or convert to explicit open-item callouts.
-5. **Conflicts-page threshold.** Count `> [!conflict]` callouts across all pages. If more than 6, propose consolidating to `andromeda-wiki/conflicts.md`.
+5. **Conflicts index.** Every `> [!conflict]` callout must have one line in `andromeda-wiki/conflicts.md`, and every line there must match a callout. Report any that don't.
 
 ## Process
 

@@ -200,7 +200,7 @@ The interpreter reserves the following [[interpreter/variables-and-flags]] entri
 
 - `var(22)` — Set to 1 on machine type 0, otherwise 3, at startup and after a restore. No read found in the interpreter, and SQ1 never tests it [AGI 2.917 1000:10AD; SQ1 data check, log 2026-11-01]. Type 8 gets 3 even though it uses the speaker.
 - `var(23)` — Added to attenuation during the envelope, so higher is quieter. No effect on the speaker, and no range check beyond the cap at 15 [AGI 2.917 1000:80F3].
-- `flag(9)` — Sound on. Set at startup, and restart appears to keep it [AGI 2.917 1000:0F97, 1000:24AB]. Clearing it ends a playing sound on the next tick.
+- `flag(9)` — Sound on. Set at startup, and restart keeps it [AGI 2.917 1000:0F97, 1000:24AB]. Clearing it ends a playing sound on the next tick.
 
 Three LOGIC commands control playback (see [[interpreter/commands]]):
 
