@@ -1,12 +1,12 @@
 # Andromeda — AGI Interpreter Development Plan
 
-A personal working document for building a cleanroom Python prototype of Sierra's AGI (Adventure Game Interpreter) targeting AGI v2 games (Space Quest 1, King's Quest 1/2, Leisure Suit Larry 1, etc.), prototyped against PySDL2.
+A personal working document for building a Python prototype of Sierra's AGI (Adventure Game Interpreter) targeting AGI v2 games (Space Quest 1, King's Quest 1/2, Leisure Suit Larry 1, etc.), prototyped against PySDL2.
 
 ---
 
 ## 0. Ground rules and caveats
 
-- **Cleanroom.** All spec knowledge must come from publicly documented AGI specifications — primarily Peter Kelly's "AGI Specifications" (a.k.a. `agispec`) and Lance Ewing's notes, as mirrored on the ScummVM wiki, agidev.com, and agiwiki.sierrahelp.com. **Do not** read original Sierra binaries or decompiled interpreter sources. ScummVM and NAGI sources are acceptable only as secondary cross-checks on behavior once you've read the spec; prefer the spec text when in doubt.
+- **Sources.** Start from the publicly documented AGI specifications — primarily Peter Kelly's "AGI Specifications" (a.k.a. `agispec`) and Lance Ewing's notes, as mirrored on the ScummVM wiki, agidev.com, and agiwiki.sierrahelp.com. The specs contain errors, so claims are being checked against the AGI 2.917 interpreter from SQ1, which is the top source for that version's behavior (see `WIKI_AUDIT_PLAN.md`). ScummVM and NAGI are the cross-checks for other versions.
 - **Web verification caveat.** The research that backs this plan was compiled in an environment where live web fetching was disabled, so every byte-level claim below should be diffed against a freshly fetched copy of the Kelly spec before you commit code that depends on it. The gotchas listed per subsystem flag the high-risk spots.
 - **Scope target.** First playable milestone is **Space Quest 1 room 1** (outside the Arcada): PIC loaded, ego drawn, input parsed, basic `said()` dialogue works. Everything else is scaffolding toward that.
 - **Language/stack.** Python 3.14, PySDL2 (already a dep). Avoid heavy dependencies — one goal is to keep the code pedagogical. This is the prototype: a Rust rewrite is planned, but its design and timing aren't covered in this plan yet.
@@ -537,7 +537,7 @@ Each milestone has a concrete "exit criteria" you can demo. If you find yourself
 
 ## 9. One-page summary
 
-- **Target:** Cleanroom Python prototype of AGI v2, playable SQ1 first, ahead of a planned Rust rewrite.
+- **Target:** Python prototype of AGI v2, playable SQ1 first, ahead of a planned Rust rewrite.
 - **Stack:** Python 3.14 + PySDL2.
 - **Critical data:** opcode arity table (LOGIC), PIC opcode dispatch (0xF0–0xFF), reserved var/flag constants, the "Avis Durgan" XOR key, the SN76489 frequency constant (111860 / divisor).
 - **Critical semantics:** `new.room` aborts the cycle, `said_ok` is per-cycle state, flood fill is "visual drives priority tags along," priority values 0–3 are control cells, message offsets are 1-based, all VOL resources share a 5-byte header.

@@ -27,6 +27,7 @@ Empty subdirectories carry a `.gitkeep` until they hold real pages.
 - **Every factual claim cites a source** inline, in square brackets after the claim:
   - Spec citation: `[3-2-Files.html §VOL layout]`
   - Code citation: `[resource/view.py:get_view_data]` or `[ScummVM agi/decode.cpp:42]`
+  - Binary citation: `[AGI 2.917 1000:02C4]` for a routine, `[AGI 2.917 DS:061D]` for data
   - Multiple sources cited together when they corroborate: `[6-1-VIEW.html §cel header; resource/view.py:get_view_data]`
 - **Contradictions between sources are flagged inline** with an Obsidian callout:
   ```
@@ -44,6 +45,7 @@ Carried over from `CLAUDE.md` and the `agi_spec_sources` memory:
 2. **agidev.com (the Peter Kelly spec, vendored at `AGI_Specifications/`) has known factual errors** in byte-level details. It remains the broadest single reference and is the primary ingestion source, but its claims are not authoritative on their own.
 3. **When agidev and ScummVM (or working code in `resource/`) disagree**, the wiki records both, marks ScummVM/AGI Studio as the resolution, and tags the agidev claim `(agidev, unverified)` or `(agidev, contradicted)`.
 4. **Unverified claims are tagged**, not deleted. Future sessions may cross-check, so the tag stays until a code citation or ScummVM citation resolves it.
+5. **The interpreter binary outranks every other source for its own version.** A claim read from AGI 2.917 settles what 2.917 does, but says nothing about other versions, where ScummVM stays the cross-check. Pages describe behavior in prose and never reproduce disassembly. [[sources/agi-2917-binary]] holds the setup, and `WIKI_AUDIT_PLAN.md` tracks the audit.
 
 ## Operations
 

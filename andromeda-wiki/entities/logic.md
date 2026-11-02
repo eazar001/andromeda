@@ -105,6 +105,13 @@ The argument-type byte encodes which arguments are variable references vs. liter
 - `0x80` — argument 1 is a variable, the rest are numbers.
 - `0x60` — arguments 2 and 3 are variables, the rest are numbers.
 
+> [!conflict] What the type byte does in AGI 2.917
+> **Contradicted:** the type byte does not control execution. Every handler read so far hard-codes which arguments it dereferences, and no code in the disassembled part of the program reads the byte directly. The table reaches only the trace display as a whole [AGI 2.917 1000:8CDC, 1000:8D44], so the byte probably exists just for debugger output. Disassembly is incomplete, so this stays open until the remaining code is read.
+>
+> **The byte is also wrong for some commands.** `$5F put` (`0x00`) and `$60 put.v` (`0x40`) understate their variable arguments, and `$A2 show.obj.v` has `0x01` where `0x80` would be expected [AGI 2.917 1000:74C5, 1000:74F0, 1000:5DD3]. A decoder can use the table's argument count, but should not trust this byte for execution.
+>
+> **Confirmed:** the argument count is live. The `if` scanner uses it to skip failed tests [AGI 2.917 1000:29C0].
+
 This is also where the version-conditional argument-count changes documented in [[interpreter/command-evolution]] live (`quit`, `print.at`, `print.at.v`, unknown command #176).
 
 ## Text section

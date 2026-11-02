@@ -1,6 +1,6 @@
 # Andromeda
 
-A cleanroom re-implementation of Sierra On-Line's AGI (Adventure Game Interpreter) v2, the engine behind *Space Quest 1*, *King's Quest 1/2*, *Leisure Suit Larry 1*, and other early Sierra adventure games. This Python codebase is the prototype, rendering through PySDL2; a Rust rewrite is planned. The first playable milestone targets Space Quest 1, room 1.
+A re-implementation of Sierra On-Line's AGI (Adventure Game Interpreter) v2, the engine behind *Space Quest 1*, *King's Quest 1/2*, *Leisure Suit Larry 1*, and other early Sierra adventure games. This Python codebase is the prototype, rendering through PySDL2; a Rust rewrite is planned. The first playable milestone targets Space Quest 1, room 1.
 
 ## Status
 
@@ -35,9 +35,10 @@ andromeda-wiki/       # Distilled, cited AGI format notes; start at index.md
 
 ## References
 
-Andromeda is a cleanroom implementation built from public specifications, not from disassembly of Sierra's interpreters.
+Andromeda is built from public specifications, checked against analysis of Sierra's AGI 2.917 interpreter.
 
 - Peter Kelly, *AGI Specifications* — primary format reference (vendored in `AGI_Specifications/`)
+- [Wiki audit plan](WIKI_AUDIT_PLAN.md) — how wiki claims are being checked against the interpreter
 - [ScummVM AGI engine](https://github.com/scummvm/scummvm/tree/master/engines/agi) — secondary behavioral cross-check
 - [NAGI](https://github.com/sonneveld/nagi) — Nick Sonneveld's cleanroom AGI reimplementation
 - [AGI Wiki](http://agiwiki.sierrahelp.com/)

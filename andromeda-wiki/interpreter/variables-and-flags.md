@@ -16,16 +16,16 @@ Variables and flags share a single global namespace across every loaded LOGIC re
 | `var(3)` | Current score. The interpreter monitors changes to this variable to redraw the on-screen status line. |
 | `var(4)` | Object number (≠ EGO) that touched a screen border. |
 | `var(5)` | Border-touch code for the object in `var(4)`; same encoding as `var(2)`. |
-| `var(6)` | Direction of EGO's motion. Compass mapping: `0` = motionless, `1` = N, `2` = NE, `3` = E, `4` = SE, `5` = S, `6` = SW, `7` = W, `8` = NW. The interpreter reads from or writes to this slot depending on whether the game is in *program control* or *player control* mode (see [[interpreter/event-loop]]). |
+| `var(6)` | Direction of EGO's motion. Compass mapping: `0` = motionless, `1` = N, `2` = NE, `3` = E, `4` = SE, `5` = S, `6` = SW, `7` = W, `8` = NW. Before LOGIC 0, program control copies EGO's direction into this slot and player control copies this slot to EGO. After LOGIC 0 it is always copied to EGO [AGI 2.917 1000:017B, 1000:01EA]. See [[interpreter/event-loop]]. |
 | `var(7)` | Maximum achievable score. |
 | `var(8)` | Free memory: number of 256-byte pages still available in the interpreter's heap. See [[interpreter/memory-layout]]. |
-| `var(9)` | 1-indexed position of the first word the input parser failed to match in the player's input; 0 if all words parsed successfully. Set only when vocabulary lookup fails [2-6-Interpreter.html; 4-4-Logic.html §TEST COMMANDS, `said`]. The 2-2 phrasing ("if = 0, it is the number of the word ... that was not found") reads as inverted but is semantically consistent with this once read as "if non-zero, gives the unparsed-word position; if zero, all words parsed." 4-4 corroborates 2-6 verbatim (both are Bykov AGDS translations). See [[interpreter/input-parsing]] and [[interpreter/command-semantics]] §"`said` test command — algorithm". |
+| `var(9)` | 1-indexed position of the first word the input parser failed to match in the player's input; 0 if all words parsed successfully. Set only when vocabulary lookup fails [2-6-Interpreter.html; 4-4-Logic.html §TEST COMMANDS, `said`]. The 2-2 phrasing ("if = 0, it is the number of the word ... that was not found") reads as inverted but is semantically consistent with this once read as "if non-zero, gives the unparsed-word position; if zero, all words parsed." 4-4 corroborates 2-6 verbatim (both are Bykov AGDS translations). Cleared at the start of input handling every cycle, and again on a room change [AGI 2.917 1000:3586, 1000:01C9]. See [[interpreter/input-parsing]] and [[interpreter/command-semantics]] §"`said` test command — algorithm". |
 | `var(10)` | Inter-cycle delay, in 1/20-second units (50 ms per unit). Games typically set this to 2–4. |
 | `var(11)`–`var(14)` | Interpreter's internal clock: seconds, minutes, hours, days respectively. |
 | `var(15)` | Joystick sensitivity, used when `flag(8) = 1`. |
-| `var(16)` | VIEW resource ID associated with EGO. Written by step 6 of the `new.room` procedure (preserved across room transitions). |
-| `var(17)` | Interpreter error code. Spec phrasing is "(if = 0)"; translator's note again suggests the intended meaning is "if != 0" [2-2-Interpreter.html §Variables used by the interpreter] (agidev, unverified — inverted phrasing in source). |
-| `var(18)` | Additional information accompanying the error code in `var(17)`. |
+| `var(16)` | VIEW resource ID associated with EGO, copied from EGO's object entry by the `new.room` core [AGI 2.917 1000:1819]. |
+| `var(17)` | Interpreter error code. Set by the error routine, which cleans up and returns to the main loop's return point [AGI 2.917 1000:3FE8]. For example, code `0x10` means an action opcode above the limit, with the opcode in `var(18)`. The spec's "(if = 0)" is inverted. |
+| `var(18)` | Additional information accompanying the error code in `var(17)` [AGI 2.917 1000:3FE8]. |
 | `var(19)` | Last key pressed on the keyboard. |
 | `var(20)` | Computer type (for hardware compatibility). For IBM PC it is always 0. |
 | `var(21)` | Window auto-close delay. If `flag(15) = 0` (window-auto-close mode) and `var(21) ≠ 0`, message windows automatically close after `0.5 × var(21)` seconds. |

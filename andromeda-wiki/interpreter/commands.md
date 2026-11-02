@@ -16,7 +16,7 @@ Companion pages:
 - All opcodes are 1-byte unsigned values. Hex notation throughout.
 - Per-opcode argument count is authoritative; in the spec's HTML tables some rows carry stray cells (e.g. literal "string" in arg-slot 2 of a 1-arg command) that do not represent real arguments and are markup artifacts — ignored in the transcription below.
 - `???` denotes an argument type the spec marks as undocumented. Pending cross-check against ScummVM or AGI Studio source.
-- **Verification.** Argument counts are confirmed for the 142 action and 15 test commands SQ1 uses: all 101 SQ1 LOGICs decode with no desyncs [SQ1 data check, log 2026-11-01]. The other 40 action commands and 3 test commands, including every `unknown*` opcode and `set.upper.left`, never occur in SQ1 and stay `(agidev, unverified)`. There is still no LOGIC decoder in `resource/`.
+- **Verification.** Argument counts for all 18 test commands and action commands `$00..$AD` match the AGI 2.917 tables exactly [AGI 2.917 DS:08F5, DS:061D]. Separately, all 101 SQ1 LOGICs decode with no desyncs for the 142 action and 15 test commands SQ1 uses [SQ1 data check, log 2026-11-01]. Opcodes `$AE..$B5` do not exist in 2.917 and stay `(agidev, unverified)`, as do counts for every other version. There is still no LOGIC decoder in `resource/`.
 - For arg type abbreviations, see [[concepts/agi-data-types]]. Quick legend:
   - `var` — variable index (8-bit)
   - `num` — numeric literal (8-bit)
@@ -52,7 +52,9 @@ Companion pages:
 | `$11` | `center.posn` | 5 | S obj, num, num, num, num |
 | `$12` | `right.posn` | 5 | S obj, num, num, num, num |
 
-The spec's outer condition range from [4-1-Logic.html §TEST CONDITIONS] is `$00..$12`; `$00` is not used as a test opcode — it doubles as the action-command `return`.
+The spec's outer condition range from [4-1-Logic.html §TEST CONDITIONS] is `$00..$12`; `$00` is not used as a test opcode — it doubles as the action-command `return`. The 2.917 test table does have a 0-argument entry for `$00`; its handler is unread.
+
+**Loose bound in 2.917.** The test dispatcher only rejects opcodes `$26` and up, but the table ends after `$12`. Opcodes `$13..$25` would read unrelated bytes as handler addresses [AGI 2.917 1000:07EB]. A reimplementation should treat them as errors, since no valid game can rely on them.
 
 ## Action commands (`$00..$B5`)
 
@@ -159,7 +161,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | Opcode | Mnemonic | Args | Signature |
 |--------|----------|------|-----------|
 | `$51` | `move.obj` | 5 | S obj, num, num, num, flag |
-| `$52` | `move.obj.v` | 5 | S obj, var, var, num, flag |
+| `$52` | `move.obj.v` | 5 | S obj, var, var, var, flag — the step size is also a variable, contradicting 4-3's `num` [AGI 2.917 1000:6C9A] |
 | `$53` | `follow.ego` | 3 | S obj, num, flag |
 | `$54` | `wander` | 1 | S obj |
 | `$55` | `normal.motion` | 1 | S obj |
@@ -238,7 +240,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$7C` | `status` | 0 | — |
 | `$7D` | `save.game` | 0 | — |
 | `$7E` | `restore.game` | 0 | — |
-| `$7F` | `init.disk` | 0 | — |
+| `$7F` | `init.disk` | 0 | — no-op in 2.917: the handler just continues to the next command [AGI 2.917 1000:4F8A] |
 | `$80` | `restart.game` | 0 | — |
 
 ### Object queries, RNG, control (`$81..$85`)
@@ -278,7 +280,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$95` | `trace.on` | 0 | — | |
 | `$96` | `trace.info` | 3 | num, num, num | |
 | `$97` | `print.at` | 4 | message, num, num, num | **3 args in versions before "2.400"** (spec typo, plausibly 2.440); see [[interpreter/command-evolution]] §conflict. |
-| `$98` | `print.at.v` | 4 | message, var, var, var | Same version-conditional boundary as `print.at`. |
+| `$98` | `print.at.v` | 4 | var, num, num, num | Same version-conditional boundary as `print.at`. Only the message number is a variable, contradicting 4-3's `message, var, var, var`. A width of 0 means 30 [AGI 2.917 1000:1C71, 1000:1C96]. |
 
 ### Late v2 additions (`$99..$A9`)
 
@@ -286,7 +288,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 |--------|----------|------|-----------|
 | `$99` | `discard.view.v` | 1 | var |
 | `$9A` | `clear.text.rect` | 5 | num, num, num, num, num |
-| `$9B` | `set.upper.left` | 2 | ???, ??? |
+| `$9B` | `set.upper.left` | 2 | ignored, ignored — no-op in 2.917 [AGI 2.917 1000:4C15] |
 | `$9C` | `set.menu` | 1 | message |
 | `$9D` | `set.menu.item` | 2 | message, cntrl |
 | `$9E` | `submit.menu` | 0 | — |
@@ -321,11 +323,11 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 
 These eleven opcodes match the [2-8-Interpreter.html] note "the last eleven we do not know the names of". Recovery candidates: ScummVM `engines/agi/op_*.cpp` and AGI Studio source. Tracking under [[sources/2-8-interpreter]] §Notes.
 
-**Note on `$9B set.upper.left`.** [4-4-Logic.html §OTHER COMMANDS] describes the command (under the mnemonic `upper.left`) as a **0-arg state toggle** that switches the collision-detection base-point reference, contradicting 4-3's 2-arg signature with `???` types. See [[interpreter/command-semantics]] §"`set.upper.left` argument-count conflict" for the conflict callout. Provisional reading favors 4-4's 0-arg form.
+**Note on `$9B set.upper.left`.** [4-4-Logic.html §OTHER COMMANDS] describes the command (under the mnemonic `upper.left`) as a **0-arg state toggle** that switches the collision-detection base-point reference. In 2.917 it takes 2 ignored bytes and does nothing. See [[interpreter/command-semantics]] §"`set.upper.left` argument-count conflict".
 
 ## Notes
 
-**Argument-type prefixes from 4-2.** [[sources/4-2-logic]] documents source-syntax prefixes (`v`, `f`, `m`, `o`, `i`, `s`, `w`, `c`) that compilers/decoders display. The bytecode itself is untyped — the AGIDATA.OVL bit-encoded type byte (see [[entities/logic]] §"Argument dispatch") tells the interpreter which arguments to dereference vs. consume as immediates.
+**Argument-type prefixes from 4-2.** [[sources/4-2-logic]] documents source-syntax prefixes (`v`, `f`, `m`, `o`, `i`, `s`, `w`, `c`) that compilers/decoders display. The bytecode itself is untyped. In 2.917 each handler hard-codes which arguments it dereferences; the AGIDATA.OVL type byte does not drive this (see [[entities/logic]] §"Argument dispatch").
 
 **Spec table markup artifacts.** The HTML table in 4-3 contains stray cells (literal `string` text) in argument slots beyond the declared count for many rows from `$3E..$71`. These do not appear to encode anything — the declared argument count is correct, and the stray cells are markup noise (possibly an editing accident with rowspan / colspan). All entries in the tables above were validated against the declared argument count, ignoring stray cells.
 

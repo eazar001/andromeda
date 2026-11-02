@@ -77,6 +77,16 @@ The discard between `draw.pic` and `show.pic` is intentional — the picture is 
 
 The reserved variables Var(0), Var(1), Var(2), Var(4), Var(5), Var(16) and Flag(5) — all documented in [[interpreter/variables-and-flags]] — are coordinated state at step 6 / step 10. Flag(5) is the signal LOGIC scripts use to detect they are running in a freshly-entered room and should perform first-cycle initialization (the chapter emphasizes this in all-caps: "THIS IS VERY IMPORTANT!"). The spec cross-references the "Thunderstorm" educational program for a concrete example.
 
+> [!conflict] 4-4 procedure vs. AGI 2.917
+> Read from the `new.room` core [AGI 2.917 1000:1792]. `new.room.v` differs only in reading the room number through a variable [AGI 2.917 1000:1773].
+>
+> - **Confirmed:** resets every object's state, player control, unblock, horizon 36, `var(1)` ← `var(0)`, `var(0)` ← n, clears `var(4)` and `var(5)`, loads the new LOGIC, repositions EGO from `var(2)`, clears `var(2)`, sets `flag(5)`.
+> - **Contradicted, step 6:** `var(16)` comes from EGO's object entry (offset 7), the view it has now. It is not looked up from a file.
+> - **Contradicted, step 7:** the core only loads the LOGIC. It does not execute it. It returns 0, and the main loop reruns LOGIC 0, which then calls the room's LOGIC as usual.
+> - **Refined, step 8:** the reposition follows the load, as 4-4 lists it. The per-edge cases are unread.
+> - **Refined, step 11:** the core clears the controller table and redraws the status line. Whether it also flushes keys is unread (`38D7`). `var(9)` and `flag(2)` are cleared by the main loop, not here.
+> - **Unread:** the routines behind steps 1–2 (`516C`, `1485`, `4482`, `6FB5`, `6FA6`, `10D0`) and `30D6`.
+
 ## `release.loop` — direction → loop auto-selection
 
 When `release.loop(n)` is in effect on object `n`, the loop index is set automatically from the object's direction (Var assigned by `set.dir` or motion commands). Direction encoding [4-4-Logic.html §OBJECT DESCRIPTION COMMANDS, with the chapter's compass diagram]:
@@ -114,7 +124,7 @@ The two tables differ only for directions 1 and 5: 4+ loops uses dedicated up (l
 > [!conflict]
 > **4-3 and 4-4 disagree on `$9B`'s arity.** [4-3-Logic.html §Action commands] lists opcode `$9B set.upper.left` with **2 arguments** (both `???` type). [4-4-Logic.html §OTHER COMMANDS] calls the command `upper.left` (no `set.` prefix) and describes it as a **0-arg state toggle** that switches the collision-detection base-point reference. The descriptions cannot both be right.
 >
-> Possible reconciliation: the 4-3 entry may carry an erroneous argument count (the `???` types suggest the spec author did not actually know what the arguments were, and may have guessed wrong). Provisional reading: 4-4's 0-arg description is correct. `(agidev, unverified)` until ScummVM cross-check.
+> **Resolved for 2.917: 4-3's count is right, and 4-4's behavior does not exist there.** The table gives 2 arguments, and the handler does nothing except skip those 2 bytes [AGI 2.917 DS:061D entry $9B; 1000:4C15]. There is no base-point toggle in this version. An earlier provisional reading on this page favored 4-4 and was wrong. Other versions are unchecked.
 
 ## Mnemonic variants across chapters
 

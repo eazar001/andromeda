@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Andromeda is a cleanroom emulator for Sierra's AGI game engine. This Python codebase is the prototype; a Rust rewrite is planned. So far it decodes some resources from AGI games (e.g., Space Quest 1) and draws VIEW cels, but it does not run game logic. AGI games store their resources in `VOL.*` volume files, indexed by `*DIR` directory files (VIEWDIR, LOGDIR, PICDIR, SNDDIR), plus standalone `OBJECT` (inventory) and `WORDS.TOK` (vocabulary) files.
+Andromeda is an emulator for Sierra's AGI game engine. This Python codebase is the prototype; a Rust rewrite is planned. So far it decodes some resources from AGI games (e.g., Space Quest 1) and draws VIEW cels, but it does not run game logic. AGI games store their resources in `VOL.*` volume files, indexed by `*DIR` directory files (VIEWDIR, LOGDIR, PICDIR, SNDDIR), plus standalone `OBJECT` (inventory) and `WORDS.TOK` (vocabulary) files.
 
 See `DEVELOPMENT_PLAN.md` for the roadmap and known bugs.
 
@@ -35,6 +35,7 @@ There are no tests or lint configurations currently.
 ├── DEVELOPMENT_PLAN.md  # Roadmap, milestones, and current status
 ├── PICTURE_DECODER.md   # Overview of the PICTURE format for M1
 ├── WIKI.md              # Wiki schema and conventions
+├── WIKI_AUDIT_PLAN.md   # Resumable plan for checking the wiki against the interpreter
 ├── README.md
 └── pyproject.toml
 ```
@@ -78,7 +79,9 @@ Peter Kelly's AGI Specifications are vendored at `AGI_Specifications/` (index: `
 
 ### Game Data
 
-Place game files under `test_games/<game>/` (e.g., `test_games/sq1/`). The expected files are `VIEWDIR`, `LOGDIR`, `PICDIR`, `SNDDIR`, `OBJECT`, `WORDS.TOK`, and `VOL.0` (plus higher-numbered VOL files for other resources). Never commit game files. This is a cleanroom project, so do not read the original interpreter binaries (`AGI`, `*.OVL`) beyond their file sizes.
+Place game files under `test_games/<game>/` (e.g., `test_games/sq1/`). The expected files are `VIEWDIR`, `LOGDIR`, `PICDIR`, `SNDDIR`, `OBJECT`, `WORDS.TOK`, and `VOL.0` (plus higher-numbered VOL files for other resources). Never commit game files, including decoded interpreters such as `AGI.decoded`.
+
+The interpreter binaries (`AGI`, `*.OVL`) may be read and analyzed. See `andromeda-wiki/sources/agi-2917-binary.md` for the setup and routine map.
 
 ### Implementation Status
 

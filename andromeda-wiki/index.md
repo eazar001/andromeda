@@ -39,7 +39,7 @@ The LOGIC VM and runtime model: opcode tables, event loop, priority bands, objec
 
 - [[interpreter/overview]] — high-level VM-model hub; one paragraph per subsystem with links into the detailed pages.
 - [[interpreter/variables-and-flags]] — reserved `var(0)`–`var(26)` and `flag(0)`–`flag(15)`: complete assignment table, semantics, shared-namespace scoping.
-- [[interpreter/event-loop]] — eleven-step per-frame cycle: input poll, LOGIC execution, post-LOGIC reset, rendering, room-transition check, plus the room-change procedure that runs only after `new_room`.
+- [[interpreter/event-loop]] — per-cycle order read from AGI 2.917: timer wait, input events, direction sync, motion, LOGIC 0, status line, object update, plus when `new.room` takes effect and where the spec's eleven-step version differs.
 - [[interpreter/memory-layout]] — runtime heap organization: 256-byte variable region, 32-byte flag region, string buffers, jump table, encryption key, and loaded resources, in heap order.
 - [[interpreter/input-parsing]] — player-input preprocessing (punctuation/case/space normalization, vocabulary lookup) and `said` test pattern matching (wildcards `1` and `9999`, equality, at-most-once-per-cycle semantics).
 - [[interpreter/command-evolution]] — version-conditional command argument-count rules for LOGIC bytecode decoding (`quit`, `print.at`, `print.at.v`, unknown #176) plus command-count summary by interpreter version.
@@ -54,6 +54,7 @@ The LOGIC VM and runtime model: opcode tables, event loop, priority bands, objec
 
 One page per ingested AGI Specification chapter, with a short summary and links to the entity/concept pages it informed.
 
+- [[sources/agi-2917-binary]] — The AGI 2.917 interpreter binary from SQ1, analyzed statically: identity, analysis setup, address conventions, and routine map. Top-ranked source for 2.917's behavior.
 - [[sources/3-1-files]] — Directory files and VOL/DIR addressing scheme (AGI v2 and v3).
 - [[sources/3-2-files]] — VOL file container format and 5-byte resource header.
 - [[sources/3-3-files]] — AGI v3 resource storage: 7-byte headers, LZW compression, PICTURE compression.

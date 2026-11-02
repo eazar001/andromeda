@@ -78,7 +78,7 @@ By default, an object's position (`x_position`, `y_position` at offsets 3–6) r
       hot-spot (x, y)
 ```
 
-The hot-spot can be overridden on a per-object basis by the `set.upper.left` command (changing the reference to the top-left corner). The argument count of this command is disputed across spec chapters — see [[interpreter/command-semantics]] §"`set.upper.left` argument-count conflict" for details.
+The spec says the `set.upper.left` command moves this reference to the top-left corner, but in AGI 2.917 that command does nothing [AGI 2.917 1000:4C15]. See [[interpreter/command-semantics]] §"`set.upper.left` argument-count conflict".
 
 ## Collision-test commands
 

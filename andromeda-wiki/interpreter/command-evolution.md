@@ -24,7 +24,7 @@ The AGI command set grew across interpreter versions, and four commands changed 
 >
 > Conclusive resolution requires ScummVM source or AGI Studio cross-check. Provisional reading: 2.440 is the typo target (agidev, unverified).
 
-**SQ1 data point.** The copy tested here decodes with `quit` taking 1 argument and `print.at` taking 4. Forcing `quit` to 0 desyncs 2 LOGICs, and forcing `print.at` to 3 desyncs 1 [SQ1 data check, log 2026-11-01]. This does not settle the boundary above: the copy's file sizes (39,424 and 8,192 bytes) match the 2.915–2.936 rows of 2-8's table, past every candidate. Its highest action opcode is `$A4`. [[sources/2-7-interpreter]] lists SQ1 under several interpreter versions, so identify a copy by its files rather than its title.
+**SQ1 data point.** The copy tested here decodes with `quit` taking 1 argument and `print.at` taking 4. Forcing `quit` to 0 desyncs 2 LOGICs, and forcing `print.at` to 3 desyncs 1 [SQ1 data check, log 2026-11-01]. This does not settle the boundary above: the copy's file sizes (39,424 and 8,192 bytes) match the 2.915–2.936 rows of 2-8's table, past every candidate. Its highest action opcode is `$A4`. [[sources/2-7-interpreter]] lists SQ1 under several interpreter versions, so identify a copy by its files rather than its title. This copy's `AGIDATA.OVL` reads `Version 2.917`, and its code rejects action opcodes above `$AD`, confirming the 173 in the table below as the highest opcode [AGI 2.917 1000:02CC]. See [[sources/agi-2917-binary]].
 
 ## Total command count by interpreter version
 

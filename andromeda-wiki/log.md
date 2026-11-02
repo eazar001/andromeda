@@ -1043,3 +1043,21 @@ Filed corrections after decoding all of `test_games/sq1` with throwaway probes. 
 ## [2026-11-01] file | Planned Rust rewrite confirmed
 
 Closes the Rust open item from the lint pass above. The user confirmed the rewrite is still planned, so the mentions on `interpreter/overview`, `sources/3-3-files`, and `sources/4-1-logic` stand unchanged. Recorded it in `README.md`, `DEVELOPMENT_PLAN.md`, and `CLAUDE.md`; no design or timing is documented yet. `CLAUDE.md` was also rewritten to match the current code. Consolidating conflict callouts into `conflicts.md` stays deferred at the user's choice, even though the count of 7 is above the ~6 threshold.
+
+## [2026-11-01] file | Audit slice 1: command tables, game cycle, new.room
+
+First audit pass against the AGI 2.917 binary. See `WIKI_AUDIT_PLAN.md`. Static reading only; nothing was run.
+
+**Contradicted.** `$52 move.obj.v` step size is a variable. `$98 print.at.v` is `var, num, num, num`. `$9B set.upper.left` takes 2 ignored bytes and is a no-op, reversing this wiki's provisional reading. The argument-type byte does not drive execution and is wrong for `$5F`, `$60`, `$A2`. Event-loop step 2 clears the controller table, not the keyboard buffer. Step 5's direction sync was reversed. The status check runs once, after LOGIC 0. A room change acts straight after LOGIC 0. `var(9)` clears every cycle. `new.room` takes `var(16)` from EGO's entry and does not execute the new LOGIC itself.
+
+**Confirmed.** All argument counts for 2.917 (19 test and 174 action entries). The 173 command count. The `new.room` state changes listed in `command-semantics`. The encryption rule in `sources/2-5-interpreter`.
+
+**Resolved conflicts.** When `new.room` takes effect (immediately). The `$9B` argument count.
+
+**Open.** Unread `new.room` callees, timer tick rate, input routines. Listed under Progress in the plan. `command-evolution` version boundaries are unchanged, since only one version was checked.
+
+**Changed.** `WIKI.md` (binary citation form, source rule 5). New `sources/agi-2917-binary`. Updated `interpreter/event-loop` (rewritten), `interpreter/commands`, `interpreter/command-semantics`, `interpreter/variables-and-flags`, `interpreter/command-evolution`, `entities/logic`, `index.md`.
+
+## [2026-11-01] file | Cleanroom claim removed
+
+At the user's direction, removed the cleanroom claim from `README.md`, `DEVELOPMENT_PLAN.md`, and `CLAUDE.md`, along with the directive not to read interpreter binaries. Those docs now state that claims are checked against the AGI 2.917 interpreter. NAGI's own cleanroom description is unchanged, since it describes that project. Older log entries are left as written.
