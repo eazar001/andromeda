@@ -28,6 +28,7 @@ There are no tests or lint configurations currently.
 ├── gfx/                 # Screen buffers, palette, and cel compositing
 ├── resource/            # AGI resource decoding
 ├── util/                # Byte and XOR helpers
+├── tools/ghidra/        # Headless Ghidra scripts for interpreter analysis
 ├── andromeda-wiki/      # Distilled, cited AGI format knowledge base
 ├── AGI_Specifications/  # Vendored AGI spec and sample code (see below)
 ├── test_games/          # Local game data, gitignored

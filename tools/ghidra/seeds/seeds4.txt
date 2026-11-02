@@ -1,0 +1,4 @@
+1000:46e8 core_r46e8
+1000:467f core_r467f
+1000:4c3d core_set_key_body
+1000:6192 core_r6192

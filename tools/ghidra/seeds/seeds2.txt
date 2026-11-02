@@ -1,0 +1,5 @@
+1000:1792 core_new_room
+1000:759c core_put_v_item
+1000:7546 core_put_item
+1000:1c96 core_print_at
+1000:8d44 core_trace_command

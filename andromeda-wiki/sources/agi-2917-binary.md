@@ -12,7 +12,7 @@ Static analysis of the interpreter shipped with the local SQ1 copy. It is the to
 
 - The encryption is the rolling XOR described in [[sources/2-5-interpreter]]. Its rotate-with-OR rule, run from block 2, predicts block 307 with no wrong bits. The key was recovered from zero-padded header blocks rather than from the loader.
 - The decoded file is `test_games/sq1/AGI.decoded`, which is gitignored and must not be committed or shared.
-- REA 6.8.0 refuses DOS MZ targets on Windows, so analysis uses Ghidra 12.1.4 headless with the project and scripts in `C:\Users\ebrah\tools\andromeda-re\`.
+- REA 6.8.0 refuses DOS MZ targets on Windows, so analysis uses Ghidra 12.1.4 headless. The scripts and run command are in `tools/ghidra/`, and the project, which contains the decoded interpreter, stays outside the repo in `C:\Users\ebrah\tools\andromeda-re\`.
 - Ghidra cannot see handlers reached only through `AGIDATA.OVL`, so `AgiSeed.java` loads the overlay and seeds them. That raised disassembled bytes from 16,241 to 33,985.
 - Ghidra's instruction text prints moves into segment registers with the operands swapped. Trust the raw bytes for those.
 
