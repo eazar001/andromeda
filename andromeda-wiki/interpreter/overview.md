@@ -27,7 +27,7 @@ The priority screen also encodes *control lines* — colored lines that trigger 
 - **Black** (priority 0) — unconditional obstacle; motion is blocked.
 - **Blue** (priority 1) — conditional obstacle; LOGIC can permit or forbid crossing.
 - **Green** (priority 2) — alarm line; typically triggers a script (falling, drowning, scene transition).
-- **Cyan** (priority 3) — water boundary; objects flagged `object.on.water` are confined to cyan regions.
+- **Cyan** (priority 3) — water boundary; objects flagged `object.on.water` are confined to cyan regions, and `object.on.land` refuses a baseline that is entirely cyan. See [[interpreter/control-lines]].
 
 See [[interpreter/control-lines]] for the per-color semantics, the search-downwards algorithm that recovers a priority-band value under a control-line pixel, and the relationship to flood-fill boundary detection in [[entities/picture]].
 
@@ -75,4 +75,4 @@ Game content is organized into five resource categories [2-1-Interpreter.html §
 
 ## Implementation status
 
-The Python prototype implements only the file-system layer (DIR/VOL parsing, OBJECT decryption, VIEW decoding). There is no LOGIC VM, event loop, or screen renderer wired up — those subsystems are the focus of the planned Rust rewrite. Spec claims in this overview about command semantics, variable scoping, priority occlusion, and event-loop ordering therefore cannot be cross-checked against working code at present. The runtime heap layout documented in [[interpreter/memory-layout]] is similarly unverifiable without external memory instrumentation on original hardware.
+The Python prototype implements only the file-system layer (DIR/VOL parsing, OBJECT decryption, VIEW decoding). There is no LOGIC VM, event loop, or screen renderer wired up — those subsystems are the focus of the planned Rust rewrite. Spec claims in this overview about command semantics, variable scoping, priority occlusion, and event-loop ordering therefore cannot be cross-checked against working project code at present. They are being checked against the AGI 2.917 binary instead; see [[sources/agi-2917-binary]]. That includes the heap layout in [[interpreter/memory-layout]].

@@ -27,7 +27,7 @@ This is the most authoritative version-by-version fingerprint of the AGI interpr
 
 ### Post-table observations (verbatim)
 
-1. The number of supported commands grew monotonically with the interpreter version; the last eleven commands have no documented names.
+1. The number of supported commands grew monotonically with the interpreter version; the last eleven commands have no documented names. For 2.917 the first four of them are resolved; see [[interpreter/command-evolution]].
 2. There are two main AGI versions, v2 and v3.
 3. Early AGI v2 games (2.089, 2.272) did *not* encrypt the OBJECT file with the "Avis Durgan" string.
 4. AGI v3 games use adaptive LZW to compress LOGIC, VIEW, and SOUND files.

@@ -46,6 +46,8 @@ A decoder encountering a command index greater than the target interpreter versi
 
 The spec states: "the last eleven we do not know the names of" [2-8-Interpreter.html]. For the final v3 release (3.002.149, 181 commands), this means roughly the last eleven opcode indices have no documented names or semantics in the AGI Specifications corpus. Unknown command #176 (with its version-conditional argument count, above) is one of these eleven. Recovering their identities needs a ScummVM or AGI Studio cross-check. SQ1 uses none of them.
 
+For 2.917, `$AA..$AD` are named `set.simple`, `push.script`, `pop.script` and `hold.key` per ScummVM's `engines/agi/opcodes.cpp`, with behavior read from the binary in [[interpreter/command-semantics]] §"Former unknowns".
+
 ## See also
 
 - [[sources/2-8-interpreter]] — source chapter; also documents OBJECT-encryption timeline, LZW adoption boundary, PICTURE-opcode v2/v3 color-encoding difference, and the v2-LOGIC-text-encryption inference.

@@ -60,7 +60,7 @@ Null-terminated ASCII strings. The name offset in each entry points to the first
 |---|---|
 | `get(i)`, `get.v(v)` | Room byte = 255 |
 | `drop(i)` | Room byte = 0 |
-| `put(i, v)` | Room byte = `var(v)` |
+| `put(i, v)` | Room byte = `var(v)`, not the literal the spec describes; see [[interpreter/command-semantics]] §"Inventory commands" |
 | `put.v(a, b)` | Item `var(a)`, room byte = `var(b)` |
 | `get.room.v(a, b)` | `var(b)` = room byte of item `var(a)` |
 
@@ -68,7 +68,7 @@ There is no `drop.v`, as the table in [[interpreter/commands]] already shows. `d
 
 **Bounds.** All of these raise error `0x17` for an item past the end of the array. `var(18)` then holds the item number minus the item count, not the item number [AGI 2.917 1000:7571, 1000:75D5]. The tests `has` and `obj.in.room` don't check, and read whatever follows [AGI 2.917 1000:08AD, 1000:093B].
 
-**`status`.** The inventory screen walks the array and lists items in room 255, using the pointer for each name. If there are none, it shows a fixed message from `DS:0F16`. Items sit in two columns, and an item number equal to `var(25)` starts highlighted [AGI 2.917 1000:3203]. The rest of the screen, including selection, is unread.
+**`status`.** The inventory screen walks the array and lists items in room 255, using the pointer for each name. If there are none, it shows `nothing` from `DS:0F16` [AGI 2.917 1000:3203]. Layout, selection with `flag(13)`, and `var(25)` are in [[interpreter/command-semantics]] §"`status`".
 
 ## Reference implementations
 

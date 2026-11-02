@@ -1123,3 +1123,131 @@ Static reading, plus data checks on all SQ1 directories, 50 SOUNDs, 101 LOGICs, 
 **Runtime only.** All sound timing and pitch, and the speaker cut-off after the envelope.
 
 **Changed.** `entities/sound`, `entities/object`, `entities/words-tok`, `entities/dir-file`, `entities/vol-file`, `concepts/offset-encoding`, `concepts/pcjr-sound-encoding`, `interpreter/variables-and-flags`, `interpreter/event-loop`, `sources/agi-2917-binary`, `index`.
+
+## [2026-11-01] file | Audit slice 2, misc: inventory, menus, and remaining action handlers
+
+Static reading, including the display overlays' shake routines, plus a survey of how all 101 SQ1 LOGICs use these opcodes. Nothing was run. See `WIKI_AUDIT_PLAN.md`.
+
+**Contradicted.** `put` stores `var(m)`, not `m`. `pause` waits for Enter or Esc, not any key, and it stops the sound. `open.dialogue` and `close.dialogue` don't enable `get.string` or `get.num`: those commands never read the input-enabled state. The dialogue commands only set `DS:0D07`, which the input line limit and Hercules paths read and which `print` also changes.
+
+**Refined.** `quit` asks for any `n` other than 1, not just 0. `shake.screen` varies by monitor, and on type 4 it flashes rather than moves. `echo.line` appends only what's beyond the current length. `log` writes the previous line and the message text, not a message number. `toggle.monitor` flips monitor type 0 and 1 in the CGA driver and leaves `var(26)` stale. `init.joy` also runs at startup. `menu.input` tests `flag(14)` once and only sets a request.
+
+**Confirmed.** `get`, `get.v`, `drop`, `put.v`, `get.room.v`. `status` layout, `flag(13)`, and `var(25)`. `random` range is inclusive. `version`. Enable and disable by code. A menu choice reaches `controller`. Item bounds error `0x17`.
+
+**New.** The four "unknown" commands: `$AA set.simple`, `$AB push.script`, `$AC pop.script`, `$AD hold.key` (names from ScummVM, behavior from 2.917; SQ1 uses none). Generator: 16-bit LCG with multiplier `0x7C4D`, BIOS seed, output is state bytes XORed. Full menu behavior, layout, and key map. The menu runs at the start of the next cycle's input step, blocks, and delivers its controller in that same cycle. `submit.menu` raises the heap floor. `restart.game` and `restore.game` re-enable all items. `quit(0)` skips confirmation with `flag(15)` or `var(21)` set. `shake.screen(0)` loops 65,536 times. `status` returns 0 on the `nothing` screen. The keyboard interrupt swallows direction-key repeats, stops EGO on numeric-pad 5, and shifts the screen on Ctrl-Alt-arrows.
+
+**Unread.** The `set.simple` save and restore flow beyond the tests (left for unit persist). Hercules prompt routines at `9B92`, `9C6B`, `9CD3`. Joystick button routine `635E`. Whether saved games store the random state, the script mark, or `hold.key`.
+
+**Runtime only.** All four `shake.screen` effects. Disabled-item dither. The menu bar and box geometry. `hold.key`. `status` selection. `toggle.monitor` color change.
+
+**Tooling.** `AgiGrep` misses some direct memory moves (it missed `1000:70DE` and `1000:1089`). A raw byte scan caught them, and every "only writer" claim here was checked that way.
+
+**Changed.** `interpreter/command-semantics`, `interpreter/commands`, `entities/object`, `interpreter/event-loop`, `interpreter/variables-and-flags`, `sources/agi-2917-binary`.
+
+## [2026-11-01] file | Audit slice 3, part 1: object table, motion, cycling, collision
+
+Static reading of all 63 owned handlers and their callees, plus a linear scan of 101 SQ1 LOGICs and all VIEW headers. Nothing was run. See `WIKI_AUDIT_PLAN.md`.
+
+**Contradicted.** Automatic loop choice uses its second table for exactly 4 loops; 4-4 says "more than 4" and the wiki said "4+". `follow.ego`'s `s` is a stop distance, not a step, and the flag sets within that distance rather than at equal coordinates. `distance` uses x centers and caps at 254. `object.on.land` refuses only a baseline entirely on water, not any contact. `force.update` ignores its argument and redraws everything. Motion type 3 moves to a point and doesn't follow an object. Step and cycle bytes aren't redundant: each pair is a reload value and a countdown. Offset `12` is the previous cel pointer, not a duplicate. Objects update in two passes, not one at "step 10".
+
+**Resolved.** The base point is bottom left. Offsets `02`, `14` and `27`–`2A` and seven unknown flag bits now have meanings.
+
+**Confirmed.** 43-byte entries in 2.917. Field offsets for position, view, loop, cel, size, step size, direction, cycle type. Flag bits 2, 3, 5, 8, 11. Compass and both loop tables' values. Position test formulas. `stop.motion` and `start.motion` control changes for EGO.
+
+**New.** Active mask `0x51`. A step's order of limits, border codes, collision and control check. Position fixer with a square spiral. Collision rule with vertical-order crossing. Block box as a strict point test both ways. Did-not-move bit driving `wander` and `follow.ego`. Wander ranges. Direction rule with threshold. Draw order and fixed-priority sort key. EGO's on-water and on-land bits clear after each screen pass. `set.dir` on EGO is overwritten from `var(6)`. Finishing `move.obj` returns EGO to player control unconditionally. Finishing a one-shot loop clears the direction. Error codes for the view, loop, cel, draw, erase and animate commands. Stopped objects neither cycle nor move. `SS` equals `DS` once the main loop runs.
+
+**Unread.** Blit internals (`569A` only skimmed, driver entries `9CF0`, `9CF3`, `9CF6`), a `5872` caller near `2DF5`, flag bit 15 beyond an instruction search.
+
+**Runtime only.** The shared slot at offset `27`, `set.loop` accepting a loop equal to the count (SQ1 LOGIC 71 with VIEW 89), `draw` and `erase` accepting a number equal to the slot count, the fixer's unbounded walk, step time 0 skipping the motion pass.
+
+**Changed.** `interpreter/view-objects`, `interpreter/command-semantics`, `interpreter/commands`, plus the coordinator's merges listed in the handoff.
+
+## [2026-11-01] file | Audit slice 3, draw: cel drawing, priority, control lines, VIEW, RLE
+
+Static reading, plus data checks on all 238 SQ1 VIEWs and 101 LOGICs. Nothing was run. See `WIKI_AUDIT_PLAN.md`.
+
+**Tally.** 48 claims on the four owned pages: 21 Confirmed, 16 Refined, 4 Contradicted, 7 Unread. Plus 4 of 4 handlers read.
+
+**Contradicted.** Only priority 0 to 2 start the search-downwards rule, not 0 to 3, and the search stops at 3 or higher. An object at priority 15 skips the baseline test, so it crosses blue and black, against 4-4's lead. Control values don't come only from PICTURE bytecode: the `add.to.pic` margin and a cel at fixed priority 1 to 3 write them too. VIEW marker bytes aren't always `1|2, 1`: VIEW 104 has `0, 2`.
+
+**Resolved.** `add.to.pic` margin 4 draws no rectangle. A search that reaches row 167 uses the last value read. The per-pixel occlusion rule, open on `entities/view`.
+
+**Confirmed.** The y table, built at `1000:55DA`. Cel byte 2 layout. View, loop and cel offset bases. In-place mirroring that rewrites the stored loop index. Argument order of `add.to.pic`. 43-byte object entries.
+
+**New.** The cel routines are in `IBM_OBJS.OVL`, loaded at `1000:9CF0`, outside the Ghidra project. One 160 by 168 buffer holds priority in the high nibble and color in the low nibble. Full baseline test. Drawing over priority 0 to 2 keeps the control value. A tie draws. Blue depends on the object's `ignore.blocks`. Water needs an all-cyan baseline and land is blocked only by one. EGO's water and land bits clear each cycle. Automatic priority is assigned only inside the baseline test. Draw-order key. Save and restore records. Row-flip rules. `add.to.pic` placement and priority 0 as automatic. `show.obj` steps, including `Not now.`.
+
+**Refined.** Nothing enforces reserved mirror space in 2.917; SQ1 has 32 cels that grow when flipped and none that overflow. `show.obj` doesn't check for a missing description.
+
+**Unread.** `HGC_OBJS.OVL`. The graphics-driver entries `9740`–`9777`, including the view-load hook and horizontal doubling. The routine that loads the overlays and picks one. The replay caller at `1000:6826`. `position` handlers. KQ1 example, flood fill and SCI text on `control-lines`.
+
+**Runtime only.** Queued in section 5 and below: `add.to.pic` clobbering `flag(0)`, `flag(1)` and `flag(3)`. The margin rectangle wrapping on narrow cels. `flag(0)` left set after a black first pixel. `get.priority` straight after `position`. The blit's nibble handling on a real screen.
+
+**Changed.** `interpreter/control-lines`, `interpreter/priority-bands`, `entities/view`, `concepts/rle-encoding`, `interpreter/commands` (`$7A`, `$7B`, `$81`, `$A2`), `interpreter/command-semantics` (`add.to.pic`, new `show.obj`). Pending the coordinator: `sources/agi-2917-binary`, `concepts/screen-layers`, `interpreter/view-objects`, `interpreter/variables-and-flags`.
+
+## [2026-11-01] file | Audit slice 3: PICTURE, screen buffer, palette
+
+Static reading of the handlers, the PICTURE routine and all five graphics overlays. The interpreter's own PICTURE routine, unmodified, was also run in an x86 emulator (Unicorn) on all 73 SQ1 PICTUREs and on synthetic pictures, in isolation and with machine 0, monitor 3 only. The audited rules reproduce it with no differing pixel: 73 SQ1 pictures, 1,500 random pictures, 600 noisy fills, 2,000 random lines, 293 overflow-capable lines, 1,920 solid and 1,920 splatter plots. The display path was only read, not run.
+
+**Contradicted (12).** Two framebuffers: it is one 26,880-byte buffer, priority in the high nibble and color in the low. `showpic.c` as byte-exact target. BFS with a 4,000-entry queue: it is a span fill on the machine stack, and order can't be observed. The line algorithm: integer error terms, not rounded fractions, though the pixels match. Pen width: `size + 1` columns, not `2·size + 1`. Size 1 is a 2×3 block, not a plus sign. The splatter "wrap at 255" bug: no table or wrap exists, the source is a shift register of period 255. The offset table has 120 reachable entries, not 128. `0xFB..0xFE` are skipped rather than fatal. Spare display rows aren't all at the bottom: `configure.screen` places them. The reservation of priorities 0..3 doesn't follow from the palette. `showpic.c`'s fill test is wrong for priority-only fills.
+
+**Resolved (3).** Both-layers fill writes priority at every filled pixel; the literal 5-1 reading differs in 2 of 73 pictures (183 and 11 pixels), `showpic.c`'s rule in none. `showpic.c`'s stale-color check is a bug and not the target: 8 of 73 pictures, 7,592 priority pixels; correcting it alone gives no differences in all 73. The splatter table conflict: the 5-1 prose is right at all 120 positions and `showpic.c` wrong at 4 (indices 11, 15, 116, 117; the wiki had mislabeled the last two as 124, 125).
+
+**Confirmed.** Opcode set and argument order, corner order, displacement layout, pen bits, initial white and priority 4 on `draw.pic`, horizontal doubling, 160×168, mask contents match `showpic.c`, `0xFF` terminator, `draw.pic` and `overlay.pic` take a variable, `showpic.c` line pixels (97,292 line shapes, no difference where sums are at most 255).
+
+**New.** Coordinate clamps. `0xF7` wraps to the opposite edge past 0, and `Δx = −7` can't be encoded. Drawing white with priority enabled fills nothing. Priority-only fill with priority 4 fills nothing. Color bytes aren't masked. Lines whose major and minor lengths sum above 255 overflow 8-bit errors and miss their endpoints, and the next segment starts from there. Pen overrun past the right edge into the next row, and past the buffer's end at the bottom. No length check on the stream. PICTURE state resets for every picture, including overlays. `show.pic` clears `flag(15)` and closes windows. `show.pri.screen` swaps nibbles and waits for Enter or Esc only. `DS:120E` gates object updates. Driver entries, including `9743` and `9746`. EGA path: mode `0Dh`, write mode 2, no palette loaded. Driver choice and color mapping for all displays. Fill depth against the 2,560-byte stack and its "Stack blown." guard.
+
+**Unread.** Fill with a color byte whose low nibble is 15 but which isn't 15. Hercules beyond the outline. Whether a saved game uses `DS:013B`. Object drawing and occlusion (drawing audit).
+
+**Runtime only.** The actual RGB output of each display. `show.pri.screen` on screen. Composite CGA. `0xF0` under `-v` on machine type 0. A real stack overflow from a fill. A full-interpreter run of `draw.pic`, `overlay.pic` and `show.pic` (the emulation covered the PICTURE routine alone).
+
+**Changed.** `entities/picture`, `concepts/picture-rendering`, `concepts/screen-layers`, `concepts/ega-palette`, `interpreter/commands`, `interpreter/command-semantics`.
+
+## [2026-11-01] file | Audit slice 4, part 2: memory layout and auto-discard
+
+Static reading, plus a data check of every SQ1 LOGIC for `script.size`. Nothing was run. See `WIKI_AUDIT_PLAN.md`.
+
+**Contradicted.** `DS:0000` is the stack base, not a 2-byte data-area length. The game ID is 7 bytes at `DS:0002`, not 8. Code and the screen buffer are outside the heap, so 2.917 is not one arena. Each verdict keeps the spec's claim in a callout.
+
+**Refined.** Auto-discard reclaims later memory, but cuts only the discarded type's list, so other types keep stale records. `var(8)` isn't refreshed by every release. `AGIDATA.OVL` is read only up to 7,792 bytes. The spec's second "unknown" region is the stack and directories. `show.pic` doesn't use the resource, so the `discard.pic` order isn't enforced.
+
+**Resolved.** The allocator: a bump allocator in `DS`, growing upward, sized `0xE19` paragraphs (57,744 bytes) whatever RAM the machine has. Running out shows "No memory. Want n, have m" and exits to DOS with code 0, with no retry; only `show.obj` fails softly. The list clears under `10D0` and the release under `1485`. A `call` of an unloaded LOGIC fits the model, unrecorded, with the same stale-record gap. The script buffer's contents, limit, and replay.
+
+**Confirmed.** Variables at `DS:0009` and flags at `DS:0109`, both zeroed at setup. Key at `DS:08E9`. Heap order `WORDS.TOK`, `OBJECT`, object table, LOGIC 0, which stays resident. Argument forms of all eight owned handlers.
+
+**New.** Stack is 2,560 bytes at the heap's base. Resident mark at `DS:0A51`. Record sizes: LOGIC 10, VIEW and PICTURE 5, SOUND 14. Object save areas stay on top of the heap, bracketed around every permanent change. Script codes 0 to 8, 50-entry default, overflow error `0x0B`. `load.logics` records even when already loaded. `script.size` allocates once and never resizes. `$AB` and `$AC` save and restore the script count. SQ1 never uses `script.size`.
+
+**Unread.** Driver entries `9CF0`, `9CF3`, `9CF6` (save area actions inferred from call structure). The view driver hook `9777`. `8130`, `81AE`. `DS:05CD`–`DS:05E2`, apart from two slots.
+
+**Runtime only.** The heap base and 16-bit top wrap. Stale records after a mixed discard or a temporary `call`. `new.room` inside a temporary `call`. Larger second `script.size` overflow. `set.menu` over save areas. The spec's crash claim for other picture orders.
+
+**Changed.** `interpreter/memory-layout`, `interpreter/commands`, `interpreter/command-semantics`, `sources/agi-2917-binary`, `interpreter/variables-and-flags`, `entities/logic`.
+
+## [2026-11-01] file | Audit slice 4, part 3: debug modes, save, restore, restart, trace
+
+Static reading, plus a data check of all SQ1 LOGICs, `OBJECT` and `WORDS.TOK`. Nothing was run, and no save file was inspected. See `WIKI_AUDIT_PLAN.md`.
+
+`debug-modes` verdicts over 26 claims: Confirmed 2, Refined 10, Contradicted 5, Unread 9.
+
+**Contradicted.** The interpreter has no built-in debugger beyond the trace. It has no ALT-D handling. Its only use of `flag(10)` is one read, gating the trace, so it isn't "interpreter-managed". The trace shows actions as well as tests, and never the `if` itself. SQ1's `POSITION` moves EGO rather than printing a position.
+
+**Resolved.** The debug vocabulary is per-game LOGIC, not interpreter code. In SQ1, ALT-D is `set.key(0, 0x20, 14)` in LOGIC 104, and LOGIC 0 responds by setting `flag(190)` and loading LOGIC 99. `$AA` is a named-save command. `trace.info` is names LOGIC, top offset and height.
+
+**Confirmed.** Single stepping. The trace shows LOGIC number, command, arguments and result. `flag(6)` and `flag(12)` set by restart and restore. `flag(11)` on restore. Paused state during save and restore.
+
+**New.** Save file layout: 31-byte description, then five length-prefixed blocks, with a map of the fixed block. 12 slots named `<id>sg.<n>`, filtered by stored game ID. Restore replays the script buffer through 9 entry codes, shared with `toggle.monitor`. Object flags are stashed in the position field during replay. Restart resets and keeps lists. `flag(16)` skips the restart prompt. `\` stops being the format escape during saves. Read failures in restore are fatal. Lengths are not validated. `+` skips the trace to the next LOGIC. `trace.on` skips a byte if the trace is already on. Scroll Lock toggles on either transition.
+
+**Unread.** The three per-game phrases and the six vocabulary rows absent from SQ1, since those games aren't local. Drive checks in `5B15`, `5D39`, `5D76` and the rule at `DS:1120`. `547E`, `3AE7`, `0A06` internals. The purpose of `DS:012F`, `DS:013F`, `DS:01E1`–`020C`. The full condition around controller 14 in LOGIC 0.
+
+**Runtime only.** A real save file's bytes and sizes. Restore from a file. Trace window geometry and text. `trace.on` when already on. ALT-D in SQ1. The trace after a restore with its names LOGIC gone.
+
+**Changed.** `interpreter/debug-modes` (rewritten), `interpreter/command-semantics` (new section "Save, restore and restart"), `interpreter/commands`, `interpreter/variables-and-flags`, `interpreter/event-loop`, `sources/agi-2917-binary`, `index`.
+
+## [2026-11-01] file | Audit merge: spot-checks and cross-unit reconciliation
+
+The six entries above came from parallel agents in separate worktrees. The coordinator re-read their riskiest claims from the raw bytes with a separate disassembler, and checked data claims against SQ1.
+
+**Verified.** `set.loop` accepts a loop equal to the count, unlike `set.cel`. The second loop table applies to exactly 4 loops. The baseline test, including priority 15 skipping it and all-water refusal under `object.on.land`. Cel draw, including 0 to 2 starting the search, a tie drawing, the control value kept through the search path, and `flag(1)`. `trace.on` skipping a byte when active. The `quit` return path. The random generator. The save-file block order and the 1,505-byte block. The heap size of `0xE19` paragraphs. `var(2)`'s clear. LOGIC 104's `set.key`, LOGIC 0's matching bytes, and LOGIC 71 with VIEW 89. All 238 SQ1 VIEWs have at most 4 loops, so SQ1 can't test the 5-or-more case. Rerunning the picture comparison reproduced its figures on all 73 pictures.
+
+**Settled across units.** The overlay loader's table names each file and gives its segment, which removes the assumption behind the `1000:9740` and `1000:9CF0` bases. `flag(1)` has a setter in `IBM_OBJS`, which the objects unit couldn't see. Where the objects and draw units differed on `flag(0)`, draw's wording matches the bytes: a black stop keeps it, a blue one clears it. Saves don't hold `DS:1707` or `DS:1526`.
+
+**Unchanged.** Runtime only items stay queued in `WIKI_AUDIT_PLAN.md`. The `variables-and-flags` audit item stays open: this merge applied the handoffs' edits, but every reserved slot hasn't been checked yet.

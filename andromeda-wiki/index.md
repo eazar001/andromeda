@@ -13,8 +13,8 @@ Resource types and on-disk file formats. One page per resource.
 - [[entities/dir-file]] — VOL/DIR addressing: v2 and v3 directory file layouts, entry decoding, absent-entry rule (high nibble `F`), and how 2.917 uses directories.
 - [[entities/vol-file]] — VOL container format: 5-byte resource header (signature, VOL number, length), payload structure, and how 2.917 reads a resource, including wrong-disk checks and retries.
 - [[entities/logic]] — LOGIC resource bytecode format: 7-byte header (5-byte VOL header + 2-byte text offset), `$FF/$FE/$FD/$FC` control-flow opcodes, AGIDATA.OVL argument dispatch, and Avis-Durgan-XOR'd text-message section.
-- [[entities/picture]] — PICTURE resource bytecode format: drawing-opcode catalogue `0xF0..0xFF`, dual-screen dispatch, sign-magnitude `0xF7` displacements, pen-style and splatter-texture encoding.
-- [[entities/view]] — VIEW resource format: loop/cel hierarchy, RLE-compressed bitmap cel data, code-verified byte-2 mirror/transparency packing, loop mirroring with in-place Sierra-runtime mutation note.
+- [[entities/picture]] — PICTURE resource bytecode format, audited against 2.917: drawing-opcode catalogue `0xF0..0xFF`, two-layer dispatch, `0xF7` displacements, pen-style and splatter-texture encoding, flood-fill target rule.
+- [[entities/view]] — VIEW resource format, audited against 2.917: loop/cel hierarchy, RLE cel data, byte-2 mirror and transparency packing, in-place loop mirroring.
 - [[entities/sound]] — SOUND resource format: 8-byte header of four voice offsets, 5-byte note encoding (duration, tone divisor / noise selector, attenuation), v2+ and legacy v1.12 variants, PCjr four-voice playback (PC speaker renders voice 1 only).
 - [[entities/object]] — OBJECT inventory file: 3-byte header (name-section offset + max animated objects), 3-byte-per-item entries (name offset + starting room, `0xFF` = carried), null-terminated name section, optional Avis-Durgan XOR encryption from v2.411 onward.
 - [[entities/words-tok]] — WORDS.TOK vocabulary file: 52-byte alphabet index + variable-length prefix-share-compressed entries with `0x7F`-XOR character obfuscation. Uses Hi-Lo byte order throughout — the one AGI file that bucks the system-wide little-endian convention. Special word codes `0`/`1`/`9999` are parser-level wildcards.
@@ -27,10 +27,10 @@ Shared primitives referenced by multiple entities: encoding schemes, palettes, e
 - [[concepts/lzw-compression]] — adaptive LZW (9-/10-/11-bit codes) applied to most AGI v3 non-PICTURE resources.
 - [[concepts/picture-compression]] — 4-bit color-packing scheme specific to AGI v3 PICTURE resources.
 - [[concepts/agi-data-types]] — semantic data types used as AGI command parameters: variables, flags, strings, words, objects, inventory items, messages, controllers.
-- [[concepts/screen-layers]] — visual / priority dual-screen model: 160×168 logical pixel grid, init colors (white visual / red priority), per-pixel encoding of depth values (4..15) and control colors (0..3), drawing-mode flags.
-- [[concepts/picture-rendering]] — PICTURE rendering algorithms code-verified against Lance Ewing's reference decoder: additive-fixed-point line drawing with direction-sensitive rounding, BFS flood-fill (4000-entry queue), brush plotting, splatter texture masking with wrap-at-255.
+- [[concepts/screen-layers]] — one 160×168 buffer holding visual and priority nibbles, init values, drawing-mode flags, and how pixels reach the display through the graphics overlays.
+- [[concepts/picture-rendering]] — PICTURE rendering algorithms audited against AGI 2.917 and emulation of its PICTURE routine: integer line drawing with 8-bit overflow, span flood fill, pen masks, splatter shift register.
 - [[concepts/rle-encoding]] — VIEW-cel RLE: chunk byte (high nibble = color, low nibble = run length 1..15), `0x00` row terminator, trailing-transparency padding rule.
-- [[concepts/ega-palette]] — IBM EGA 16-color palette table; explains why priority-screen 0..3 are control colors and 4..15 are depth values.
+- [[concepts/ega-palette]] — IBM EGA 16-color table, which isn't in the binary; driver choice and color mapping on non-EGA displays.
 - [[concepts/pcjr-sound-encoding]] — TI SN76496A voice primitives: 10-bit tone frequency divisor, 2-bit pre-selected noise frequencies (+ borrow-voice-3 mode), 4-bit attenuation (A0=bit3=16 dB → A3=bit0=2 dB). Shared by every 5-byte note in [[entities/sound]].
 
 ## Interpreter
@@ -40,15 +40,15 @@ The LOGIC VM and runtime model: opcode tables, event loop, priority bands, objec
 - [[interpreter/overview]] — high-level VM-model hub; one paragraph per subsystem with links into the detailed pages.
 - [[interpreter/variables-and-flags]] — reserved `var(0)`–`var(26)` and `flag(0)`–`flag(15)`: complete assignment table, semantics, shared-namespace scoping.
 - [[interpreter/event-loop]] — per-cycle order read from AGI 2.917: timer wait, input events, direction sync, motion, LOGIC 0, status line, object update, plus when `new.room` takes effect and where the spec's eleven-step version differs.
-- [[interpreter/memory-layout]] — runtime heap organization: 256-byte variable region, 32-byte flag region, string buffers, jump table, encryption key, and loaded resources, in heap order.
+- [[interpreter/memory-layout]] — 2.917 memory, audited: data segment, bump-allocator heap, resident mark, resource lists and auto-discard, out-of-memory exit, script buffer.
 - [[interpreter/input-parsing]] — player-input preprocessing (punctuation/case/space normalization, vocabulary lookup) and `said` test pattern matching (wildcards `1` and `9999`, equality, at-most-once-per-cycle semantics).
 - [[interpreter/command-evolution]] — version-conditional command argument-count rules for LOGIC bytecode decoding (`quit`, `print.at`, `print.at.v`, unknown #176) plus command-count summary by interpreter version.
 - [[interpreter/commands]] — full opcode catalogue: 18 test commands (`$01..$12`) and 182 action commands (`$00..$B5`) with argument counts and per-argument types.
-- [[interpreter/command-semantics]] — selected behavioral semantics for high-value opcodes from 4-4: arithmetic edge cases, resource auto-discard rule, `new.room` eleven-step procedure, `release.loop` direction tables, `add.to.pic` margin gap, base-point and `set.upper.left` conflicts with 4-3, AGDS surface syntax, the `said` algorithm.
-- [[interpreter/priority-bands]] — y → priority eleven-band auto-assignment table from `release.priority`. Resolves the long-dangling forward-ref from [[interpreter/overview]].
-- [[interpreter/control-lines]] — black/blue/green/cyan control-line semantics on the priority screen (barrier / conditional barrier / alarm / surface) and the search-downwards algorithm that recovers a priority band under a control-line pixel. Resolves the [[interpreter/control-lines]] forward-ref from [[interpreter/overview]].
-- [[interpreter/view-objects]] — runtime VIEW object table: 43-byte SQ2 entry structure (position, view/loop/cel pointers, size, step/cycle timing, direction, motion type, cycle type, priority, 16-bit flags), hot-spot reference point, and the four collision-test commands (`posn`, `right.posn`, `center.posn`, `obj.in.box`). Resolves forward-refs from [[interpreter/memory-layout]] and [[interpreter/event-loop]].
-- [[interpreter/debug-modes]] — built-in interpreter debugger: ALT-D and per-game magic-phrase activation, debug command vocabulary, command-trace mode (Scroll-Lock), `flag(10)` activation flag.
+- [[interpreter/command-semantics]] — behavioral semantics audited against 2.917: arithmetic, tests, resources, `new.room`, objects, `add.to.pic`, `show.obj`, text output, save/restore/restart with the save-file layout, inventory, menus, miscellaneous commands, and the former unknowns `$AA..$AD`.
+- [[interpreter/priority-bands]] — y → priority table and the per-pixel occlusion rule for cels, audited against 2.917.
+- [[interpreter/control-lines]] — black/blue/green/cyan control values, the baseline test, and the search-downwards rule, audited against 2.917.
+- [[interpreter/view-objects]] — object table layout and flags, per-cycle motion, cycling and collision, audited against 2.917.
+- [[interpreter/debug-modes]] — the command trace (Scroll Lock, `flag(10)`) and per-game debug scripts; 2.917 has no other built-in debugger.
 
 ## Sources
 

@@ -93,20 +93,22 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$15` | `load.logics.v` | 1 | var |
 | `$16` | `call` | 1 | num |
 | `$17` | `call.v` | 1 | var |
-| `$18` | `load.pic` | 1 | var |
+| `$18` | `load.pic` | 1 | var [AGI 2.917 1000:4A16] |
 | `$19` | `draw.pic` | 1 | var |
 | `$1A` | `show.pic` | 0 | — |
-| `$1B` | `discard.pic` | 1 | var |
+| `$1B` | `discard.pic` | 1 | var [AGI 2.917 1000:4BAA] |
 | `$1C` | `overlay.pic` | 1 | var |
 | `$1D` | `show.pri.screen` | 0 | — |
+
+`$19`, `$1A`, `$1C` and `$1D` are audited against 2.917; see [[interpreter/command-semantics]] §"PICTURE commands" [AGI 2.917 1000:4AAA, 1000:4B82, 1000:4B17, 1000:7254].
 
 ### Views and screen objects (`$1E..$50`)
 
 | Opcode | Mnemonic | Args | Signature |
 |--------|----------|------|-----------|
-| `$1E` | `load.view` | 1 | num |
-| `$1F` | `load.view.v` | 1 | var |
-| `$20` | `discard.view` | 1 | num |
+| `$1E` | `load.view` | 1 | num [AGI 2.917 1000:39B1] |
+| `$1F` | `load.view.v` | 1 | var [AGI 2.917 1000:39D0] |
+| `$20` | `discard.view` | 1 | num [AGI 2.917 1000:3ECD] |
 | `$21` | `animate.obj` | 1 | S obj |
 | `$22` | `unanimate.all` | 0 | — |
 | `$23` | `draw` | 1 | S obj |
@@ -114,7 +116,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$25` | `position` | 3 | S obj, num, num |
 | `$26` | `position.v` | 3 | S obj, var, var |
 | `$27` | `get.posn` | 3 | S obj, var, var |
-| `$28` | `reposition` | 3 | S obj, var, var |
+| `$28` | `reposition` | 3 | S obj, var, var (signed deltas [AGI 2.917 1000:7C20]) |
 | `$29` | `set.view` | 2 | S obj, num |
 | `$2A` | `set.view.v` | 2 | S obj, var |
 | `$2B` | `set.loop` | 2 | S obj, num |
@@ -134,7 +136,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$39` | `get.priority` | 2 | S obj, var |
 | `$3A` | `stop.update` | 1 | S obj |
 | `$3B` | `start.update` | 1 | S obj |
-| `$3C` | `force.update` | 1 | S obj |
+| `$3C` | `force.update` | 1 | S obj (ignored: all objects update [AGI 2.917 1000:6A51]) |
 | `$3D` | `ignore.horizon` | 1 | S obj |
 | `$3E` | `observe.horizon` | 1 | S obj |
 | `$3F` | `set.horizon` | 1 | num |
@@ -147,9 +149,9 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$46` | `stop.cycling` | 1 | S obj |
 | `$47` | `start.cycling` | 1 | S obj |
 | `$48` | `normal.cycle` | 1 | S obj |
-| `$49` | `end.of.loop` | 2 | S obj, flag |
+| `$49` | `end.of.loop` | 2 | S obj, flag (shares a slot with motion parameters; see [[interpreter/view-objects]]) |
 | `$4A` | `reverse.cycle` | 1 | S obj |
-| `$4B` | `reverse.loop` | 2 | S obj, flag |
+| `$4B` | `reverse.loop` | 2 | S obj, flag (same slot as `$49`) |
 | `$4C` | `cycle.time` | 2 | S obj, var |
 | `$4D` | `stop.motion` | 1 | S obj |
 | `$4E` | `start.motion` | 1 | S obj |
@@ -162,7 +164,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 |--------|----------|------|-----------|
 | `$51` | `move.obj` | 5 | S obj, num, num, num, flag |
 | `$52` | `move.obj.v` | 5 | S obj, var, var, var, flag — the step size is also a variable, contradicting 4-3's `num` [AGI 2.917 1000:6C9A] |
-| `$53` | `follow.ego` | 3 | S obj, num, flag |
+| `$53` | `follow.ego` | 3 | S obj, num (stop distance, not a step [AGI 2.917 1000:6D3B]), flag |
 | `$54` | `wander` | 1 | S obj |
 | `$55` | `normal.motion` | 1 | S obj |
 | `$56` | `set.dir` | 2 | S obj, var |
@@ -230,42 +232,42 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | Opcode | Mnemonic | Args | Signature |
 |--------|----------|------|-----------|
 | `$79` | `set.key` | 3 | num, num, cntrl — low and high key-code bytes, then controller. The table has 39 slots, and calls past that are silently ignored [AGI 2.917 1000:4C3D] |
-| `$7A` | `add.to.pic` | 7 | num, num, num, num, num, num, num |
-| `$7B` | `add.to.pic.v` | 7 | var, var, var, var, var, var, var |
+| `$7A` | `add.to.pic` | 7 | num, num, num, num, num, num, num — view, loop, cel, x, y, priority, margin [AGI 2.917 1000:2C7A] |
+| `$7B` | `add.to.pic.v` | 7 | var, var, var, var, var, var, var — same order, all seven read from variables [AGI 2.917 1000:2CCA] |
 
 ### Game lifecycle (`$7C..$80`)
 
 | Opcode | Mnemonic | Args | Signature |
 |--------|----------|------|-----------|
 | `$7C` | `status` | 0 | — |
-| `$7D` | `save.game` | 0 | — |
-| `$7E` | `restore.game` | 0 | — |
+| `$7D` | `save.game` | 0 | — always continues to the next command. See [[interpreter/command-semantics]] §"Save, restore and restart" [AGI 2.917 1000:2753] |
+| `$7E` | `restore.game` | 0 | — ends all running LOGICs on success, and continues on cancel or a file that won't open [AGI 2.917 1000:2512] |
 | `$7F` | `init.disk` | 0 | — no-op in 2.917: the handler just continues to the next command [AGI 2.917 1000:4F8A] |
-| `$80` | `restart.game` | 0 | — |
+| `$80` | `restart.game` | 0 | — prompts unless `flag(16)` is set; ends all running LOGICs if it goes ahead [AGI 2.917 1000:2472] |
 
 ### Object queries, RNG, control (`$81..$85`)
 
 | Opcode | Mnemonic | Args | Signature |
 |--------|----------|------|-----------|
-| `$81` | `show.obj` | 1 | num |
+| `$81` | `show.obj` | 1 | num — view number [AGI 2.917 1000:5DF7] |
 | `$82` | `random` | 3 | num, num, var |
 | `$83` | `program.control` | 0 | — |
 | `$84` | `player.control` | 0 | — |
-| `$85` | `obj.status.v` | 1 | var |
+| `$85` | `obj.status.v` | 1 | var — object number. Shows a window with the object's position, size, priority and step size [AGI 2.917 1000:71EE] |
 
 ### Quit, debug, misc (`$86..$92`)
 
 | Opcode | Mnemonic | Args | Signature | Version notes |
 |--------|----------|------|-----------|---------------|
 | `$86` | `quit` | 1 | num | **0 args in interpreter 2.089**; see [[interpreter/command-evolution]] |
-| `$87` | `show.mem` | 0 | — | |
+| `$87` | `show.mem` | 0 | — | Prints heap figures in a window; see [[interpreter/command-semantics]] [AGI 2.917 1000:14BD] |
 | `$88` | `pause` | 0 | — | |
 | `$89` | `echo.line` | 0 | — | |
 | `$8A` | `cancel.line` | 0 | — | |
 | `$8B` | `init.joy` | 0 | — | |
 | `$8C` | `toggle.monitor` | 0 | — | |
 | `$8D` | `version` | 0 | — | |
-| `$8E` | `script.size` | 1 | num | |
+| `$8E` | `script.size` | 1 | num | Size in 2-byte entries. Allocated once and never resized; see [[interpreter/memory-layout]] [AGI 2.917 1000:70A3] |
 | `$8F` | `set.game.id` | 1 | message | Argument is a LOGIC-resident message; resolves the source-syntax half of the 2-5 forward-pointer about `set.game.id` (runtime semantics — what the interpreter does with the ID — remain in [[sources/2-5-interpreter]]). |
 | `$90` | `log` | 1 | message | |
 | `$91` | `set.scan.start` | 0 | — | Companion to `reset.scan.start`; see [[entities/logic]] §"Entry-point control". |
@@ -277,8 +279,8 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 |--------|----------|------|-----------|---------------|
 | `$93` | `reposition.to` | 3 | S obj, num, num | |
 | `$94` | `reposition.to.v` | 3 | S obj, var, var | |
-| `$95` | `trace.on` | 0 | — | |
-| `$96` | `trace.info` | 3 | num, num, num | |
+| `$95` | `trace.on` | 0 | — | Does nothing unless `flag(10)` is set. If the trace is already on, it skips one extra bytecode byte [AGI 2.917 1000:8BCA]. See [[interpreter/debug-modes]]. |
+| `$96` | `trace.info` | 3 | num, num, num | Names LOGIC, top row offset, height (minimum 2) [AGI 2.917 1000:8C76]. See [[interpreter/debug-modes]]. |
 | `$97` | `print.at` | 4 | message, num, num, num | **3 args in versions before "2.400"** (spec typo, plausibly 2.440); see [[interpreter/command-evolution]] §conflict. |
 | `$98` | `print.at.v` | 4 | var, num, num, num | Same version-conditional boundary as `print.at`. Only the message number is a variable, contradicting 4-3's `message, var, var, var`. A width of 0 means 30 [AGI 2.917 1000:1C71, 1000:1C96]. |
 
@@ -286,7 +288,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 
 | Opcode | Mnemonic | Args | Signature |
 |--------|----------|------|-----------|
-| `$99` | `discard.view.v` | 1 | var |
+| `$99` | `discard.view.v` | 1 | var [AGI 2.917 1000:3EE9] |
 | `$9A` | `clear.text.rect` | 5 | num, num, num, num, num |
 | `$9B` | `set.upper.left` | 2 | ignored, ignored — no-op in 2.917 [AGI 2.917 1000:4C15] |
 | `$9C` | `set.menu` | 1 | message |
@@ -295,7 +297,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$9F` | `enable.item` | 1 | cntrl |
 | `$A0` | `disable.item` | 1 | cntrl |
 | `$A1` | `menu.input` | 0 | — |
-| `$A2` | `show.obj.v` | 1 | var |
+| `$A2` | `show.obj.v` | 1 | var — view number from a variable [AGI 2.917 1000:5DD3] |
 | `$A3` | `open.dialogue` | 0 | — |
 | `$A4` | `close.dialogue` | 0 | — |
 | `$A5` | `mul.n` | 2 | var, num |
@@ -304,14 +306,14 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$A8` | `div.v` | 2 | var, var |
 | `$A9` | `close.window` | 0 | — |
 
-### Unknown commands (`$AA..$B5`) — eleven undocumented
+### Late commands (`$AA..$B5`), which the spec leaves unnamed
 
 | Opcode | Mnemonic | Args | Signature | Version notes |
 |--------|----------|------|-----------|---------------|
-| `$AA` | `unknown170` | 1 | ??? | |
-| `$AB` | `unknown171` | 0 | — | |
-| `$AC` | `unknown172` | 0 | — | |
-| `$AD` | `unknown173` | 0 | — | |
+| `$AA` | `set.simple` | 1 | string | Copies string `s` to the save-name buffer. Behavior read for 2.917 and name from ScummVM; see [[interpreter/command-semantics]] §"Former unknowns". |
+| `$AB` | `push.script` | 0 | — | Saves the script buffer position in one slot. See the same section. |
+| `$AC` | `pop.script` | 0 | — | Restores that position. See the same section. |
+| `$AD` | `hold.key` | 0 | — | Makes releasing a direction key stop EGO. It can't be turned off. See the same section. |
 | `$AE` | `unknown174` | 1 | ??? | |
 | `$AF` | `unknown175` | 1 | ??? | |
 | `$B0` | `unknown176` | 0 | — | **1 arg in interpreter 3.002.086**; 0 in all later v3 (see [[interpreter/command-evolution]]). |
@@ -321,7 +323,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 | `$B4` | `unknown180` | 2 | ???, ??? | |
 | `$B5` | `unknown181` | 0 | — | |
 
-These eleven opcodes match the [2-8-Interpreter.html] note "the last eleven we do not know the names of". Recovery candidates: ScummVM `engines/agi/op_*.cpp` and AGI Studio source. Tracking under [[sources/2-8-interpreter]] §Notes.
+The spec's eleven match the [2-8-Interpreter.html] note "the last eleven we do not know the names of", though the table above has twelve rows. `$AA..$AD` are the last opcodes 2.917 accepts, and their behavior is read from it [AGI 2.917 1000:02CC]. SQ1 uses none of the four [SQ1 data check, log 2026-11-01]. Their names come from ScummVM's `engines/agi/opcodes.cpp`. `$AE..$B5` don't exist in 2.917 and stay unnamed here. Tracking under [[sources/2-8-interpreter]] §Notes.
 
 **Note on `$9B set.upper.left`.** [4-4-Logic.html §OTHER COMMANDS] describes the command (under the mnemonic `upper.left`) as a **0-arg state toggle** that switches the collision-detection base-point reference. In 2.917 it takes 2 ignored bytes and does nothing. See [[interpreter/command-semantics]] §"`set.upper.left` argument-count conflict".
 

@@ -8,15 +8,15 @@ The interpreter repeats one cycle forever. This page gives the order read from A
 2. **Clear the 50-entry controller table** [AGI 2.917 1000:4C23].
 3. **Clear `flag(2)` and `flag(4)`.**
 4. **Read the joystick**, if one is present (`DS:15BD`), at most once every 9 timer ticks. It maps the axes to a direction from 0 to 8 and queues a direction event when the direction changes [AGI 2.917 1000:612B, 1000:62F7, 1000:6278]. A waiting keypress cancels the read.
-5. **Drain queued input events**, first clearing `var(19)` and `var(9)` [AGI 2.917 1000:357C]. See "Input events" below.
+5. **Drain queued input events**, first clearing `var(19)` and `var(9)`. If `menu.input` set its request in an earlier cycle, the menu runs here first and blocks the cycle, and its controller event is then drained like any other [AGI 2.917 1000:357C, 1000:358B]. See "Input events" below and [[interpreter/command-semantics]] §"Menus".
 6. **Sync EGO's direction.** Under program control `var(6)` takes EGO's direction. Under player control EGO's direction takes `var(6)`.
 7. **Update object motion.** Each object with all of flag bits `0x51` set, whose byte at offset 1 equals 1, gets its direction recalculated from its motion type (offset `0x22`, values 1–3), then a block check [AGI 2.917 1000:0644, 1000:067A].
 8. **Snapshot the score and `flag(9)`**, and record a return point that the error routine jumps back to [AGI 2.917 1000:7E19, 1000:3FE8].
-9. **Run LOGIC 0.** If it returns 0, a room changed: clear `var(9)`, `var(5)`, `var(4)` and `flag(2)`, re-snapshot the score, and run LOGIC 0 again at once. Steps 1–8 are not repeated and objects are not updated in between.
+9. **Run LOGIC 0.** It returns 0 after `new.room`, a successful `restore.game`, or a confirmed `restart.game` [AGI 2.917 1000:24FE, 1000:268D, 1000:02FF]. In that case, clear `var(9)`, `var(5)`, `var(4)` and `flag(2)`, re-snapshot the score, and run LOGIC 0 again at once. Steps 1–8 are not repeated and objects are not updated in between.
 10. **Set EGO's direction from `var(6)`**, regardless of control mode.
 11. **Redraw the status line** if the score or `flag(9)` differs from its snapshot [AGI 2.917 1000:34BD].
 12. **Clear `var(4)`, `var(5)`, `flag(5)`, `flag(6)` and `flag(12)`.**
-13. **Update objects on screen** unless `DS:174D` is set, which `text.screen` sets [AGI 2.917 1000:0563, 1000:7603].
+13. **Update objects on screen** unless `DS:174D` is set, which `text.screen` sets [AGI 2.917 1000:0563, 1000:7603]. If any object is active, this pass also clears `var(2)`, `var(4)` and `var(5)` and EGO's on-water and on-land bits [AGI 2.917 1000:0610, 1000:150A, 1000:0639]. See [[interpreter/view-objects]] §"What happens each cycle".
 
 ## Timer
 
@@ -29,13 +29,15 @@ The 20 Hz routine does the following:
 - Unless paused, advances the `var(10)` counter and the clock: 20 ticks make one `var(11)` second, rolling over at 60 seconds, 60 minutes and 24 hours into `var(14)`.
 - Checks a guard value at the bottom of the stack. If it was overwritten, the interpreter shows a message, waits for Esc and exits [AGI 2.917 1000:849E].
 
-`pause`, `save.game` and `restore.game` set the paused state, so the clock and `var(10)` counter stop during those commands [AGI 2.917 1000:025C, 1000:275C, 1000:251B].
+`pause`, `save.game` and `restore.game` set the paused state, so the clock and `var(10)` counter stop during those commands [AGI 2.917 1000:025C, 1000:275C, 1000:251B]. Menu, `status` and `print` waits don't set it, so the clock runs during them.
 
 ## Input events
 
 Input arrives through a 20-entry ring queue of events, each with a type and a value. Events are added by the timer, not by the cycle. When the queue is full, the newest event is dropped [AGI 2.917 1000:44A9].
 
 The keyboard poll sends each key through a direction lookup first: a direction key becomes a type 2 event, and anything else becomes type 1 [AGI 2.917 1000:467F]. The lookup itself (`46B6`) is unread.
+
+The keyboard interrupt handler also filters keys before the BIOS sees them [AGI 2.917 1000:5F6E, 1000:5FF8]. Auto-repeats of the eight direction keys (scan codes `47h` to `51h` except `4Ah`, `4Ch`, `4Eh`) are discarded. Numeric-pad 5 with no Shift, Ctrl or Alt queues a type 2 event with value 0, which stops EGO. Ctrl-Alt with the left or right arrow calls driver entry `9749` to shift the screen. With `hold.key` on, releasing a direction key also queues that stop event.
 
 The pump reads events until the queue is empty. On the way out, each type 1 key is checked against the `set.key` table, and a match turns it into a type 3 event. A key bound to a controller therefore never reaches `var(19)` or the input line [AGI 2.917 1000:4566]. On a Tandy, detected or forced with the `-t` switch, a second table can turn keys into directions [AGI 2.917 1000:46E8, 1000:40E5].
 
@@ -54,7 +56,7 @@ The input line handles keys as follows [AGI 2.917 1000:3652]:
 - **Enter (13):** if the line isn't empty, saves it as the previous line, parses it, then clears it. An empty line does nothing.
 - **Anything else:** appended if the line is under its limit.
 
-The limit is the smaller of `var(24)` and 40 minus the prompt's length, or the smaller of `var(24)` and 36 while a text window is open (`DS:0D07`). It's one less while a cursor character is set (`DS:05D7`) [AGI 2.917 1000:1F1F, 1000:38B4].
+The limit is the smaller of `var(24)` and 40 minus the prompt's length, or the smaller of `var(24)` and 36 while `DS:0D07` is set, which `print` and `open.dialogue` both do. It's one less while a cursor character is set (`DS:05D7`) [AGI 2.917 1000:1F1F, 1000:38B4].
 
 ## Where the spec differs
 
@@ -78,7 +80,7 @@ Immediately. The `new.room` core returns 0 [AGI 2.917 1000:1792]. A zero return 
 - **`flag(2)`, `flag(4)`:** valid only from input handling in the same cycle.
 - **`var(4)`, `var(5)`:** cleared after LOGIC 0 and on a room change.
 - **`var(9)`, `var(19)`:** cleared every cycle before input is read. The spec implies `var(9)` only clears on a room change; that is contradicted for 2.917.
-- **`var(2)`:** cleared by the room change; no per-cycle reset is present in the main loop.
+- **`var(2)`:** cleared by the room change and at the start of each screen pass's step phase, whenever an object is active, then set again if EGO touches a border [AGI 2.917 1000:151E, 1000:1646]. So a border touch reaches LOGIC in the next cycle and is replaced at the end of that cycle.
 - **`flag(5)`:** set by the room change and cleared at step 12, so room setup sees it during the repeat LOGIC 0 run.
 
 ## See also

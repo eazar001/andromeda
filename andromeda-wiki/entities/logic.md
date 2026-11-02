@@ -160,7 +160,7 @@ Each loaded LOGIC has a 10-byte record on a linked list: next record, LOGIC numb
 `call` works as follows [AGI 2.917 1000:12AE]:
 
 - **Already loaded:** the LOGIC runs from its entry point and stays loaded.
-- **Not loaded:** it is loaded, run, then cut from the list, and the heap top is reset to its record. Everything allocated after that record goes with it. Whether a resource loaded during the call leaves a stale entry on its own list is unread; see [[interpreter/memory-layout]].
+- **Not loaded:** it is loaded, run, then cut from the list, and the heap top is reset to its record. Everything allocated after that record goes with it. A resource loaded during the call stays on its own list with a stale pointer, because only the LOGIC list is cut, by reading only; see [[interpreter/memory-layout]] [AGI 2.917 1000:12AE].
 - **Current LOGIC:** the previous value is restored on return, so calls nest. The only limit found is the stack guard in [[interpreter/event-loop]] §"Timer".
 
 Variables and flags are not touched by `call`. If the called LOGIC changed rooms, the zero return stops every caller. See [[interpreter/event-loop]] §"When `new.room` takes effect".

@@ -198,7 +198,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
   - `0xFA` plot pen (solid: `(x,y)` per point; splatter: `(pattern, x, y)` per point)
   - `0xFF` end of picture
 - [ ] `gfx/pic_render.py`: executes a decoded PIC op list into a `VisualScreen` + `PriorityScreen` pair. Implement:
-  - Bresenham line drawing — use the Kelly-spec pseudocode for rounding, not the textbook version, or you'll get one-pixel gaps that let floods leak. See `andromeda-wiki/concepts/picture-rendering.md` and `AGI_Specifications/Code/showpic.c`.
+  - Line drawing — use the integer rule in `andromeda-wiki/concepts/picture-rendering.md`, not textbook Bresenham, or you'll get one-pixel gaps that let floods leak.
   - Flood fill: **iterative** (stack-based), not recursive. Fill rules:
     - Visual enabled only: fill pixels currently == 15 (white).
     - Priority enabled only: fill cells currently == 4.
@@ -541,5 +541,5 @@ Each milestone has a concrete "exit criteria" you can demo. If you find yourself
 - **Stack:** Python 3.14 + PySDL2.
 - **Critical data:** opcode arity table (LOGIC), PIC opcode dispatch (0xF0–0xFF), reserved var/flag constants, the "Avis Durgan" XOR key, the SN76489 frequency constant (111860 / divisor).
 - **Critical semantics:** `new.room` aborts the cycle, `said_ok` is per-cycle state, flood fill is "visual drives priority tags along," priority values 0–3 are control cells, message offsets are 1-based, all VOL resources share a 5-byte header.
-- **Biggest risks:** getting the opcode arity table wrong (silent desync), getting the PIC Bresenham rounding wrong (flood-fill leaks), getting the SN76489 bit layout wrong (octave-off audio), getting reserved flag/var indices wrong (game-specific weirdness).
+- **Biggest risks:** getting the opcode arity table wrong (silent desync), getting the PIC line rule wrong (flood-fill leaks), getting the SN76489 bit layout wrong (octave-off audio), getting reserved flag/var indices wrong (game-specific weirdness).
 - **Biggest win:** once M5 exits, every subsequent milestone is visible in the running game, which makes debugging far easier.

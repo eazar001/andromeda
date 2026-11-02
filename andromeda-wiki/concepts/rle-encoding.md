@@ -23,13 +23,23 @@ The andromeda decoder extracts both nibbles in one pass via the `nibble()` helpe
 
 A `0x00` byte marks end-of-row. The next byte begins the next row. Total rows per cel = cel header byte 1 (height) [6-1-VIEW.html §Cel data; resource/view.py:103-104].
 
-Note that `0x00` is unambiguous as a terminator because a chunk with `N = 0` (zero-length run) carries no information and would never be emitted — every real chunk has `N ≥ 1`. The renderer at [gfx/view_render.py:9] treats `(color == 0 && num_pixels == 0)` as the sentinel after the parser splits the byte into a `(color, count)` tuple.
+In 2.917 the draw routine counts `height` terminators and doesn't check row width, so a row that runs long spills into the next one [AGI 2.917 1000:9DFA]. In all 1,433 distinct SQ1 cels, no row is wider than its cel [SQ1 data check, audit draw].
+
+Only the whole byte `0x00` ends a row when drawing. A chunk with `N = 0` and any other color is not a terminator, and the interpreter doesn't handle it safely:
+
+- With the transparent color, it is skipped harmlessly [AGI 2.917 1000:9DD6].
+- With any other color, the draw loop's counter starts at zero and wraps, repeating 65,536 times [AGI 2.917 1000:9DD8, 1000:9DF6].
+- The mirror routine treats a zero low nibble as end of row once it has passed the leading transparent chunks, so the two routines disagree [AGI 2.917 1000:580D].
+
+No SQ1 cel contains such a chunk [SQ1 data check, audit draw], so encoders must never emit one. The renderer at [gfx/view_render.py:9] treats `(color == 0 && num_pixels == 0)` as the sentinel after the parser splits the byte into a `(color, count)` tuple.
 
 ## Transparency padding
 
-If a row's last run is the cel's transparent color (low nibble of cel header byte 2 — see [[entities/view]] §"Byte 2 layout"), the encoder may omit that final chunk: the `0x00` terminator implicitly pads transparent pixels to the right edge of the cel [6-1-VIEW.html §Cel data, "If the color of the last chunk on the line is the transparent color..."]. This is a space optimization; sparse sprites with large transparent margins save 1-2 bytes per row.
+If a row's last run is the cel's transparent color (low nibble of cel header byte 2 — see [[entities/view]] §"Byte 2 layout"), the encoder may omit that final chunk: the `0x00` terminator implicitly pads transparent pixels to the right edge of the cel [6-1-VIEW.html §Cel data, "If the color of the last chunk on the line is the transparent color..."]. This is a space optimization. In SQ1 it is universal: no row in any cel ends in a transparent chunk [SQ1 data check, audit draw].
 
-The renderer doesn't need to know about the omission specifically — the unwritten pixels simply aren't drawn, which is the same outcome as if they had been encoded as transparent.
+The renderer doesn't need to know about the omission specifically — the unwritten pixels simply aren't drawn, which is the same outcome as if they had been encoded as transparent. This is also how 2.917 behaves: a terminator moves straight to the next row [AGI 2.917 1000:9DFA].
+
+The rule matters when a cel is mirrored, because the omitted run has to become a leading one. See [[entities/view]] §"Loop mirroring".
 
 ## Rendering steps
 
@@ -43,6 +53,8 @@ The andromeda compositor [gfx/view_render.py:composite_cel] implements:
 6. Advance `x` by `count`. Stop when `y >= cel.height`.
 
 Compositing works in logical pixels. Horizontal doubling happens only when the finished screen is converted for SDL [gfx/palette.py:visual_screen_to_bytes].
+
+These steps describe the project's compositor. The 2.917 draw routine reads the same stream the same way, and also applies the priority comparison, which the compositor doesn't yet do. It mirrors by rewriting the cel's data before drawing, rather than flipping `x` per pixel. See [[interpreter/priority-bands]] §"How a cel pixel is compared" [AGI 2.917 1000:9D75].
 
 ## Worked example
 

@@ -38,3 +38,7 @@ The action table is at `AGIDATA.OVL` offset `0x61D` and the test table at `0x8F5
 - Ghidra locks a project while it's open, so give each concurrent run its own project; whether `-readOnly` runs can share one is untested. For parallel agents, copy `ghidra_project` per agent and prefix its output files.
 - Ghidra prints moves into segment registers with the operands swapped. Trust the raw bytes for those.
 - Some handlers use assembly-only register conventions, so prefer the listing to the decompilation.
+- `AgiGrep` can miss direct memory moves, so a negative result is unproven. Confirm "only writer" claims with a raw byte scan of `AGI.decoded`, where the file offset is `1000:xxxx` + `0x200`.
+- `AgiRange` stops with an "uninitialized block" error at the image's end, `1000:9800`, and loses any later ranges. Addresses after `1000:972A` print as `1964:xxxx`. One run also stopped early at a range starting at `1000:9740`, for a reason not found.
+- The display and object overlays aren't in the project. Disassemble them separately as 16-bit code at their load base, `1000:9740` for `*_GRAF.OVL` and `1000:9CF0` for `*_OBJS.OVL`. Capstone works for this.
+- Running `AgiRange` over the whole image forces disassembly across data regions, so don't use a project copy that has had this as a clean base.
