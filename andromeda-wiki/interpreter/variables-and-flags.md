@@ -20,8 +20,8 @@ Variables and flags share a single global namespace across every loaded LOGIC re
 | `var(7)` | Maximum achievable score. |
 | `var(8)` | Free memory: number of 256-byte pages still available in the interpreter's heap. See [[interpreter/memory-layout]]. |
 | `var(9)` | 1-indexed position of the first word the input parser failed to match in the player's input; 0 if all words parsed successfully. Set only when vocabulary lookup fails [2-6-Interpreter.html; 4-4-Logic.html §TEST COMMANDS, `said`]. The 2-2 phrasing ("if = 0, it is the number of the word ... that was not found") reads as inverted but is semantically consistent with this once read as "if non-zero, gives the unparsed-word position; if zero, all words parsed." 4-4 corroborates 2-6 verbatim (both are Bykov AGDS translations). Cleared at the start of input handling every cycle, and again on a room change [AGI 2.917 1000:3586, 1000:01C9]. See [[interpreter/input-parsing]] and [[interpreter/command-semantics]] §"`said` test command — algorithm". |
-| `var(10)` | Inter-cycle delay, in 1/20-second units (50 ms per unit). Games typically set this to 2–4. |
-| `var(11)`–`var(14)` | Interpreter's internal clock: seconds, minutes, hours, days respectively. |
+| `var(10)` | Minimum time per cycle, in 1/20-second units (50 ms per unit). Time spent on the cycle counts toward it [AGI 2.917 1000:7EB1, 1000:7E4E]. Games typically set this to 2–4. |
+| `var(11)`–`var(14)` | Interpreter's internal clock: seconds, minutes, hours, days respectively. Rolls over at 60, 60 and 24, and stops during `pause`, `save.game` and `restore.game` [AGI 2.917 1000:7E35]. |
 | `var(15)` | Joystick sensitivity, used when `flag(8) = 1`. |
 | `var(16)` | VIEW resource ID associated with EGO, copied from EGO's object entry by the `new.room` core [AGI 2.917 1000:1819]. |
 | `var(17)` | Interpreter error code. Set by the error routine, which cleans up and returns to the main loop's return point [AGI 2.917 1000:3FE8]. For example, code `0x10` means an action opcode above the limit, with the opcode in `var(18)`. The spec's "(if = 0)" is inverted. |
@@ -31,7 +31,7 @@ Variables and flags share a single global namespace across every loaded LOGIC re
 | `var(21)` | Window auto-close delay. If `flag(15) = 0` (window-auto-close mode) and `var(21) ≠ 0`, message windows automatically close after `0.5 × var(21)` seconds. |
 | `var(22)` | Sound generator type: `1` = PC speaker, `3` = Tandy. |
 | `var(23)` | Sound volume (Tandy only), range `0x0`–`0xF`. Interpreter-managed; orthogonal to the per-note 4-bit attenuation stored in [[entities/sound]] notes. (agidev, unverified — exact mapping between `var(23)` and the T1 chip's attenuation register is not specified in this corpus.) Reference-code vintage caveat: `play.c:9-10` ([[sources/7-2-sound]]) notes the sample player "was written before we worked out the details on the fourth voice and the volume control" — `var(23)` semantics were not finalized at sample-code authoring time. |
-| `var(24)` | Spec lists this as `29h` with no further description; meaning unclear (agidev, unverified). |
+| `var(24)` | Maximum input line length. The spec's bare `29h` is its startup value, 41 [AGI 2.917 1000:108C, 1000:3681]. See [[interpreter/event-loop]] §"Input line". |
 | `var(25)` | ID of the item selected via the `status` command, or `0xFF` if the player pressed Esc. |
 | `var(26)` | Monitor type: `0` = CGA, `2` = Hercules, `3` = EGA. |
 

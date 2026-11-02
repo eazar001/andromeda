@@ -37,9 +37,11 @@ Do not commit without the user's approval. The user writes all project code; age
 - [x] `interpreter/commands`: all argument counts and variable positions against `AGIDATA.OVL` and disputed handlers
 - [x] `interpreter/event-loop`: main loop order
 - [x] `new.room` core and its conflict
-- [ ] `new.room` unread callees: `516C`, `1485`, `4482`, `6FB5`, `6FA6`, `10D0`, `30D6`, `38D7`, and the `var(2)` reposition cases
-- [ ] Timer interrupt: the tick rate behind `var(10)` and the clock in `var(11)`–`var(14)`
-- [ ] Input events: `44F9`, `4566`, key mapping, and joystick routine `612B`
+- [x] `new.room` unread callees: `516C`, `1485`, `4482`, `6FB5`, `6FA6`, `10D0`, `30D6`, `38D7`, and the `var(2)` reposition cases
+- [x] Timer interrupt: the tick rate behind `var(10)` and the clock in `var(11)`–`var(14)`
+- [x] Input events: `44F9`, `4566`, key mapping, and joystick routine `612B`
+
+Left for later slices: the direction-key lookup (`46B6`, slice 2 with input), the internals of the resource-list clears under `10D0` and heap release under `1485` (slice 4 with memory), and sound stepping at 60 Hz (`7F55`, slice 4).
 
 ### Slice 2: the LOGIC VM
 

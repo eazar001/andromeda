@@ -1061,3 +1061,17 @@ First audit pass against the AGI 2.917 binary. See `WIKI_AUDIT_PLAN.md`. Static 
 ## [2026-11-01] file | Cleanroom claim removed
 
 At the user's direction, removed the cleanroom claim from `README.md`, `DEVELOPMENT_PLAN.md`, and `CLAUDE.md`, along with the directive not to read interpreter binaries. Those docs now state that claims are checked against the AGI 2.917 interpreter. NAGI's own cleanroom description is unchanged, since it describes that project. Older log entries are left as written.
+
+## [2026-11-01] file | Audit slice 1 closed: new.room callees, timer, input
+
+Static reading only. See `WIKI_AUDIT_PLAN.md`.
+
+**Contradicted.** Input is polled in the 20 Hz timer routine and queued, not once per cycle.
+
+**Confirmed.** `var(10)` units are 50 ms. The `var(11)`–`var(14)` clock and its rollovers. `new.room` clears queued input and discards resources.
+
+**Resolved.** `var(24)` is the maximum input length, and the spec's `29h` is its startup value. `stop.sound` sets the completion flag if a sound is playing.
+
+**New.** 60 Hz timer with sound stepping at that rate. 20-entry event queue. `set.key` lookup when events leave the queue, with 39 slots. Input line rules. Exact `var(2)` reposition values. Pause freezes the clock and delay counter. Stack guard check.
+
+**Changed.** `interpreter/event-loop`, `interpreter/command-semantics`, `interpreter/variables-and-flags`, `interpreter/commands`, `sources/agi-2917-binary`.

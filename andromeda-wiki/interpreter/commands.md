@@ -193,7 +193,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 
 `load.sound` reads a SOUND resource into a playback buffer; `sound` initiates playback and signals the named flag on completion; `stop.sound` halts the current sound. See [[entities/sound]] for the SOUND resource format (four-voice PCjr-style note streams; reference playback implementations cataloged in [[sources/7-2-sound]]) and [[interpreter/variables-and-flags]] for the related runtime state (`var(22)` hardware type, `var(23)` volume, `flag(9)` on/off).
 
-**Flag-signal semantics.** The flag is set to 1 when playback finishes [4-4-Logic.html §SOUND RESOURCE MANAGEMENT COMMANDS] `(agidev, unverified)` until run in a working interpreter. Still unspecified: whether the flag is cleared when playback starts, and what `stop.sound` does to it.
+**Flag-signal semantics.** The flag is set to 1 when playback finishes [4-4-Logic.html §SOUND RESOURCE MANAGEMENT COMMANDS] `(agidev, unverified)` until run in a working interpreter. `stop.sound` also sets it if a sound is playing, and does nothing otherwise. So do room changes and errors, which stop sound the same way [AGI 2.917 1000:516C, 1000:1797, 1000:3FED]. Still unread: whether the flag is cleared when playback starts.
 
 ### Print, display, screen (`$65..$71`)
 
@@ -229,7 +229,7 @@ Organized by opcode index. Section headers below group adjacent opcodes by purpo
 
 | Opcode | Mnemonic | Args | Signature |
 |--------|----------|------|-----------|
-| `$79` | `set.key` | 3 | num, num, cntrl |
+| `$79` | `set.key` | 3 | num, num, cntrl — low and high key-code bytes, then controller. The table has 39 slots, and calls past that are silently ignored [AGI 2.917 1000:4C3D] |
 | `$7A` | `add.to.pic` | 7 | num, num, num, num, num, num, num |
 | `$7B` | `add.to.pic.v` | 7 | var, var, var, var, var, var, var |
 

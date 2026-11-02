@@ -32,6 +32,13 @@ Code is `1000:xxxx` and data is `DS:xxxx`, where `DS` is segment `19F5`, filled 
 | `1000:357C` | Input event pump |
 | `1000:0644` | Per-object motion update |
 | `1000:0563` | Per-object screen update |
+| `1000:845A` | 60 Hz timer interrupt |
+| `1000:7E35` | 20 Hz routine: clock, delay counter, input polling |
+| `1000:44A9`, `1000:44F9` | Input queue add and remove |
+| `1000:4566` | Applies the `set.key` table to a queued key |
+| `1000:3652` | Input line editor |
+| `1000:119A` | LOGIC load, including message decryption |
+| `1000:516C` | Stop sound |
 | `1000:3FE8` | Error routine, setting `var(17)` and `var(18)` |
 | `1000:8D44` | Command trace display |
 | `DS:061D` | Action table, 4 bytes per entry: handler, argument count, mask |

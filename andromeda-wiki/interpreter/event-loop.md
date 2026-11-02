@@ -4,10 +4,10 @@ The interpreter repeats one cycle forever. This page gives the order read from A
 
 ## The cycle in 2.917
 
-1. **Wait for the timer** until a tick counter reaches `var(10)`, then reset the counter [AGI 2.917 1000:7EB1]. The counter runs throughout the cycle, so time spent working counts toward the delay. With `var(10) = 0` there is no wait. The tick length is unread; the spec says 50 ms per unit.
+1. **Wait for the timer** until a tick counter reaches `var(10)`, then reset the counter [AGI 2.917 1000:7EB1]. The counter runs throughout the cycle, so time spent working counts toward the delay. With `var(10) = 0` there is no wait. Each unit is 1/20 second; see "Timer" below.
 2. **Clear the 50-entry controller table** [AGI 2.917 1000:4C23].
 3. **Clear `flag(2)` and `flag(4)`.**
-4. **Check the joystick**, apparently: a routine active only when `DS:15BD` is set, which posts a direction event when the reading changes [AGI 2.917 1000:612B]. Unread in detail.
+4. **Read the joystick**, if one is present (`DS:15BD`), at most once every 9 timer ticks. It maps the axes to a direction from 0 to 8 and queues a direction event when the direction changes [AGI 2.917 1000:612B, 1000:62F7, 1000:6278]. A waiting keypress cancels the read.
 5. **Drain queued input events**, first clearing `var(19)` and `var(9)` [AGI 2.917 1000:357C]. See "Input events" below.
 6. **Sync EGO's direction.** Under program control `var(6)` takes EGO's direction. Under player control EGO's direction takes `var(6)`.
 7. **Update object motion.** Each object with all of flag bits `0x51` set, whose byte at offset 1 equals 1, gets its direction recalculated from its motion type (offset `0x22`, values 1–3), then a block check [AGI 2.917 1000:0644, 1000:067A].
@@ -18,13 +18,43 @@ The interpreter repeats one cycle forever. This page gives the order read from A
 12. **Clear `var(4)`, `var(5)`, `flag(5)`, `flag(6)` and `flag(12)`.**
 13. **Update objects on screen** unless `DS:174D` is set, which `text.screen` sets [AGI 2.917 1000:0563, 1000:7603].
 
+## Timer
+
+The interpreter reprograms the PC timer to 60 Hz (divisor `0x4DAE`) [AGI 2.917 1000:8380]. Each 60 Hz interrupt advances sound if one is playing. Every third interrupt also passes through to the BIOS, which triggers the interpreter's 20 Hz routine [AGI 2.917 1000:845A, 1000:8485, 1000:7E35].
+
+The 20 Hz routine does the following:
+
+- Advances an always-running tick count, which the joystick timing uses.
+- Polls the keyboard and joystick buttons and queues what it finds [AGI 2.917 1000:449A, 1000:467F, 1000:6192].
+- Unless paused, advances the `var(10)` counter and the clock: 20 ticks make one `var(11)` second, rolling over at 60 seconds, 60 minutes and 24 hours into `var(14)`.
+- Checks a guard value at the bottom of the stack. If it was overwritten, the interpreter shows a message, waits for Esc and exits [AGI 2.917 1000:849E].
+
+`pause`, `save.game` and `restore.game` set the paused state, so the clock and `var(10)` counter stop during those commands [AGI 2.917 1000:025C, 1000:275C, 1000:251B].
+
 ## Input events
 
-The pump reads events until the queue is empty. Events have a type and a value [AGI 2.917 1000:357C]:
+Input arrives through a 20-entry ring queue of events, each with a type and a value. Events are added by the timer, not by the cycle. When the queue is full, the newest event is dropped [AGI 2.917 1000:44A9].
 
-- **Type 1, key:** the value goes to `var(19)`, and to line input if input is enabled (`DS:05D3`).
+The keyboard poll sends each key through a direction lookup first: a direction key becomes a type 2 event, and anything else becomes type 1 [AGI 2.917 1000:467F]. The lookup itself (`46B6`) is unread.
+
+The pump reads events until the queue is empty. On the way out, each type 1 key is checked against the `set.key` table, and a match turns it into a type 3 event. A key bound to a controller therefore never reaches `var(19)` or the input line [AGI 2.917 1000:4566]. With the `-t` command-line switch, a second table can turn keys into directions [AGI 2.917 1000:46E8].
+
+The pump then handles each event [AGI 2.917 1000:357C]:
+
+- **Type 1, key:** the value goes to `var(19)`, and to the input line if input is enabled (`DS:05D3`). In Hercules mode any key except Enter goes through a separate prompt first.
 - **Type 2, direction:** `var(6)` takes the value, or 0 if EGO is already moving that way, so pressing the same direction again stops EGO. Under player control, EGO's motion type also resets to 0.
 - **Type 3, controller:** the value indexes the controller table entry to set.
+
+## Input line
+
+The input line handles keys as follows [AGI 2.917 1000:3652]:
+
+- **Backspace (8):** removes the last character.
+- **Line feed (10) and key 0:** ignored.
+- **Enter (13):** if the line isn't empty, saves it as the previous line, parses it, then clears it. An empty line does nothing.
+- **Anything else:** appended if the line is under its limit.
+
+The limit is the smaller of `var(24)` and 40 minus the prompt's length, or the smaller of `var(24)` and 36 when `DS:0D07` is set. It's one less while `DS:05D7` is set, which appears to be the cursor character.
 
 ## Where the spec differs
 
@@ -32,10 +62,11 @@ The pump reads events until the queue is empty. Events have a type and a value [
 > [2-2-Interpreter.html §Interpreter work cycle] differs from the binary as follows. None of these were caught before the audit.
 >
 > - **Contradicted, step 2:** the spec clears the keyboard buffer. 2.917 clears the controller table here, and queued key events survive to step 5.
+> - **Contradicted, step 4:** the spec polls input once per cycle. 2.917 polls the keyboard in the 20 Hz timer routine and queues it, and the cycle only drains the queue. Only the joystick axes are read from the cycle.
 > - **Contradicted, step 5:** the spec has program control read from `var(6)` and player control write into it. 2.917 does the reverse.
 > - **Contradicted, step 7:** the spec checks the status line before LOGIC 0. 2.917 checks once, after it.
 > - **Contradicted, step 11:** the spec tests for a room change at the end of the cycle, after the object update. 2.917 acts on it straight after LOGIC 0, before the update.
-> - **Refined, step 1:** this is a wait for an elapsed count, not a fixed sleep.
+> - **Refined, step 1:** this is a wait for an elapsed count, not a fixed sleep. The 50 ms unit is confirmed.
 > - **Refined, step 10:** the object update is skipped while `DS:174D` is set.
 
 ## When `new.room` takes effect
