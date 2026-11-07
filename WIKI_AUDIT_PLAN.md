@@ -27,7 +27,7 @@ Do not commit without the user's approval. The user writes all project code; age
 - Facts apply to 2.917 unless another version is checked. Use ScummVM for cross-version questions.
 - Describe behavior in prose. Never paste disassembly or translate routines line by line.
 - Pages stay spec-organized for now; the build document gets its own structure later.
-- Static reading is not proof. Queue anything load-bearing for the runtime pass. For PICTURE behavior, `tools/picture_emu/` runs the interpreter's own routine, so check new claims there first.
+- Static reading is not proof. Check anything load-bearing on the running interpreter with `tools/agi_emu/`, which runs all of 2.917 under emulation; add a scenario and cite it as `[2.917 runtime: scenario]`. For PICTURE behavior alone, `tools/picture_emu/` runs just the routine.
 - REA refuses this DOS MZ target on Windows, so analysis uses headless Ghidra. See `andromeda-wiki/sources/agi-2917-binary.md`.
 - When agents run in parallel, give each its own git worktree and its own copy of the Ghidra project, because Ghidra locks a project while it's open. Give each agent exclusive pages and have it hand off edits to shared pages, which a coordinator merges. Worktrees don't contain `test_games/`, so point agents at the main checkout's copy.
 - Before committing subagent findings, spot-check the riskiest claims against the binary or game data.
@@ -51,7 +51,7 @@ Left for later slices: the direction-key lookup (`46B6`, slice 2 with input), th
 - [x] `entities/logic`: header, entry point, `goto` offset base, message decryption, LOGIC load and discard
 - [x] Remaining action handlers, by group. All 174 now have a verdict. See the log entries of 2026-11-01 for each group; what stays Unread or Runtime only is listed under Resume notes
 - [x] `interpreter/input-parsing` and `said`
-- [ ] `interpreter/variables-and-flags`: every reserved slot
+- [x] `interpreter/variables-and-flags`: every reserved slot
 
 ### Slice 3: objects and drawing
 
@@ -70,25 +70,25 @@ Left for later slices: the direction-key lookup (`46B6`, slice 2 with input), th
 
 ### Slice 5: proof and the document
 
-- [ ] Runtime pass: capture traces and screens from the real interpreter for every "Runtime only" item
-- [ ] Mark out-of-scope v3 pages as unaudited rather than deleting them
-- [ ] Generate the start-to-finish build document from the wiki
+- [x] Runtime pass: capture traces and screens from the real interpreter for every "Runtime only" item
+- [x] Mark out-of-scope v3 pages as unaudited rather than deleting them
+- [x] Generate the start-to-finish build document from the wiki: `BUILD_GUIDE.md` at the repo root
 
 ## Resume notes
 
-Next item: `interpreter/variables-and-flags`. The handoffs' edits are already on that page, so finish by checking every remaining reserved slot, especially `var(7)`, `var(15)`, `var(19)`, `var(22)`, `flag(8)` and `flag(13)`, and by searching for indirect writes. "Only writer" claims need a raw byte scan as well as `AgiGrep`. Then do the v3 marking, the runtime pass, and the build document, in that order.
+The audit is complete. What remains is under "Open" below. When the wiki changes, keep `BUILD_GUIDE.md` in step: it summarizes the wiki and links to it, and doesn't add claims of its own.
 
-The six agents' full handoffs, with per-opcode verdicts and addresses to re-check, are outside the repo in `C:\Users\ebrah\tools\andromeda-re\audit_2026-11-01\handoffs\`. Each log entry from the merge summarizes its unit.
+Raw scans use `C:\Users\ebrah\tools\andromeda-re\scan\agiscan.py` (`mem`, `calls`, `dis`) and `ovl.py` for the overlays, run with `uv run --with capstone python -I`. The six agents' 2026-11-01 handoffs are in `C:\Users\ebrah\tools\andromeda-re\audit_2026-11-01\handoffs\`.
 
-### Runtime pass queue, from slices 2 to 4
+### Runtime pass
 
-- **Objects:** `end.of.loop`'s flag sharing offset `27` with motion parameters (SQ1 LOGICs 53 and 78). `set.loop` accepting a loop equal to the count (LOGIC 71 with VIEW 89). `draw` and `erase` accepting a number equal to the slot count. The placement search's unbounded walk. Step time 0.
-- **Drawing:** the control value kept when drawing over priority 0 to 2. `add.to.pic` rewriting `flag(0)`, `flag(1)` and `flag(3)`. The margin rectangle wrapping on narrow cels. `flag(0)` left set after a black first pixel. `get.priority` straight after `position`.
-- **Picture and display:** every driver path, since only the PICTURE routine ran in an emulator. Display colors on each monitor type. `show.pri.screen`. Composite CGA. `0xF0` under `-v` on machine type 0. Stack overflow from a fill. Line overflow, pen and splatter behavior in a game that uses them.
-- **Misc:** `quit(0)` skipping confirmation. A menu's controller arriving in the cycle it runs. `hold.key`. `shake.screen` effects. Disabled-item dither, menu geometry, `status` selection, the `toggle.monitor` color change.
-- **Memory:** heap base and the 16-bit top wrap. Stale records after a mixed discard or a temporary `call`. `new.room` inside a temporary `call`. A larger second `script.size`. `set.menu` over save areas.
-- **Save and debug:** a real save file's bytes, with an expected size for SQ1 of 2,748 + 4 × (loaded LOGICs + 1) and the game ID at offset 33. Restore from a file. ALT-D in SQ1. Trace window output. `trace.on` when already on.
+Done on 2026-11-07 with `tools/agi_emu/`, one scenario per claim, each named in that claim's citation. See `andromeda-wiki/sources/agi-2917-runtime.md` and the log entry of that date. It also corrected one static claim, the size of save block 5.
 
-### Still unread
+### Open
 
-`HGC_OBJS.OVL` and the rest of the Hercules driver. Driver entries `9777` (view load hook) and `97D9`. Replay caller `1000:6826`. Joystick routine `635E`. The lookup `46B6`. Restart's sub-clears `396D`, `5004`, `49DC`. Drive checks in `5B15`, `5D39`, `5D76`. A fill with an unmasked color byte such as `0x1F`. Other games' debug phrases.
+These can't be settled with what's local:
+
+- **Analog display output.** Composite CGA artifact colors, and how any monitor shows a palette. The registers and memory each driver writes are recorded.
+- **DOS's own behavior.** The result of a divide by zero, which DOS's handler decides, and whether a heap filled exactly to its 16-bit top writes the file's last 16 bytes over `DS:0000`, which depends on how DOS reads across a 64K offset boundary.
+- **Menu box geometry in pixels.** Text positions are confirmed; the box itself goes through the driver's fill and wasn't compared pixel by pixel.
+- **Other games' debug phrases**, which need games that aren't local.

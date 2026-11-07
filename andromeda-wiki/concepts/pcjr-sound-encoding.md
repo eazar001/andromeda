@@ -37,7 +37,7 @@ The base frequency 111,860 Hz is reported as 1/32 of the PCjr system clock (3.57
 
 **Code corroboration.** `play.c:116` (vendored at `AGI_Specifications/Code/play.c`) uses `111860.0 / freq`, matching the spec.
 
-**PC speaker constant.** On the speaker, 2.917 programs the PC timer with `divisor × 12` [AGI 2.917 1000:8115, 1000:8068]. With the timer's 1,193,180 Hz clock, that gives `99,432 / divisor`, about 11% lower than the sound chip. This explains the outlier in `oldplay.c:91` ([[sources/7-2-sound]]), which uses `99320 / fileData`: it's the speaker's constant, approximately. A reimplementation should pick the constant by the machine it emulates. Runtime only.
+**PC speaker constant.** On the speaker, 2.917 programs the PC timer with `divisor × 12` [AGI 2.917 1000:8115, 1000:8068]. With the timer's 1,193,180 Hz clock, that gives `99,432 / divisor`, about 11% lower than the sound chip. This explains the outlier in `oldplay.c:91` ([[sources/7-2-sound]]), which uses `99320 / fileData`: it's the speaker's constant, approximately. A reimplementation should pick the constant by the machine it emulates. **Confirmed at runtime:** for SOUND 1 on machine type 0, the PIT channel 2 divisors were exactly 12 times the notes' divisors, programmed in mode 3 [2.917 runtime: speaker_divisor_on_pc].
 
 ## Noise frequency encoding (2-bit selector)
 

@@ -48,5 +48,6 @@ One line per `> [!conflict]` callout. Each callout stays on its page, beside the
 | [[interpreter/memory-layout]] | 4-4 vs. AGI 2.917: later resources |
 | [[interpreter/memory-layout]] | 2-4 vs. AGI 2.917: the first two regions |
 | [[interpreter/memory-layout]] | 2-4 vs. AGI 2.917: one arena |
+| [[interpreter/save-restore]] | Static reading vs. AGI 2.917 at runtime: block 5's size (resolved) |
 | [[interpreter/view-objects]] | 6-2 vs. AGI 2.917, motion type 3 |
 | [[interpreter/view-objects]] | 6-2 vs. AGI 2.917, doubled fields |

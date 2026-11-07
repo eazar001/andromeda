@@ -24,6 +24,8 @@ The table is 168 bytes at `DS:1270`, built at startup: 48 entries of 4, then 12 
 | `144 ≤ y < 156`| 13 |
 | `156 ≤ y < 168`| 14 |
 
+The table the interpreter builds at runtime matches these bands exactly, rows 0 to 167 [2.917 runtime: priority_table_and_cycle_delay].
+
 The screen is 168 rows tall. The lookup uses the low byte of `y` as an unchecked index, so it relies on the placement checks keeping `y` at 167 or less [AGI 2.917 1000:5607, 1000:5974].
 
 ## When automatic priority is assigned
@@ -32,7 +34,7 @@ Refined from "whenever `y` changes". Priority is reset from the table only insid
 
 So the value follows `y` through motion steps and placement, but not at once:
 
-- `position` and `position.v` only write the coordinates [AGI 2.917 1000:7B53, 1000:7B90], so `get.priority` straight after them should return the old value. Marked Runtime only.
+- `position` and `position.v` only write the coordinates [AGI 2.917 1000:7B53, 1000:7B90], so `get.priority` straight after them returns the old value. Confirmed at runtime: an object at `y` 60 read priority 6 before and straight after `position(1, 50, 150)`, and 13 two cycles later [2.917 runtime: get_priority_after_position].
 - Objects that aren't updating, such as those under `stop.update`, keep their value until something tests them again.
 
 ## How a cel pixel is compared

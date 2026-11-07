@@ -15,6 +15,8 @@ The AGI command set grew across interpreter versions, and four commands changed 
 | Unknown #176 | 1 | 3.002.086 only |
 | Unknown #176 | 0 | All later v3 versions ≥ 3.002.098 |
 
+The two `#176` rows are v3 and unaudited, since 2.917 has no opcode above `$AD`.
+
 > [!conflict]
 > **The `print.at` / `print.at.v` boundary version is ambiguous in the spec.** Both [2-8-Interpreter.html] and [4-3-Logic.html §Action commands] carry the same string "2.400" — 2-8 in prose ("for versions 2.089 - 2.400 and four for the other versions"), 4-3 in inline note cells on opcodes `$97 print.at` and `$98 print.at.v`. `2.400` is not a real AGI interpreter version — it appears in neither [[sources/2-7-interpreter]]'s game-cross-reference enumeration nor 2-8's own version table. Two same-era chapters carrying the identical erroneous string strengthens the typo reading rather than the real-version reading. Plausible corrections:
 >

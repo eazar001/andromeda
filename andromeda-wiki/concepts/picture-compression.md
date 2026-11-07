@@ -1,5 +1,7 @@
 # PICTURE Compression
 
+> **Audit status: unaudited (v3).** This page describes AGI v3. The audit checks the wiki against interpreter 2.917, which is v2 and has none of this, so every claim here rests on the spec alone. Cross-check with ScummVM before building on it.
+
 AGI v3 PICTURE resources use a lightweight, lossless compression scheme specific to PICTURE data — distinct from [[concepts/lzw-compression]] [3-3-Files.html §PICTURE COMPRESSION].
 
 ## Scheme

@@ -1,6 +1,6 @@
 # Source: AGI 2.917 interpreter binary
 
-Static analysis of the interpreter shipped with the local SQ1 copy. It is the top-ranked source for what 2.917 does and says nothing about other versions [WIKI.md §Source-reliability rules]. Everything here comes from reading code, not from running it, except the PICTURE routine, which was also run alone in an x86 emulator with `tools/picture_emu/`; see [[concepts/picture-rendering]].
+Static analysis of the interpreter shipped with the local SQ1 copy. It is the top-ranked source for what 2.917 does and says nothing about other versions [WIKI.md §Source-reliability rules]. Everything here comes from reading code, not from running it, except the PICTURE routine, which was also run alone in an x86 emulator with `tools/picture_emu/`; see [[concepts/picture-rendering]]. The whole interpreter has since been run too; see [[sources/agi-2917-runtime]].
 
 ## Identity
 
@@ -15,7 +15,7 @@ Static analysis of the interpreter shipped with the local SQ1 copy. It is the to
 - REA 6.8.0 refuses DOS MZ targets on Windows, so analysis uses Ghidra 12.1.4 headless. The scripts and run command are in `tools/ghidra/`, and the project, which contains the decoded interpreter, stays outside the repo in `C:\Users\ebrah\tools\andromeda-re\`.
 - Ghidra cannot see handlers reached only through `AGIDATA.OVL`, so `AgiSeed.java` loads the overlay and seeds them. That raised disassembled bytes from 16,241 to 33,985.
 - Ghidra's instruction text prints moves into segment registers with the operands swapped. Trust the raw bytes for those.
-- The overlays aren't in the Ghidra project, which ends before them at `1000:9800`, so read them with a 16-bit disassembler at their load base. The loader's table at `1964:0004` has 16-byte entries giving segment, name and size in paragraphs: `CGA_GRAF`, `JR_GRAF`, `EGA_GRAF`, `HGC_GRAF` and `VG_GRAF` load at `1000:9740`, `IBM_OBJS` and `HGC_OBJS` at `1000:9CF0`, then `AGIDATA` [AGI 2.917 1000:66FC, 1000:8155]. `HGC_OBJS` is unread.
+- The overlays aren't in the Ghidra project, which ends before them at `1000:9800`, so read them with a 16-bit disassembler at their load base. The loader's table at `1964:0004` has 16-byte entries giving segment, name and size in paragraphs: `CGA_GRAF`, `JR_GRAF`, `EGA_GRAF`, `HGC_GRAF` and `VG_GRAF` load at `1000:9740`, `IBM_OBJS` and `HGC_OBJS` at `1000:9CF0`, then `AGIDATA` [AGI 2.917 1000:66FC, 1000:8155]. See [[concepts/ega-palette]] §"Other displays" for the Hercules overlays.
 - `AgiGrep` can miss direct memory moves, so confirm "only writer" claims with a raw byte scan. The file offset is `1000:xxxx` + `0x200`.
 
 ## Addresses

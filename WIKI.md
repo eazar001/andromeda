@@ -29,6 +29,7 @@ Empty subdirectories carry a `.gitkeep` until they hold real pages.
   - Spec citation: `[3-2-Files.html §VOL layout]`
   - Code citation: `[resource/view.py:get_view_data]` or `[ScummVM agi/decode.cpp:42]`
   - Binary citation: `[AGI 2.917 1000:02C4]` for a routine, `[AGI 2.917 DS:061D]` for data
+  - Runtime citation: `[2.917 runtime: scenario]`, naming a function in `tools/agi_emu/scenarios.py` that reproduces the result; see [[sources/agi-2917-runtime]]
   - Multiple sources cited together when they corroborate: `[6-1-VIEW.html §cel header; resource/view.py:get_view_data]`
 - **Contradictions between sources are flagged inline** with an Obsidian callout:
   ```
@@ -36,6 +37,7 @@ Empty subdirectories carry a `.gitkeep` until they hold real pages.
   > agidev.com claims X. ScummVM treats it as Y. Ground truth: Y, per [resource/view.py] which round-trips Y correctly on sq1.
   ```
   Callouts stay inline, beside the claim they contradict, however many there are. `andromeda-wiki/conflicts.md` indexes them with one line per callout, so update it when adding or removing one.
+- **v3 content is marked unaudited.** The audit checks the wiki against interpreter 2.917, which is v2. A page that is wholly about v3 opens with an "Audit status: unaudited (v3)" blockquote, and a v3 section or sentence on a mixed page is labeled "Unaudited (v3)". Source pages summarize chapters and carry no marker.
 - **No orphans.** Every page is linked from `index.md` and reachable in ≤2 hops. Every new page adds an `index.md` entry in the same edit.
 
 ## Source-reliability rules

@@ -20,7 +20,7 @@ The chapter flags four behaviors as unspecified, marked with translator's-note b
 1. **`addn` / `addv` overflow** — wraps at 8 bits, so 250 + 10 = 4.
 2. **`subn` / `subv` underflow** — wraps at 8 bits, so 1 - 2 = 255.
 3. **`mul.n` / `mul.v` overflow** — keeps the low 8 bits of the product.
-4. **`div.n` / `div.v` by zero** — the interpreter neither checks for it nor installs a handler for the CPU's divide error, so control passes to DOS [AGI 2.917 1000:7395, 1000:8369]. The result on real hardware is Runtime only. A reimplementation should treat it as a fatal error. Division is unsigned and keeps the quotient.
+4. **`div.n` / `div.v` by zero** — the interpreter neither checks for it nor installs a handler for the CPU's divide error, so control passes to DOS [AGI 2.917 1000:7395, 1000:8369]. The result depends on DOS's own divide-error handler, which the runtime harness doesn't model, so it stays open. The interpreter does hook `int 23h` to a bare `IRET` [AGI 2.917 1000:836D, 1000:84F3], which matters if that handler goes through Ctrl-C handling. A reimplementation should treat it as a fatal error. Division is unsigned and keeps the quotient.
 
 `increment` and `decrement` saturate at 255 and 0 [4-4-Logic.html §ARITHMETIC COMMANDS; AGI 2.917 1000:728E, 1000:72A1], so `addn(var, 1)` is not the same as `increment(var)` at the boundary.
 
@@ -61,7 +61,7 @@ All comparisons are unsigned 8-bit [AGI 2.917 1000:0823–1000:089A]. `lessn` an
 
 > "Remember that when a resource is unloaded, all resources loaded after it ARE ALSO AUTOMATICALLY UNLOADED!"
 
-Load order does decide what is reclaimed, because the heap only grows and shrinks at its top. In 2.917 the rule holds fully for memory but only partly for bookkeeping: a discard reclaims all later memory, yet cuts only its own type's list, so resources of other types can stay listed with stale pointers. See the callout in [[interpreter/memory-layout]] §"Releasing memory" [AGI 2.917 1000:3F0D, 1000:4BCE]. By reading only; queued for runtime.
+Load order does decide what is reclaimed, because the heap only grows and shrinks at its top. In 2.917 the rule holds fully for memory but only partly for bookkeeping: a discard reclaims all later memory, yet cuts only its own type's list, so resources of other types can stay listed with stale pointers. See the callout in [[interpreter/memory-layout]] §"Releasing memory" [AGI 2.917 1000:3F0D, 1000:4BCE]. Confirmed at runtime there.
 
 ### Load and discard handlers
 
@@ -73,7 +73,7 @@ Read from AGI 2.917. Heap details are in [[interpreter/memory-layout]].
 - **`script.size(n)`** sets the script buffer's size to `n` entries of 2 bytes each and empties the log. Its byte argument limits `n` to 255 [AGI 2.917 1000:70A3, 1000:6FB5].
 
 > [!conflict] Spec silent vs. AGI 2.917: resizing the script buffer
-> 4-4 presents `script.size` as setting the buffer's size. In 2.917 the buffer is allocated only once, by the first `script.size` or `new.room`, with a default of 50 entries. A later call changes the limit but not the buffer, so a larger size lets entries overflow into the heap above it. Any call also discards the current room's log. `script.size(0)` makes the next recorded command raise error `0x0B` [AGI 2.917 1000:6FC1, 1000:7004]. By reading only. SQ1 doesn't use this command [SQ1 data check, memory unit, log 2026-11-01].
+> 4-4 presents `script.size` as setting the buffer's size. In 2.917 the buffer is allocated only once, by the first `script.size` or `new.room`, with a default of 50 entries. A later call changes the limit but not the buffer, so a larger size lets entries overflow into the heap above it. Any call also discards the current room's log. `script.size(0)` makes the next recorded command raise error `0x0B` [AGI 2.917 1000:6FC1, 1000:7004]. **Confirmed at runtime:** after `script.size(10)` before any room, then `script.size(100)` and 23 recorded loads, the entries ran past the 20-byte buffer and overwrote the VIEW records above it, leaving the view list reading `1, 255, 0, 14, …` where views 2 to 13 had been. `script.size(0)` then one load gave `var(17)` = `0x0B` [2.917 runtime: script_size_resize_and_zero]. SQ1 doesn't use this command [SQ1 data check, memory unit, log 2026-11-01].
 
 ### Missing command variants
 
@@ -98,7 +98,7 @@ Read from AGI 2.917. Heap details are in [[interpreter/memory-layout]].
 >  `load.pic(n); draw.pic(n); discard.pic(n); ...; show.pic;`
 >  Any other order may crash the interpreter without any diagnostic messages."
 
-The discard between `draw.pic` and `show.pic` works because `show.pic` doesn't use the resource [AGI 2.917 1000:4B82]. The spec calls any other order a crash hazard, but 2.917 enforces no order, and keeping a picture loaded is harmless in itself. The hazards found by reading are `draw.pic` on a picture that isn't loaded, which raises error `0x12` rather than crashing [AGI 2.917 1000:4AE8], and the stale records described in [[interpreter/memory-layout]]. Whether another order crashes is Runtime only.
+The discard between `draw.pic` and `show.pic` works because `show.pic` doesn't use the resource [AGI 2.917 1000:4B82]. The spec calls any other order a crash hazard, but 2.917 enforces no order, and keeping a picture loaded is harmless in itself. The hazards found by reading are `draw.pic` on a picture that isn't loaded, which raises error `0x12` rather than crashing [AGI 2.917 1000:4AE8], and the stale records described in [[interpreter/memory-layout]], which do decode garbage at runtime there. No crash came from order alone.
 
 ### PICTURE commands
 
@@ -205,7 +205,7 @@ Behavior of opcodes `$21`..`$5B`, `$83`, `$84`, `$93` and `$94` in 2.917, read f
 - **`erase`**: error `0x0C` if out of range. It does nothing if not drawn. It clears only the drawn bit, so the object stays animated [AGI 2.917 1000:0AAB].
 
 > [!conflict] Bound checks that let one extra number through
-> `draw` and `erase` accept an object number equal to the slot count, because they compare with "end of table >= entry", unlike `animate.obj`'s strict check [AGI 2.917 1000:0A21, 1000:0AC9, 1000:0510]. The entry they then use lies past the table. **Runtime only.**
+> `draw` and `erase` accept an object number equal to the slot count, because they compare with "end of table >= entry", unlike `animate.obj`'s strict check [AGI 2.917 1000:0A21, 1000:0AC9, 1000:0510]. The entry they then use lies past the table. **Confirmed at runtime:** in 2.917's heap order, the bytes after the table are LOGIC 0's list record and bytecode. With 18 slots, `draw(18)` did nothing, because the byte at the flags offset happened to have the drawn bit set. `erase(18)` cleared that bit and copied the cel pointer into the previous-cel field, which rewrote two commands of LOGIC 0's own bytecode, after which LOGIC 0 no longer counted cycles. `animate.obj(18)` raised error `0x0D` as expected [2.917 runtime: draw_and_erase_one_past_table].
 
 ### Position
 
@@ -223,7 +223,7 @@ Behavior of opcodes `$21`..`$5B`, `$83`, `$84`, `$93` and `$94` in 2.917, read f
 - **`fix.loop`**, **`release.loop`**: set and clear bit 13 only [AGI 2.917 1000:497B, 1000:49A3].
 
 > [!conflict] `set.loop` bound
-> The check rejects a loop only if it's **greater than** the count, so a loop equal to the count passes, unlike the cel check, which is strict [AGI 2.917 1000:3BEF, 1000:3D03]. That loop reads its offset from past the VIEW's loop table. This isn't hypothetical: LOGIC 71 has `set.view(11, 89)` directly followed by `set.loop(11, 3)`, and VIEW 89 has 3 loops. There, the offset read is 4873, past the end of the 1,529-byte resource [SQ1 data check, log 2026-11-01]. The scan is linear, so reaching that code isn't shown. **Runtime only.**
+> The check rejects a loop only if it's **greater than** the count, so a loop equal to the count passes, unlike the cel check, which is strict [AGI 2.917 1000:3BEF, 1000:3D03]. That loop reads its offset from past the VIEW's loop table. This isn't hypothetical: LOGIC 71 has `set.view(11, 89)` directly followed by `set.loop(11, 3)`, and VIEW 89 has 3 loops. There, the offset read is 4873, past the end of the 1,529-byte resource [SQ1 data check, log 2026-11-01]. The scan is linear, so reaching that code isn't shown. **Confirmed at runtime:** `set.view(1, 89)` then `set.loop(1, 3)` stored loop 3, read a cel count of 0 from the heap after the view, and the next cel operation raised error 8 with `var(18)` = 1. The game ran on [2.917 runtime: set_loop_equal_to_count].
 
 ### Priority and updates
 
@@ -328,10 +328,10 @@ The packing has two side effects. Only the low 4 bits of the margin survive, so 
 
 **The rectangle** is hollow and changes only the priority nibble, never the color [AGI 2.917 1000:5771–1000:57AB]. It has the cel's width. Its bottom is the cel's bottom row, and its height is the smaller of the cel's height and the number of rows from `y` upward that share `y`'s band [AGI 2.917 1000:573E–1000:5769].
 
-Two quirks read from the code, both Runtime only:
+Two quirks read from the code, both confirmed at runtime:
 
-- With a rectangle height above 1, a cel 2 pixels wide makes the rectangle's top-row counter start at zero, so it wraps and writes the priority nibble across the whole 64K segment. A cel 1 pixel wide writes 255 bytes. No literal SQ1 call combines a margin below 4 with such a narrow cel [AGI 2.917 1000:579F–1000:57AB; SQ1 data check, audit draw].
-- The private object's number stays 0, because nothing writes `DS:0EAE`, and object 0 is EGO to the routines that set EGO's flags. So each call clears `flag(0)` and `flag(3)` in the baseline test and rewrites `flag(1)` when drawing. `show.obj` guards against this by using object number `0xFF`, and `add.to.pic` doesn't [AGI 2.917 1000:5663, 1000:9E2C, 1000:5EAA].
+- With a rectangle height above 1, a cel 2 pixels wide makes the rectangle's top-row counter start at zero, so it wraps and writes the priority nibble across the whole 64K segment. A cel 1 pixel wide writes 255 bytes. No literal SQ1 call combines a margin below 4 with such a narrow cel [AGI 2.917 1000:579F–1000:57AB; SQ1 data check, audit draw]. At runtime, margin 0 with a 4-row cel at `y` 59: a 3-pixel cel drew a normal hollow rectangle, a 1-pixel cel wrote a 255-byte run along one row, and a 2-pixel cel set the priority of 26,237 of the buffer's 26,880 bytes to 0, the rest already being 0, turning the whole screen into a barrier. With a rectangle height of 1, at `y` 120, a 2-pixel cel was harmless [2.917 runtime: narrow_cel_margin_rectangle].
+- The private object's number stays 0, because nothing writes `DS:0EAE`, and object 0 is EGO to the routines that set EGO's flags. So each call clears `flag(0)` and `flag(3)` in the baseline test and rewrites `flag(1)` when drawing. `show.obj` guards against this by using object number `0xFF`, and `add.to.pic` doesn't [AGI 2.917 1000:5663, 1000:9E2C, 1000:5EAA]. At runtime, with all three flags set beforehand, an `add.to.pic` left all three clear, on plain ground and over an all-cyan baseline alike, while a run without it kept them set [2.917 runtime: add_to_pic_rewrites_ego_flags].
 
 PICTURE bytecode has no VIEW-composition opcodes ([[entities/picture]]), so `add.to.pic` is purely a LOGIC-side operation.
 
@@ -424,7 +424,7 @@ Output never scrolls: on row 24, a newline stays on that row. Past column 39 it 
 `set.text.attribute(fg, bg)` behaves differently by mode [AGI 2.917 1000:770E, 1000:773C]:
 
 - **Text mode:** both colors apply.
-- **Graphics mode:** `bg` is only zero or non-zero. Non-zero draws inverted text and ignores `fg`, which is how the status line gets black on white. How inverted glyphs reach the screen varies by display and is unread.
+- **Graphics mode:** `bg` is only zero or non-zero. Non-zero draws inverted text and ignores `fg`, which is how the status line gets black on white. Outside type 8, the interpreter copies the character's glyph from the ROM font at `F000:FA6E`, XORs every row with `FF`, and prints it as character `0x80` with the user-font vector pointed at the copy [AGI 2.917 1000:2A7A, 1000:2C37, 1000:2C55, 1000:2AB6]. On type 8 it uses a BIOS attribute instead. Seen at runtime on EGA [2.917 runtime: menu_delivery_and_look].
 
 `clear.lines(first, last, color)` and `clear.text.rect(row1, col1, row2, col2, color)` also don't use a real color. In graphics mode a non-zero value fills with `0xFF`, which should appear white, and 0 fills black. In text mode they always fill black [AGI 2.917 1000:764D, 1000:768C, 1000:77E6].
 
@@ -447,7 +447,7 @@ Strings live in a table at `DS:020D`, 40 bytes each. The next variable starts at
 | Command | Behavior |
 |---|---|
 | `set.string(s, m)` | Copies message `m`, up to 39 characters plus the terminator [AGI 2.917 1000:0D37]. |
-| `word.to.string(s, w)` | Copies input word `w`, **numbered from 0**, with the same limit. There's no check against the word count. Parsing clears the word codes but not these text pointers, so a slot past the current line's words keeps its pointer from an earlier line [AGI 2.917 1000:0D70, 1000:18C8]. A slot never used is null, which copies from `DS:0000`; see [[entities/logic]] §"Text section". Runtime only. |
+| `word.to.string(s, w)` | Copies input word `w`, **numbered from 0**, with the same limit. There's no check against the word count. Parsing clears the word codes but not these text pointers, so a slot past the current line's words keeps its pointer from an earlier line [AGI 2.917 1000:0D70, 1000:18C8]. A slot never used is null, which copies from `DS:0000`; see [[entities/logic]] §"Text section". At runtime it copied `80 1E 53 51`, the stack base and then the game ID `SQ` [2.917 runtime: null_message_reads]. |
 | `get.string(s, m, row, col, len)` | Empties the string, prints the formatted prompt, and reads up to `len` characters, at most 39 [AGI 2.917 1000:0C44]. A row of 25 or more keeps the current cursor position. |
 | `get.num(m, v)` | Prints the prompt on the input row at column 0 and reads up to 3 characters. Leading spaces are skipped, digits are read up to the first non-digit, and the low byte goes in `var(v)`, so 300 becomes 44 [AGI 2.917 1000:7126, 1000:4DC6]. |
 | `parse(s)` | Ignores strings 12 and up. See [[interpreter/input-parsing]]. |
@@ -460,7 +460,7 @@ Strings live in a table at `DS:020D`, 40 bytes each. The next variable starts at
 
 **Word numbering.** `%w` counts from 1 and `word.to.string` from 0, so `%w1` and `word.to.string(s, 0)` give the same word.
 
-**Hercules.** `get.string` and `get.num` take a separate prompt path on Hercules [AGI 2.917 1000:0CF3, 1000:718F], which is unread.
+**Hercules.** `get.string` and `get.num` take a separate prompt path on Hercules [AGI 2.917 1000:0CF3, 1000:718F]. It opens the centered prompt window that the Hercules input line uses, 36 columns wide and headed by the formatted prompt message, runs the normal line editor inside it, then closes it [HGC_GRAF.OVL +0x452, +0x593]. See [[interpreter/event-loop]] §"Input events".
 
 ## `said` test command — algorithm
 
@@ -497,6 +497,8 @@ Behavior then depends on `flag(13)`:
 | **Highlight** | White on black, starting on the item whose number equals `var(25)`, otherwise the first entry | None |
 | **Ends on** | Enter, which sets `var(25)` to the highlighted item; Esc, which sets it to 255 | Any key or direction event |
 | **`var(25)`** | Written | Untouched |
+
+Confirmed at runtime for the `flag(13)` case: the title, item columns and row 24 prompt appeared where stated, Enter returned the item `var(25)` started on, and Esc returned 255 [2.917 runtime: status_selection].
 
 Up and down move two entries, and left and right move one, so right from a row's second item reaches the next row. Diagonals do nothing. A move past either end of the list is ignored, with no wrap-around [AGI 2.917 1000:33FC]. Joystick buttons count as Enter and Esc [AGI 2.917 1000:4634].
 
@@ -552,7 +554,7 @@ The menu reads raw events, so `set.key` bindings don't apply inside it, and any 
 
 [AGI 2.917 1000:93B5, 1000:945F]. Joystick buttons count as Enter and Esc, and on a Tandy the second key table applies [AGI 2.917 1000:4634, 1000:46E8].
 
-**Delivery.** The pump drains the queue right after the menu closes, so the chosen controller is set before LOGIC 0 runs in the same cycle. A script therefore sees the choice in the cycle after its `menu.input` call, and only in that cycle, since the table is cleared at the start of each one. The controller code isn't bounds-checked anywhere, and the spec's range of 0 to 255 overruns the 50-entry table [AGI 2.917 1000:362B]. SQ1's codes go up to 28.
+**Delivery.** The pump drains the queue right after the menu closes, so the chosen controller is set before LOGIC 0 runs in the same cycle. A script therefore sees the choice in the cycle after its `menu.input` call, and only in that cycle, as observed at runtime [2.917 runtime: menu_delivery_and_look], since the table is cleared at the start of each one. The controller code isn't bounds-checked anywhere, and the spec's range of 0 to 255 overruns the 50-entry table [AGI 2.917 1000:362B]. SQ1's codes go up to 28.
 
 Each menu remembers its highlighted item, and the interpreter remembers the current menu, so the menu reopens where the player left it [AGI 2.917 1000:94ED, 1000:947F].
 
@@ -562,7 +564,7 @@ Row 0 is always the menu bar, whatever row `configure.screen` gives the status l
 
 The item box is `length * 4 + 8` units wide and `(items + 2) * 8` pixels high, using the first item's length. It covers screen rows 1 to `items + 2`, with its left edge one column before the items. It uses the `print` window's box routine with fill color 15 [AGI 2.917 1000:95C4, 1000:54C8].
 
-Disabled text is dithered in graphics modes other than Hercules and monitor type 4, where it looks the same as enabled text [AGI 2.917 1000:953E, 1000:2A85, 1000:2C46]. How it looks on screen is Runtime only.
+Disabled text is dithered in graphics modes other than Hercules and monitor type 4, where it looks the same as enabled text [AGI 2.917 1000:953E, 1000:2A85, 1000:2C46]. At runtime, with a solid font in ROM, the glyph buffer showed the mechanism: menu text is the glyph inverted, black on white; the highlighted entry is printed normally; and a disabled item is the inverted glyph ORed with alternating `55` and `AA` rows. So half of each disabled glyph's black pixels, in a checkerboard, turn white, and the text looks grey [AGI 2.917 1000:2C37, 1000:2C46; 2.917 runtime: menu_delivery_and_look].
 
 On closing, the box area is restored from the picture and the cursor and text attribute are put back. If the status line is on it's redrawn at its own row, otherwise row 0 is cleared to black [AGI 2.917 1000:94E2, 1000:9396]. So with the status line on another row, the menu bar stays on row 0 until something overwrites it.
 
@@ -585,7 +587,7 @@ Three other routines draw from the same generator [AGI 2.917 1000:0C0B, 1000:3F8
 
 **`quit(n)`** stops the sound first, even if the player then keeps playing. With `n` = 1 it exits at once. **Any other value asks**, not just the spec's 0, showing `Press ENTER to quit.` / `Press ESC to keep playing.` [AGI 2.917 1000:027F, DS:05E3]. The exit closes the log, restores the machine state and returns code 0 to DOS [AGI 2.917 1000:02AE, 1000:81AE].
 
-The prompt's wait returns 1 for Enter and 0 for Esc. But with `flag(15)` set or `var(21)` non-zero it always returns 1, so `quit(0)` then exits with no confirmation, and Esc can't cancel it [AGI 2.917 1000:1D16, 1000:1D7D, 1000:4618].
+The prompt's wait returns 1 for Enter and 0 for Esc. But with `flag(15)` set or `var(21)` non-zero it always returns 1, so `quit(0)` then exits with no confirmation, and Esc can't cancel it [AGI 2.917 1000:1D16, 1000:1D7D, 1000:4618]. Confirmed at runtime: with neither set it waited at the prompt, and with either it exited with code 0 [2.917 runtime: quit_zero_confirmation].
 
 **`pause`** sets the paused state, which stops the clock and `var(10)` counter. It clears queued input, stops the sound, shows `Game paused.` / `Press Enter to continue.`, and clears the paused state [AGI 2.917 1000:0257, DS:0C05].
 
@@ -605,7 +607,7 @@ The prompt's wait returns 1 for Enter and 0 for Esc. But with `flag(15)` set or 
 | 3 (EGA) | Copies the screen to page 1 with an offset, then flips pages | 8 flips, each 4 vertical retraces |
 | 4 | Inverts 16 VGA color registers and back, so the screen flashes rather than moves | 20 inversions, one 20 Hz tick each |
 
-The last three are in the display overlays, at `9B23` in `HGC_GRAF.OVL`, `98F8` in `EGA_GRAF.OVL` and `9856` in `VG_GRAF.OVL`, with those files loaded at `9740`. The spec's "shakes n times" holds only loosely, and how each looks is Runtime only.
+The last three are in the display overlays, at `9B23` in `HGC_GRAF.OVL`, `98F8` in `EGA_GRAF.OVL` and `9856` in `VG_GRAF.OVL`, with those files loaded at `9740`. The spec's "shakes n times" holds only loosely. At runtime, `shake.screen(1)` on CGA wrote CRTC registers 2 and 7 in five pairs around vertical base 112 over 13 ticks at 60 Hz, and on a Tandy around base 56 over 15 ticks; EGA made 8 BIOS page selects, alternating pages 1 and 0; Hercules wrote its mode port 8 times; and VGA made 21 BIOS palette calls over 58 ticks [2.917 runtime: shake_screen_by_monitor]. How each looks on a monitor isn't something the harness can show.
 
 With `n` = 0, the count is used as a 16-bit loop counter that starts by wrapping, so it repeats 65,536 times, which in effect hangs the game [AGI 2.917 1000:79AE]. SQ1 only uses 1 and 2 [SQ1 data check, log 2026-11-01]. A reimplementation should do nothing for 0.
 
@@ -615,7 +617,7 @@ With `n` = 0, the count is used as a 16-bit loop counter that starts by wrapping
 
 **`cancel.line`** sends backspaces to the input line until it's empty [AGI 2.917 1000:3726]. It doesn't check whether input is enabled.
 
-On Hercules, while `DS:0D07` is clear, `cancel.line` does nothing and `echo.line` goes through a separate prompt, which is unread.
+On Hercules, while `DS:0D07` is clear, `cancel.line` does nothing and `echo.line` opens the `ENTER COMMAND` prompt window with the previous line appended, then edits it there like a typed line [AGI 2.917 1000:3775, 1000:37A5; HGC_GRAF.OVL +0x452, +0x52B].
 
 ### `open.dialogue`, `close.dialogue`
 
@@ -659,7 +661,7 @@ The spec leaves these four unnamed. The names are ScummVM's [`engines/agi/opcode
 - **`$AA set.simple(s)`** copies string `s`, at most 30 characters plus the terminator, to a save-name buffer at `DS:0E6A` [AGI 2.917 1000:2726, 1000:4D21]. `save.game` and `restore.game` both test that buffer, and a non-empty value changes how they ask for a name and slot [AGI 2.917 1000:2548, 1000:2782, 1000:887D]. See [[interpreter/save-restore]] §"Named saves with `$AA`".
 - **`$AB push.script`** saves the script buffer's entry count in one slot at `DS:05E1`, with no nesting [AGI 2.917 1000:70C4].
 - **`$AC pop.script`** restores that count and moves the write position to match, which drops every entry added since [AGI 2.917 1000:70D6].
-- **`$AD hold.key`** increments `DS:1526`, and no code ever decrements it, so the mode can't be turned off [AGI 2.917 1000:5F67, 1000:601E]. In this mode the keyboard interrupt queues a stop (a type 2 event with value 0) when a held direction key is released, so `var(6)` becomes 0 and EGO moves only while the key is held. This applies to eight keys, scan codes `47h` to `51h` except `4Ah`, `4Ch` and `4Eh` [AGI 2.917 1000:5FF8, DS:150F].
+- **`$AD hold.key`** increments `DS:1526`, and no code ever decrements it, so the mode can't be turned off [AGI 2.917 1000:5F67, 1000:601E]. In this mode the keyboard interrupt queues a stop (a type 2 event with value 0) when a held direction key is released, so `var(6)` becomes 0 and EGO moves only while the key is held. This applies to eight keys, scan codes `47h` to `51h` except `4Ah`, `4Ch` and `4Eh` [AGI 2.917 1000:5FF8, DS:150F]. Confirmed at runtime: releasing Down set `var(6)` to 0 within a tick with `hold.key` on, and left it at 5 without [2.917 runtime: hold_key_release_stops_ego].
 
 ## What this page does not cover
 

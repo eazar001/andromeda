@@ -26,6 +26,8 @@ Code reference: [resource/header.py:ResourceHeader.parse] parses this header; [r
 
 ### Version 3 resource header
 
+*Unaudited (v3): 2.917 is v2, so the audit doesn't cover this section. Its claims rest on the spec alone.*
+
 AGI v3 resources use a 7-byte header instead of the v2 5-byte variant [3-3-Files.html §Version 3 Resource Storage]:
 
 ```
@@ -46,7 +48,7 @@ The interpreter detects compression by comparing the two sizes: equal → resour
 
 ## How AGI 2.917 reads a resource
 
-Static reading, not run [AGI 2.917 1000:2E32, 1000:2E56, 1000:3080].
+Read statically [AGI 2.917 1000:2E32, 1000:2E56, 1000:3080]. The normal path runs on every resource load in the runtime scenarios; the failure paths below weren't exercised [[sources/agi-2917-runtime]].
 
 **Opening.** The files `vol.0` to `vol.4` are opened together on first use, and a file that doesn't exist simply stays unopened. SQ1 has only 0–2. The handle table has 10 slots, but only these 5 are ever opened, so a directory entry naming VOL 5–14 can never be read.
 
@@ -78,7 +80,7 @@ Bytes 5 through `5 + length - 1` contain the resource data. The interpretation d
 
 The v2 5-byte header's 2-byte little-endian length field caps an individual resource at 64 KB. The signature isn't used to resynchronize; a bad one just means the wrong disk.
 
-The v3 7-byte header keeps both size fields at 16 bits, so the compressed payload stays ≤ 64 KB; the uncompressed size can exceed that after LZW expansion. The bit-7 PICTURE flag lets the interpreter pick the right decompression scheme without consulting the DIR or any other type metadata.
+Unaudited (v3): the v3 7-byte header keeps both size fields at 16 bits, so the compressed payload stays ≤ 64 KB; the uncompressed size can exceed that after LZW expansion. The bit-7 PICTURE flag lets the interpreter pick the right decompression scheme without consulting the DIR or any other type metadata.
 
 ## Standalone files not stored in VOL
 

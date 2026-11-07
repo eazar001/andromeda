@@ -2,7 +2,7 @@
 
 VIEW objects are runtime instances of VIEW *resources*: animated screen sprites under interpreter control. Each object is one entry in the **object table**, which tracks position, animation state, direction, priority and collision flags. A **VIEW** is a resource file holding graphics. Several objects can share one VIEW, each with its own position and timing [6-2-VIEW.html §overview].
 
-Everything cited to the binary comes from static reading of AGI 2.917 and applies to that version only. Items that need the running interpreter are marked **Runtime only**. Handler-level behavior is in [[interpreter/command-semantics]] §"Objects".
+Everything cited to the binary comes from static reading of AGI 2.917 and applies to that version only. Claims cited `[2.917 runtime: …]` were also observed on the running interpreter; see [[sources/agi-2917-runtime]]. Handler-level behavior is in [[interpreter/command-semantics]] §"Objects".
 
 ## The table
 
@@ -86,13 +86,13 @@ Offsets `27`–`2A` hold whatever the current motion or cycle mode needs, and th
 | `follow.ego` | Stop distance | Completion flag | Retreat distance left, `0xFF` on the first update | |
 | `move.obj` | Target x | Target y | Saved step size | Completion flag |
 
-The first row and the others share a byte. So `end.of.loop(n, f)` followed by `move.obj(n, x, ...)` leaves `x` in the slot that the loop end reads as its flag number. The loop end then sets `flag(x)`, not `flag(f)` [AGI 2.917 1000:6B12, 1000:6C46, 1000:4919]. SQ1 has this exact pair, in the same order and on the same object, in LOGICs 53 and 78 [SQ1 data check, log 2026-11-01]. Neither LOGIC's flow is proven to reach it. **Runtime only.**
+The first row and the others share a byte. So `end.of.loop(n, f)` followed by `move.obj(n, x, ...)` leaves `x` in the slot that the loop end reads as its flag number. The loop end then sets `flag(x)`, not `flag(f)` [AGI 2.917 1000:6B12, 1000:6C46, 1000:4919]. SQ1 has this exact pair, in the same order and on the same object, in LOGICs 53 and 78 [SQ1 data check, log 2026-11-01]. Neither LOGIC's flow is proven to reach it. **Confirmed at runtime:** after `end.of.loop(1, 100)` and `move.obj(1, 80, …)`, the loop end set `flag(80)` and never `flag(100)` [2.917 runtime: end_of_loop_shares_parameter_1].
 
 ## What happens each cycle
 
 The order comes from [[interpreter/event-loop]], steps 7 and 13.
 
-**Motion pass, before LOGIC 0.** For each active object whose step countdown is 1, the motion type picks a new direction, and then the block box is checked [AGI 2.917 1000:0644, 1000:067A]. A step time of 0 keeps the countdown at 0, so such an object still steps every cycle but never gets this pass. Its motion mode and block check don't run [AGI 2.917 1000:1542].
+**Motion pass, before LOGIC 0.** For each active object whose step countdown is 1, the motion type picks a new direction, and then the block box is checked [AGI 2.917 1000:0644, 1000:067A]. A step time of 0 keeps the countdown at 0, so such an object still steps every cycle but never gets this pass. Its motion mode and block check don't run [AGI 2.917 1000:1542]. **Confirmed at runtime:** with step time 0, an object under `move.obj` walked past its target, and one moving east kept its loop, where step time 1 stopped on the target and switched to the east loop [2.917 runtime: step_time_zero].
 
 **Screen pass, after LOGIC 0.** Unless `text.screen` is active [AGI 2.917 1000:0241], the interpreter does the following:
 
@@ -123,7 +123,7 @@ This routine makes a position legal [AGI 2.917 1000:5872]. `draw`, `add.to.pic`,
 
 First, an object at or above the horizon that doesn't ignore it moves to `horizon + 1`. If the position is then legal, the routine stops. Otherwise it walks an outward square spiral, starting left 1, down 1, right 2, up 2, left 3, and so on, stopping at the first legal position [AGI 2.917 1000:58C5–1000:5929, 1000:593E].
 
-A position is legal when all of these hold: it's inside the screen limits and below the horizon as above, with no collision, and the control check accepts it [AGI 2.917 1000:594C, 1000:4719, 1000:55F0]. The walk has no limit, so a screen with no legal position would hang. **Runtime only.** It also reruns the control check at each trial position, which can change the object's automatic priority and EGO's flags.
+A position is legal when all of these hold: it's inside the screen limits and below the horizon as above, with no collision, and the control check accepts it [AGI 2.917 1000:594C, 1000:4719, 1000:55F0]. The walk has no limit, so a screen with no legal position hangs. **Confirmed at runtime:** with the horizon at 167, `draw` never returned, and every timer tick for five seconds interrupted the spiral at `5872`–`5995` [2.917 runtime: placement_with_no_legal_position]. It also reruns the control check at each trial position, which can change the object's automatic priority and EGO's flags.
 
 ### Collision with other objects
 

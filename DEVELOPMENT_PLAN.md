@@ -499,10 +499,10 @@ Put test games under `test_games/sq1/` (as the existing code already expects) an
 ## 7. Open questions to resolve as you go
 
 1. **Exact reserved var/flag indices** — M3's flags now follow spec chapter 2-2. Cross-check against a modern ScummVM build only if a particular flag isn't behaving.
-2. **SN76489 divisor bit layout** — M8 now follows the spec's formula, but it's untested on audio. Write a test tone and verify against a known SQ1 music sample (any YouTube recording of the opening will do as reference).
-3. **Priority band y-coordinates** — documented in `andromeda-wiki/interpreter/priority-bands.md`; still unverified against a running game.
-4. **`said()` semantics for ambiguous groups** — specifically, what happens when `anyword` or `rol` abuts a group-0 word. Test against real SQ1 behavior.
-5. **`v10 == 0` behavior** — some sources say "as fast as possible," some say "default 5." Pick a sane fallback.
+2. **SN76489 divisor bit layout** — the interpreter's own chip writes match the stored divisors on a Tandy (`andromeda-wiki/entities/sound.md`). M8 now follows the spec's formula, but it's untested on audio. Write a test tone and verify against a known SQ1 music sample (any YouTube recording of the opening will do as reference).
+3. **Priority band y-coordinates** — documented in `andromeda-wiki/interpreter/priority-bands.md`, and confirmed against the running interpreter's own table.
+4. **`said()` semantics for ambiguous groups** — settled for 2.917: group-0 words never reach the word list, so `anyword` and `rol` can't see them. See `andromeda-wiki/interpreter/input-parsing.md`.
+5. **`v10 == 0` behavior** — settled for 2.917: no wait at all, so the cycle runs as fast as the machine allows. See `andromeda-wiki/interpreter/event-loop.md`.
 6. **Cycle-vs-tick distinction** — AGI documentation mixes 20 Hz and 60 Hz loosely. Sound uses 60 Hz ticks (see §M8); game logic uses 20 Hz / `v10` cycles. Keep them as separate concepts in the code.
 
 ---

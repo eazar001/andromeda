@@ -4,7 +4,7 @@ The interpreter repeats one cycle forever. This page gives the order read from A
 
 ## The cycle in 2.917
 
-1. **Wait for the timer** until a tick counter reaches `var(10)`, then reset the counter [AGI 2.917 1000:7EB1]. The counter runs throughout the cycle, so time spent working counts toward the delay. With `var(10) = 0` there is no wait. Each unit is 1/20 second; see "Timer" below.
+1. **Wait for the timer** until a tick counter reaches `var(10)`, then reset the counter [AGI 2.917 1000:7EB1]. The counter runs throughout the cycle, so time spent working counts toward the delay. With `var(10) = 0` there is no wait. Each unit is 1/20 second; see "Timer" below. Confirmed at runtime: over about 3 seconds, values 1, 2 and 5 gave about 20, 10 and 4 cycles a second, and 0 ran as fast as the machine allowed [2.917 runtime: priority_table_and_cycle_delay].
 2. **Clear the 50-entry controller table** [AGI 2.917 1000:4C23].
 3. **Clear `flag(2)` and `flag(4)`.**
 4. **Read the joystick**, if one is present (`DS:15BD`), at most once every 9 timer ticks. It maps the axes to a direction from 0 to 8 and queues a direction event when the direction changes [AGI 2.917 1000:612B, 1000:62F7, 1000:6278]. A waiting keypress cancels the read.
@@ -35,7 +35,7 @@ The 20 Hz routine does the following:
 
 Input arrives through a 20-entry ring queue of events, each with a type and a value. Events are added by the timer, not by the cycle. When the queue is full, the newest event is dropped [AGI 2.917 1000:44A9].
 
-The keyboard poll sends each key through a direction lookup first: a direction key becomes a type 2 event, and anything else becomes type 1 [AGI 2.917 1000:467F]. The lookup itself (`46B6`) is unread.
+The keyboard poll sends each key through a direction lookup first: a direction key becomes a type 2 event, and anything else becomes type 1 [AGI 2.917 1000:467F]. The lookup searches a table of eight key words at `DS:16A9` and returns the direction, or -1 for any other key [AGI 2.917 1000:46B6]. The words are the BIOS scan code in the high byte with a zero character, so only the cursor-pad keys match: Up 1, PgUp 2, Right 3, PgDn 4, Down 5, End 6, Left 7, Home 8. A digit typed with Num Lock on has a non-zero character and stays a type 1 key. Numeric-pad 5 isn't in the table; the interrupt handler covers it. The Tandy table at `DS:16CD` instead maps the characters `1` to `9` to directions in the same compass layout, with `5` as 0 [AGI 2.917 1000:46E8].
 
 The keyboard interrupt handler also filters keys before the BIOS sees them [AGI 2.917 1000:5F6E, 1000:5FF8]. Auto-repeats of the eight direction keys (scan codes `47h` to `51h` except `4Ah`, `4Ch`, `4Eh`) are discarded. Numeric-pad 5 with no Shift, Ctrl or Alt queues a type 2 event with value 0, which stops EGO. Ctrl-Alt with the left or right arrow calls driver entry `9749` to shift the screen. With `hold.key` on, releasing a direction key also queues that stop event.
 
@@ -43,7 +43,7 @@ The pump reads events until the queue is empty. On the way out, each type 1 key 
 
 The pump then handles each event [AGI 2.917 1000:357C]:
 
-- **Type 1, key:** the value goes to `var(19)`, and to the input line if input is enabled (`DS:05D3`). In Hercules mode any key except Enter goes through a separate prompt first.
+- **Type 1, key:** the value goes to `var(19)`, and to the input line if input is enabled (`DS:05D3`). In Hercules mode any key except Enter opens a centered window headed `ENTER COMMAND` that holds the input line [HGC_GRAF.OVL +0x452, DS:1E24]. Keys are edited there until Enter closes it. Ctrl-C and Ctrl-X clear the line, Ctrl-E recalls the previous line, and Esc clears the line and closes the window. The line is then submitted, and `var(19)` is left as Enter, 13 [HGC_GRAF.OVL +0x52B; AGI 2.917 1000:35EC].
 - **Type 2, direction:** `var(6)` takes the value, or 0 if EGO is already moving that way, so pressing the same direction again stops EGO. Under player control, EGO's motion type also resets to 0.
 - **Type 3, controller:** the value indexes the controller table entry to set.
 

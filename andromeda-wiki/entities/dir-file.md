@@ -37,6 +37,8 @@ Entry 45 in `SNDDIR` with bytes `12 3D FE`:
 
 ## Version 3 (unified file)
 
+*Unaudited (v3): 2.917 is v2, so the audit doesn't cover this section. Its claims rest on the spec alone.*
+
 In AGI v3, all four directories are merged into a single file named `*DIR`, where `*` is the game code (e.g., `BCDIR`, `KQ4DIR`) [3-1-Files.html §Version 3 directories]. The file starts with an 8-byte header listing the offsets of the four directory sections, followed by `LOGDIR`, `PICDIR`, `VIEWDIR`, and `SNDDIR` in that order [3-1-Files.html §Version 3 directories].
 
 ### Header layout

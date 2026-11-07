@@ -7,7 +7,7 @@ In 2.917, the interpreter's only debugging features are a command trace and a fe
 
 ## Activation in SQ1
 
-LOGIC 104 binds ALT-D to controller 14 with `set.key(0, 0x20, 14)`. Under a condition that includes that controller, LOGIC 0 sets `flag(190)`, prints a message, runs `version` and loads LOGIC 99, which holds the debug commands [SQ1 data check, LOGIC 0, 99, 104]. The full condition hasn't been decoded.
+LOGIC 104 binds ALT-D to controller 14 with `set.key(0, 0x20, 14)`. Under a condition that includes that controller, LOGIC 0 sets `flag(190)`, prints a message, runs `version` and loads LOGIC 99, which holds the debug commands [SQ1 data check, LOGIC 0, 99, 104]. The full condition hasn't been decoded. **Confirmed at runtime** in room 2 of the real game: ALT-D set `flag(190)` and showed `Version 2.2`, LOGIC 99 joined the LOGIC list once the window was dismissed, and `flag(10)` stayed clear throughout [2.917 runtime: alt_d_in_sq1].
 
 SQ1's scripts never set `flag(10)` by number. The only route found is LOGIC 99's "set flag" command, which takes the flag number from the player through `set.v` [SQ1 data check]. LOGIC 99 tests `flag(10)` once, before a `call(95)`.
 
@@ -50,7 +50,9 @@ The trace shows each command as it runs, in a window, and waits for a key after 
 - **`trace.on`** opens it directly [AGI 2.917 1000:8BCA]. SQ1 never uses it [SQ1 data check].
 - **`flag(10)`** must be set for either to open the trace. If it's clear, nothing happens [AGI 2.917 1000:8BF3]. Closing doesn't check the flag, and restores the screen under the window [AGI 2.917 1000:8CB2].
 
-If the trace is already on, `trace.on` returns one byte further on in the bytecode, which skips the byte after the command [AGI 2.917 1000:8BD9]. It looks like a bug; a script that calls it twice with the trace on would desynchronize.
+If the trace is already on, `trace.on` returns one byte further on in the bytecode, which skips the byte after the command [AGI 2.917 1000:8BD9]. It looks like a bug; a script that calls it twice with the trace on desynchronizes. **Confirmed at runtime:** `trace.on`, `trace.on`, `assignn(240, 7)` skipped the `assignn` opcode and ran its argument `0xF0` as one, raising error `0x10` with `var(18)` = 240 [2.917 runtime: trace_on_twice].
+
+**The window's lines, at runtime.** Each traced command shows as the LOGIC number, a colon, the command number in decimal and its arguments in parentheses, such as `0: 3(0,7)` for `assignn` in LOGIC 0 with no names LOGIC. Tests add their result at the right of the line, such as `:T`. The trace waits for a key after each line [2.917 runtime: trace_window_output].
 
 ### `trace.info(names, top, height)`
 

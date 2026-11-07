@@ -1,5 +1,7 @@
 # Source: 3-3-Files.html
 
+> **Audit status: unaudited (v3).** This page describes AGI v3. The audit checks the wiki against interpreter 2.917, which is v2 and has none of this, so every claim here rests on the spec alone. Cross-check with ScummVM before building on it.
+
 Peter Kelly's AGI Specifications, vendored at `AGI_Specifications/Specifications/3-3-Files.html`. Specifies AGI v3 resource storage: 7-byte header layout with compression-detection fields, LZW decompression algorithm, and PICTURE-specific compression.
 
 ## Scope

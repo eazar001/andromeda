@@ -1,6 +1,6 @@
 # Save, Restore and Restart
 
-Everything here is from static reading of 2.917. No save file has been produced or inspected, so the layout below needs a runtime check against a real file.
+Everything here is from static reading of 2.917, checked at runtime against save files the real interpreter wrote and read back [2.917 runtime: save_file_bytes]. Block 5's size is corrected below.
 
 ## Save file layout
 
@@ -13,11 +13,16 @@ A save file is a 31-byte description followed by five length-prefixed blocks. Ea
 | 2 | yes | pointer at `DS:0963` | object slots × 43 | The object table [AGI 2.917 1000:282F, 1000:100B] |
 | 3 | yes | pointer at `DS:0969` | `OBJECT` file size − 3 | Decrypted `OBJECT` data after its 3-byte header, so room numbers go with it [AGI 2.917 1000:2845, 1000:0FD9] |
 | 4 | yes | pointer at `DS:16FD` | 2 × script size | The script buffer at full capacity, not just the used part [AGI 2.917 1000:285B] |
-| 5 | yes | `DS:097D` | 4 × (loaded LOGICs + 1) | Scan positions of loaded LOGICs: a word for the number and a word for the scan offset from the first bytecode byte, ended by a number of `0xFFFF` whose second word is stale [AGI 2.917 1000:1364, 1000:2873] |
+| 5 | yes | `DS:097D` | 4 × (loaded LOGICs + 2) | Scan positions: a word for the LOGIC number and a word for the scan offset from the first bytecode byte, per entry. The first entry is a pseudo-record, then one per loaded LOGIC, then a number of `0xFFFF` whose second word is stale [AGI 2.917 1000:1364, 1000:2873] |
 
 The file offset of the game ID is 33, which is what the slot list reads to reject other games' files [AGI 2.917 1000:8B3D].
 
-SQ1's sizes work out to 18 object slots (774 bytes), 328 bytes of `OBJECT` data, and a script size of 50 entries (100 bytes), since no SQ1 LOGIC calls `script.size` and `DS:0141` starts at 50 [SQ1 data check]. That gives 2,748 + 4 × (loaded LOGICs + 1) bytes.
+SQ1's sizes work out to 18 object slots (774 bytes), 328 bytes of `OBJECT` data, and a script size of 50 entries (100 bytes), since no SQ1 LOGIC calls `script.size` and `DS:0141` starts at 50 [SQ1 data check]. That gives 2,748 + 4 × (loaded LOGICs + 2) bytes.
+
+> [!conflict] Static reading vs. AGI 2.917 at runtime: block 5's size
+> The static reading gave 4 × (loaded LOGICs + 1). Real save files have one more entry: 12 bytes with LOGIC 0 alone and 16 with LOGIC 0 and a room [2.917 runtime: save_file_bytes]. The table builder starts its walk at the list-head variable `DS:096F` itself, treating it as a record, so the first entry is made from `DS:0971`–`DS:0976`. No code references those bytes and `AGIDATA.OVL` has them as zeros, so the pseudo-entry is always LOGIC 0 with offset 0 [AGI 2.917 1000:1369, 1000:137A].
+
+**Checked at runtime.** A one-room session saved to `sqsg.1` at 2,764 bytes, with block lengths 1,505, 774, 328, 100 and 16, the description first and `SQ` at offset 33 [2.917 runtime: save_file_bytes].
 
 Block 1 holds these regions, named from the code that uses them:
 
@@ -48,6 +53,16 @@ Not saved: menus, screen buffers, the sound state, the event queue, the controll
 
 There are 12 slots. The file name is the directory, a separator if needed, the game ID, `sg.` and the slot number, all lowercased: SQ1's first slot is `sqsg.1` [AGI 2.917 1000:5AAB, DS:1322]. The directory defaults to the current one and persists between saves [AGI 2.917 1000:863E].
 
+**Directory check.** The dialog asks for the directory and checks it. If the check fails, it shows "There is no directory named ..." and asks again, and Esc cancels [AGI 2.917 1000:8699, DS:1C12]. The check works like this [AGI 2.917 1000:5B15]:
+
+- Leading spaces are skipped. An empty entry becomes the current directory of the current drive, with a leading `\`, or a `/` if the DOS path contains one [AGI 2.917 1000:5CEA].
+- One trailing `\` or `/` is removed, unless it is the whole entry.
+- The drive is taken from an `x:` prefix, lowercased, or else it's the current drive. It's stored for the floppy prompt below.
+- A lone separator passes. A bare `x:` passes if DOS can select that drive [AGI 2.917 1000:5D76].
+- Anything else passes if a DOS find-first with the directory attribute finds it [AGI 2.917 1000:5D39]. That search also matches ordinary files, so a file name passes as a directory, and the save then fails at create time.
+
+**Floppy prompt.** At startup the interpreter notes whether the BIOS reports more than one floppy drive [AGI 2.917 1000:40C4, DS:1120]. With only one, a save drive of `b` becomes `a`. If the save drive is the current drive and is `a` or `b`, the dialog closes the VOL files and asks for the save game disk, and Esc cancels [AGI 2.917 1000:8559, 1000:85DC, DS:1A3C]. A save on a hard disk or another floppy drive gets no prompt.
+
 The slot list opens each file and reads its description and stored game ID. A missing file or a different game ID counts as an empty slot [AGI 2.917 1000:8AD8]. Saving lists all 12. Restoring lists only the valid ones, and says there are none if the list is empty. The pointer starts on the file with the newest DOS date and time [AGI 2.917 1000:874D, 1000:5DAB].
 
 The description is at most 31 bytes including the terminator. Saving prompts for it, pre-filled from the chosen slot, after the slot is picked [AGI 2.917 1000:85A5, 1000:8A1F, 1000:86CD].
@@ -73,6 +88,10 @@ Block 5 is built just before it's written, and the same table builder runs befor
 ## `restore.game`
 
 The handler opens the file read-only and seeks past the description. It reads each block using the file's own length word, with no check against the size of the destination [AGI 2.917 1000:25C4, 1000:26B0]. A read failure is fatal: it shows "Error in restoring game. Press ENTER to quit." and exits, whichever key is pressed, because state may already be overwritten [AGI 2.917 1000:2630]. A cancel or a file that won't open just continues at the next command.
+
+**Checked at runtime.** After a save, a scramble of a variable and a flag, and a restore, LOGIC 0 reran with the cycle counter, the variable and the flag back at their saved values and `flag(12)` set [2.917 runtime: save_file_bytes].
+
+**LOGIC 0's scan start isn't restored.** The restore applies saved scan offsets only to the LOGICs the rebuild reloads, and LOGIC 0 is never reloaded. So LOGIC 0 keeps whatever scan start it has when the restore runs. At runtime, LOGIC 0 set its scan start, saved, reset it and restored: afterwards it ran from the top, although the file held its offset, 23 [AGI 2.917 1000:13A5; 2.917 runtime: restore_keeps_logic0_scan_start]. The pseudo-entry above would shadow LOGIC 0's own entry anyway.
 
 The game ID stored in block 1 is only compared by the slot list. The handler itself doesn't check it.
 
@@ -101,6 +120,8 @@ Replay then releases the heap and walks the buffer up to the saved entry count. 
 | 7 | Discard a VIEW | `1000:3F35` |
 | 8 | Overlay a PICTURE | `1000:4B60` |
 
+Code 5 copies the three entries back into `DS:0EA6`–`DS:0EAB` in recorded order: view and loop, cel and x, y and the packed priority-and-margin byte. It then calls the `add.to.pic` core directly, which skips the handler's packing, so the redraw uses exactly what was stored [AGI 2.917 1000:67F6, 1000:6826, 1000:2D52]. The core records its own four entries again on the way in, but recording is off during replay, so nothing doubles. The core's side effects on `flag(0)`, `flag(1)` and `flag(3)` happen during replay too.
+
 Block 5 is applied only to LOGICs named in the script buffer. LOGIC 0's entry is written but never applied, so its scan position isn't restored unless a script recorded a load of it [AGI 2.917 1000:67C7, 1000:13A5]. A code above 8 is skipped.
 
 The object flags need protecting during replay, so before it the code stores each object's flags word in the position field and its x position in the object-number byte. Objects with bit `0x40` also get bit `0x01` cleared and bit `0x10` set. After replay it reverses this: x returns with a zero high byte, the object number is rewritten from its table position, and the original flags return last [AGI 2.917 1000:677B, 1000:687E, 1000:68F5]. Between those steps, each object whose view is loaded gets its view data reattached. Each that had bit `0x40` is drawn again if it also had bit `0x01`, and has its motion byte at offset `0x29` set to `0xFF` if its motion type is 2 [AGI 2.917 1000:68A4, 1000:68BB]. What those bits mean belongs to [[interpreter/view-objects]].
@@ -118,7 +139,7 @@ If it goes ahead:
 - All variables and flags, then `var(20)`, `var(22)`, `var(24)` (41), `var(26)`, `flag(5)`, and `flag(11)` on machines other than type 0 [AGI 2.917 1000:106E, 1000:7463, 1000:1080].
 - The object table, zeroed with object numbers rewritten [AGI 2.917 1000:102B, 1000:105E].
 - `OBJECT` data, reloaded from disk into the same buffer and decrypted again [AGI 2.917 1000:0FB4].
-- The heap, down to its mark, and the loaded lists, leaving only LOGIC 0 [AGI 2.917 1000:1485, 1000:10D0].
+- The heap, down to its mark, and the loaded lists, leaving only LOGIC 0 [AGI 2.917 1000:1485, 1000:10D0]. The list clear's three helpers only zero the VIEW, SOUND and PICTURE list heads, and the LOGIC clear only cuts LOGIC 0's next link, so nothing else is reset on this path [AGI 2.917 1000:396D, 1000:5004, 1000:49DC, 1000:10F7].
 - The controller table [AGI 2.917 1000:1077].
 - Player control turned on, and `block` turned off [AGI 2.917 1000:109B, 1000:10A7].
 - The 32-bit tick count, cleared to 0 [AGI 2.917 1000:24DB].

@@ -18,7 +18,7 @@ uv sync
 uv run python -m main
 ```
 
-The game code has no tests or lint configuration yet. `tools/picture_emu/` has its own tests; see its README.
+The game code has no tests or lint configuration yet. `tools/picture_emu/` and `tools/agi_emu/` have their own tests; see their READMEs.
 
 ## Directory Structure
 
@@ -30,14 +30,16 @@ The game code has no tests or lint configuration yet. `tools/picture_emu/` has i
 ├── util/                # Byte and XOR helpers
 ├── tools/ghidra/        # Headless Ghidra scripts for interpreter analysis
 ├── tools/picture_emu/   # Runs the interpreter's PICTURE routine under emulation, with tests
+├── tools/agi_emu/       # Runs the whole interpreter under emulation: the runtime evidence for the wiki
 ├── andromeda-wiki/      # Distilled, cited AGI format knowledge base
 ├── AGI_Specifications/  # Vendored AGI spec and sample code (see below)
 ├── test_games/          # Local game data, gitignored
 ├── CLAUDE.md            # This file
 ├── DEVELOPMENT_PLAN.md  # Roadmap, milestones, and current status
+├── BUILD_GUIDE.md       # Start-to-finish build guide generated from the audited wiki
 ├── PICTURE_DECODER.md   # Overview of the PICTURE format for M1
 ├── WIKI.md              # Wiki schema and conventions
-├── WIKI_AUDIT_PLAN.md   # Resumable plan for checking the wiki against the interpreter
+├── WIKI_AUDIT_PLAN.md   # The audit of the wiki against the interpreter, now complete
 ├── README.md
 └── pyproject.toml
 ```

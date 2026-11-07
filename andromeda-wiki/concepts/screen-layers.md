@@ -1,6 +1,6 @@
 # Screen Layers
 
-> **Verification status:** Buffer layout, initial state, enable flags, and the path to the display are read from AGI 2.917 and its driver overlays, and describe 2.917 only. The rules for how screen objects are drawn are on [[interpreter/priority-bands]] and [[interpreter/control-lines]]. Nothing about the actual picture on a monitor has been observed; see "Open items".
+> **Verification status:** Buffer layout, initial state, enable flags, and the path to the display are read from AGI 2.917 and its driver overlays, and describe 2.917 only. The rules for how screen objects are drawn are on [[interpreter/priority-bands]] and [[interpreter/control-lines]]. Every display path was later run on the whole interpreter and its output decoded, which matched the buffer as described here [2.917 runtime: ega_display_matches_buffer, other_display_paths]. How a monitor shows those values hasn't been observed.
 
 A rendered AGI room consists of two logical layers, the **visual screen** and the **priority screen**. They share the same `(x, y)` coordinates [5-1-PICTURE.html §GENERAL GUIDELINES].
 
@@ -88,7 +88,7 @@ Other displays are in [[concepts/ega-palette]] §"Other displays".
 
 ### `show.pri.screen`
 
-It doesn't use a separate priority image. It swaps the two nibbles of every byte in the buffer, does a full update, waits, then swaps back and updates again [AGI 2.917 1000:7254, 1000:549E]. So what appears is priority values shown as colors, and any screen objects in the buffer appear too. See [[interpreter/command-semantics]] §"PICTURE commands".
+It doesn't use a separate priority image. It swaps the two nibbles of every byte in the buffer, does a full update, waits, then swaps back and updates again [AGI 2.917 1000:7254, 1000:549E]. So what appears is priority values shown as colors, and any screen objects in the buffer appear too. Confirmed at runtime: while it waited, the EGA display matched the buffer's priority nibbles in every pixel [2.917 runtime: show_pri_screen_on_ega]. See [[interpreter/command-semantics]] §"PICTURE commands".
 
 ## Composition with screen-objects
 
@@ -102,7 +102,7 @@ SCI splits this two-screen model into three independent layers (visual / priorit
 
 ## Open items at this page's level
 
-- **On-screen result** — the display path above comes from reading code only. Runtime pass: capture each display type's output for one picture, including `show.pri.screen`.
+- **On-screen result** — done for what a driver writes: each display type's output for one picture, and `show.pri.screen` on EGA, matched the buffer [2.917 runtime: ega_display_matches_buffer, other_display_paths, show_pri_screen_on_ega]. What a monitor makes of it, such as composite CGA color, stays open.
 
 ## See also
 

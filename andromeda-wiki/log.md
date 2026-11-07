@@ -1289,3 +1289,71 @@ At the user's confirmation, applied every finding from the lint entry above.
 **Conflict rule.** New `conflicts.md`, indexing all 46 callouts. Callouts stay inline. `WIKI.md` and the lint command's check 5 now say this. Older log entries that discuss a threshold are left as written.
 
 **Open.** The `variables-and-flags` audit item, then the plan's remaining items.
+
+## [2026-11-07] file | Audit slice 2: every reserved variable and flag
+
+Checked `interpreter/variables-and-flags` against 2.917 with a raw Capstone scan of the whole image: every direct operand on `DS:0009`–`DS:0023`, and every call into the flag helpers at `1000:73FF`–`1000:743B` with a constant flag number. The scanner lives outside the repo in `C:\Users\ebrah\tools\andromeda-re\scan\`.
+
+**Contradicted.** `flag(8)` and `var(15)` are joystick-button double-click detection and its window in 20 Hz ticks, not joystick sensitivity [AGI 2.917 1000:6192]. The button codes are `0x0101`/`0x0301` and `0x0201`/`0x0401`, queued as key events.
+
+**Refined.** `var(3)` and `flag(9)` are snapshotted before LOGIC 0 and after a room change, and compared after it. `var(7)` is only read by the status line. `var(19)` is the last key drained this cycle. `var(20)` and `var(22)` are written at startup and restore and never read. `var(0)` gates `toggle.monitor` and feeds `log`; `var(1)` is never read. `flag(2)` also clears when LOGIC 0 ends in a room change. `restart.game` keeps `flag(9)`.
+
+**Confirmed.** `flag(13)` is read only by `status`.
+
+**Also read.** Joystick button routine `635E`, from the "Still unread" list: port `201h`, bits 4 and 5.
+
+**Open.** The v3 marking, the runtime pass and the build document.
+
+## [2026-11-07] file | Audit slice 5: v3 content marked unaudited
+
+Marked AGI v3 content as outside the 2.917 audit, without deleting it. New rule in `WIKI.md` §Page conventions.
+
+**Whole pages, with an opening banner.** `concepts/lzw-compression`, `concepts/picture-compression`, `sources/3-3-files`, and their `index.md` lines.
+
+**Sections and sentences.** `entities/dir-file` §Version 3, `entities/vol-file` §Version 3 resource header and its design note, the v3 lines in `entities/logic`, and the `#176` rows in `interpreter/command-evolution`. `entities/picture` and `interpreter/commands` already said so.
+
+**Left alone.** Source summaries such as `sources/2-8-interpreter` and `sources/3-1-files`, which describe chapters rather than make claims.
+
+## [2026-11-07] file | Audit: the still-unread routines
+
+Read every item on the plan's "Still unread" list that local data allows, with the Capstone scanner and overlay disassembler in `C:\Users\ebrah\tools\andromeda-re\scan\`.
+
+**Direction keys, `46B6`.** Eight cursor-pad keys with a zero character map to directions 1–8; the Tandy table maps the digit characters. `interpreter/event-loop`.
+
+**Restart's sub-clears.** They only zero the VIEW, SOUND and PICTURE list heads, which confirms restart's "kept" list on that path. `interpreter/save-restore`.
+
+**Replay of `add.to.pic`, `6826`.** It restores the six stored bytes and calls the core directly, without repacking. `interpreter/save-restore`.
+
+**Drive checks, `5B15`, `5D39`, `5D76`.** The save directory check, including a find-first that also accepts a plain file, and the single-floppy and disk-swap prompt from `DS:1120`. `interpreter/save-restore`.
+
+**CGA view hook `9777`.** Rewrites a loaded VIEW's colors in place. On monitor 1 a transparent color's entry stays remapped for later cels of the same view; SQ1's 238 views never hit that or a shared-cel double conversion. `concepts/ega-palette`, `entities/view`.
+
+**Hercules, `97D9`, the rest of `HGC_GRAF.OVL` and `HGC_OBJS.OVL`.** The image conversion, mode setup, banked copy, black-or-white window fill, the driver's own text output, the `ENTER COMMAND` prompt, which leaves `var(19)` as Enter, and the object overlay, whose dither phase follows the cel's own row count. `concepts/ega-palette`, `interpreter/event-loop`, `interpreter/variables-and-flags`.
+
+**Fill with `0x1F`.** Run on the real PICTURE routine with `tools/picture_emu/`: it never finishes, since painted pixels stay visual 15. 2.917 hangs. `entities/picture`.
+
+**Left.** Other games' debug phrases, since no other game is local.
+
+## [2026-11-07] file | Audit slice 5: the runtime pass
+
+Built `tools/agi_emu/`, which runs the whole SQ1 interpreter under Unicorn with DOS and the BIOS emulated in Python, and settled every "Runtime only" item with a scenario. New source page `sources/agi-2917-runtime`, new citation form `[2.917 runtime: scenario]` in `WIKI.md`. 38 scenarios run in about 25 seconds; `tests/test_scenarios.py` pins the key results.
+
+**Confirmed.** `end.of.loop`'s flag taken from `move.obj`'s x. Step time 0. The placement hang. Control values under a cel. `add.to.pic` clearing `flag(0)`, `flag(1)` and `flag(3)`. `flag(0)` after a black stop, cleared again before LOGIC sees it. `get.priority` lagging `position`. `quit(0)` with `flag(15)` or `var(21)`. Menu delivery in the next cycle. `hold.key`. `status` layout and results. Every display path: EGA, VGA on type 8, PCjr and Tandy pixel-exact; CGA nibbles as pixel pairs; Hercules exact on pictures. `show.pri.screen`. `toggle.monitor` on CGA. `-v` on type 0 ending in text mode. "Stack blown." from a fill. Stale records after a mixed discard and after a temporary `call`. `set.menu` over save areas. The larger second `script.size` and `script.size(0)`. The heap base `DS:1E80` and top `0x0010`. Null message reads. Save layout, restore, ALT-D in SQ1, the trace and `trace.on` twice. Sound timing at 60 Hz, the speaker's 12× divisor, and the long-note cutoff.
+
+**Observed, newly described.** What `draw` and `erase` one past the table do to LOGIC 0's bytecode. `set.loop` equal to the count leading to error 8. The width-2 margin rectangle zeroing the whole screen's priority. Disabled menu text as a checkerboard over the inverse glyph. `shake.screen` per adapter. The Hercules object dither phase. `new.room` inside a temporary `call` dropping the room's LOGIC from the list. Out-of-memory numbers printed signed.
+
+**Contradicted.** Save block 5 is 4 × (loaded LOGICs + 2) bytes, not + 1: the table builder starts at the list-head variable, giving a pseudo-entry. Conflict callout on `interpreter/save-restore`, indexed. Also found: LOGIC 0's scan start isn't restored, because the restore never reloads LOGIC 0.
+
+**Also settled**, from `DEVELOPMENT_PLAN.md` §7: the priority band table, `var(10)` = 0, and `said` next to filler words. `interpreter/priority-bands`, `interpreter/event-loop`, `interpreter/input-parsing`.
+
+**Open**, and recorded in `WIKI_AUDIT_PLAN.md`: analog display output, DOS's divide handler and its reads across a 64K boundary, menu box pixels, other games' debug phrases.
+
+**Harness notes.** Synthetic LOGIC 0s must enter a room first, since `new.room` gives objects their timings. DOS must place blocks after an MCB for the heap's base to come out right. The PCjr driver needs the BIOS page-register call.
+
+## [2026-11-07] file | Audit slice 5: the build document; audit closed
+
+Wrote `BUILD_GUIDE.md` at the repo root: a start-to-finish guide to building a 2.917 interpreter, in build order (files, state, PICTURE, LOGIC, the cycle, objects, input, text and menus, sound, save, debug), followed by a reproduce-or-reject table for 2.917's quirks and a note on using `tools/agi_emu/` as an oracle. It summarizes the audited pages, links to them, and adds no claims of its own. Prose and tables only.
+
+While writing it, fixed stale notes found on the way: the audit-status headers of `interpreter/control-lines` and `concepts/screen-layers`, the "unread" Hercules notes on `entities/view` and `interpreter/command-semantics` (`get.string`, `get.num` and `echo.line` use the Hercules prompt window), the inverse-text mechanism on `interpreter/command-semantics`, and `entities/vol-file`'s "not run".
+
+**Audit status.** Every item in `WIKI_AUDIT_PLAN.md` is ticked. Open, because they need hardware or games that aren't local: analog display output, DOS's divide handler and its reads across a 64K offset boundary, menu box pixels, and other games' debug phrases.

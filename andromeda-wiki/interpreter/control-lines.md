@@ -1,6 +1,6 @@
 # Control Lines
 
-> **Audit status.** Checked against AGI 2.917 by static reading of the interpreter and of `IBM_OBJS.OVL`, the overlay holding the cel routines, which [[sources/agi-2917-binary]] places at `1000:9CF0`. Nothing was run. The Hercules overlay `HGC_OBJS.OVL` is unread.
+> **Audit status.** Checked against AGI 2.917 by static reading of the interpreter and of `IBM_OBJS.OVL`, the overlay holding the cel routines, which [[sources/agi-2917-binary]] places at `1000:9CF0`. The load-bearing rules were then run on the whole interpreter; see the `[2.917 runtime: …]` citations and [[sources/agi-2917-runtime]]. The Hercules overlay `HGC_OBJS.OVL` applies the same rules; see [[concepts/ega-palette]] §"Other displays".
 
 Control lines are pixels on the **priority screen** with priority 0, 1, 2 or 3 (black, blue, green, cyan) that the interpreter tests when it places or moves a screen object [5-1-PICTURE.html §CONTROL LINES; 2-1-Interpreter.html §What are the priority bands?; AGI 2.917 1000:55F0]. They share the priority screen with the bands in [[interpreter/priority-bands]]: 4 to 14 are the y-derived bands and 15 is the band closest to the viewer.
 
@@ -36,7 +36,7 @@ So `object.on.water` needs every baseline pixel to be cyan, and `object.on.land`
 Two consequences of the scan stopping early:
 
 - `flag(3)` can't see a green pixel to the right of the pixel that failed.
-- `flag(0)` starts true and is cleared by any pixel other than cyan or black. If EGO's scan stops on a black pixel with only cyan before it, `flag(0)` ends up set. A failed step is normally followed by another test, so this should be brief. Marked Runtime only.
+- `flag(0)` starts true and is cleared by any pixel other than cyan or black. If EGO's scan stops on a black pixel with only cyan before it, `flag(0)` ends up set. A failed step is normally followed by another test, so this should be brief. **Confirmed at runtime:** with EGO stepping onto a row of cyan then black, each refused step left `flag(0)` set, and the position fixer's next test cleared it again, so LOGIC 0 never saw it set in 120 ticks [2.917 runtime: ego_flag0_after_black_stop].
 
 > [!conflict] Priority 15 and conditional barriers
 > The spec says an object at priority 15 without `ignore.blocks` cannot cross a conditional barrier [4-4-Logic.html §OBJECT CONTROL COMMANDS]. In 2.917 an object at priority 15 skips the baseline test altogether, so it crosses blue and black alike [AGI 2.917 1000:562A].
@@ -57,7 +57,7 @@ When a cel pixel lands on a control pixel, the interpreter looks down the same c
 3. If it reaches row 167 first, it uses the last value it read. An object at priority 2 or above therefore draws.
 4. If the object's priority is at least the value found, the pixel is drawn.
 
-A pixel drawn through this path **keeps its control value**. Only the color nibble changes, so black, blue and green lines survive cels drawn over them. A pixel drawn normally, including over cyan, takes the object's priority [AGI 2.917 1000:9DEF–1000:9DF3].
+A pixel drawn through this path **keeps its control value**. Only the color nibble changes, so black, blue and green lines survive cels drawn over them. A pixel drawn normally, including over cyan, takes the object's priority [AGI 2.917 1000:9DEF–1000:9DF3]. Confirmed at runtime: a cel at priority 15 or 5 over full-width rows of priority 0, 1, 2 and 3 left `01`, `11` and `21` in the first three and wrote its own priority into the fourth [2.917 runtime: cel_over_control_rows].
 
 > [!conflict] Which values start the search
 > The spec says a pixel of color 0..3 searches downward for a color of 4 or higher [5-1-PICTURE.html §CONTROL LINES AND PRIORITY INFORMATION]. In 2.917 only 0..2 search, and the search stops at 3 or higher [AGI 2.917 1000:9DE7, 1000:9E19].

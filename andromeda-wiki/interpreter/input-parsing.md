@@ -51,6 +51,8 @@ Scripts display the stored text with `%w<n>`, numbered from 1, or copy it with `
 
 An empty pattern is an edge case. It succeeds only when the word count is 0, regardless of the flags, and it then sets `flag(4)`. A valid game shouldn't rely on this.
 
+**Filler words next to `1` and `9999`, at runtime.** Group-0 words never reach the word list, so `said` can't see them on either side of a wildcard. With SQ1's vocabulary, where `the` and `at` are group 0, `look` 2 and `rock` 37, "look the" behaved exactly like "look" and "the look" like "look", and "look at the rock" exactly like "look rock", for every pattern tried. `look 1` failed on "look the", so `1` never matches a filler. `look 9999` matched "look" alone, so `9999` matches nothing. `look 1 9999` needed one real word after `look` [2.917 runtime: said_with_filler_words].
+
 ### How games use this
 
 Since `flag(2)` is set even for an unknown word, a script can catch input nothing matched by testing `flag(2)` set and `flag(4)` clear after its `said` tests, then print `var(9)`'s word. A `said` with a real code never matches the unknown word's slot, but `1` and `9999` can: with "look xyzzy", both `said(look, 1)` and `said(look, 9999)` succeed.

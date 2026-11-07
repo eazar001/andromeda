@@ -4,7 +4,7 @@ VIEW resources hold the bitmap sprite graphics used for animated objects, NPCs, 
 
 This page is code-verified against [`resource/view.py`](../../resource/view.py) and [`gfx/view_render.py`](../../gfx/view_render.py), which round-trip real Sierra game data (SQ1). A separate throwaway decoder matches them on all 238 SQ1 views and all 1,652 cels, pixel for pixel, and all 216 mirrored cels are exact flips of their source cels [SQ1 data check, log 2026-11-01]. Those 1,652 references come to 1,433 distinct cels, once shared loops are counted once [SQ1 data check, audit draw].
 
-The layout and draw rules were also checked against AGI 2.917 by static reading. The cel routines live in `IBM_OBJS.OVL`, which [[sources/agi-2917-binary]] places at `1000:9CF0`. The Hercules overlay `HGC_OBJS.OVL` is unread.
+The layout and draw rules were also checked against AGI 2.917 by static reading. The cel routines live in `IBM_OBJS.OVL`, which [[sources/agi-2917-binary]] places at `1000:9CF0`. The Hercules overlay `HGC_OBJS.OVL` applies the same rules; see [[concepts/ega-palette]] §"Other displays".
 
 ## On-disk layout
 
@@ -143,7 +143,7 @@ Each loaded VIEW resource is bound to one or more VIEW *objects* — runtime ins
 ## Open items
 
 - Description string parsing in the project's decoder (offset is read; string body is not).
-- `1000:5857`, called when a view loads, passes the view to the graphics-driver entry at `1000:9777`. It does this only when `DS:1126` is 0 and `DS:1128` is neither 2 nor 3. The driver entry is unread.
+- `1000:5857`, called when a view loads, passes the view to the graphics-driver entry at `1000:9777`. It does this only when `DS:1126` is 0 and `DS:1128` is neither 2 nor 3. That leaves the CGA driver, whose entry rewrites the view's colors in place; see [[concepts/ega-palette]] §"Other displays".
 - The comparison with `viewview.pas` below is carried over and wasn't repeated.
 
 ## Reference implementation

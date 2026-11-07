@@ -1,5 +1,7 @@
 # LZW Compression
 
+> **Audit status: unaudited (v3).** This page describes AGI v3. The audit checks the wiki against interpreter 2.917, which is v2 and has none of this, so every claim here rests on the spec alone. Cross-check with ScummVM before building on it.
+
 AGI v3 non-PICTURE resources are frequently compressed using an adaptive form of LZW [3-3-Files.html §LZW COMPRESSION].
 
 ## Algorithm

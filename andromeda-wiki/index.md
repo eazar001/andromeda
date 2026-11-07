@@ -24,8 +24,8 @@ Resource types and on-disk file formats. One page per resource.
 Shared primitives referenced by multiple entities: encoding schemes, palettes, encryption keys, common header layouts.
 
 - [[concepts/offset-encoding]] — 3-byte triplet encoding combining VOL number and byte offset; used in every directory entry.
-- [[concepts/lzw-compression]] — adaptive LZW (9-/10-/11-bit codes) applied to most AGI v3 non-PICTURE resources.
-- [[concepts/picture-compression]] — 4-bit color-packing scheme specific to AGI v3 PICTURE resources.
+- [[concepts/lzw-compression]] — adaptive LZW (9-/10-/11-bit codes) applied to most AGI v3 non-PICTURE resources. Unaudited (v3).
+- [[concepts/picture-compression]] — 4-bit color-packing scheme specific to AGI v3 PICTURE resources. Unaudited (v3).
 - [[concepts/agi-data-types]] — semantic data types used as AGI command parameters: variables, flags, strings, words, objects, inventory items, messages, controllers.
 - [[concepts/screen-layers]] — one 160×168 buffer holding visual and priority nibbles, init values, drawing-mode flags, and how pixels reach the display through the graphics overlays.
 - [[concepts/picture-rendering]] — PICTURE rendering algorithms audited against AGI 2.917 and emulation of its PICTURE routine: integer line drawing with 8-bit overflow, span flood fill, pen masks, splatter shift register.
@@ -56,9 +56,10 @@ The LOGIC VM and runtime model: opcode tables, event loop, priority bands, objec
 One page per ingested AGI Specification chapter, with a short summary and links to the entity/concept pages it informed.
 
 - [[sources/agi-2917-binary]] — The AGI 2.917 interpreter binary from SQ1, analyzed statically: identity, analysis setup, address conventions, and routine map. Top-ranked source for 2.917's behavior.
+- [[sources/agi-2917-runtime]] — The same interpreter run whole under emulation by `tools/agi_emu/`: what the harness models, what it can't show, and the `[2.917 runtime: …]` citation form.
 - [[sources/3-1-files]] — Directory files and VOL/DIR addressing scheme (AGI v2 and v3).
 - [[sources/3-2-files]] — VOL file container format and 5-byte resource header.
-- [[sources/3-3-files]] — AGI v3 resource storage: 7-byte headers, LZW compression, PICTURE compression.
+- [[sources/3-3-files]] — AGI v3 resource storage: 7-byte headers, LZW compression, PICTURE compression. Unaudited (v3).
 - [[sources/3-4-files]] — Sample-code reference table (Lance Ewing's historical decoders). Bibliographic only; no new format content.
 - [[sources/2-1-interpreter]] — Interpreter overview chapter (VM model at headline depth; subsystem detail deferred).
 - [[sources/2-2-interpreter]] — Reserved variables/flags assignment tables and the eleven-step interpreter work cycle.

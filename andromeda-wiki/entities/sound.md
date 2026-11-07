@@ -182,7 +182,7 @@ Startup sets a machine type, from a command-line switch or by detecting the hard
 
 The speaker has one voice and no volume. A note's attenuation matters only at 15, which silences it [AGI 2.917 1000:8054, 1000:809B]. The speaker's frequency comes from the same tone bytes with a different constant; see [[concepts/pcjr-sound-encoding]].
 
-One edge case on type 0: when the envelope table ends, the note's attenuation is replaced even though the speaker has no volume. A base of 2 or more becomes 15, which turns the speaker off for the rest of the note. That needs a note longer than 67 ticks, and SQ1 has none among its 1,068 audible voice 1 notes [SQ1 data check, log 2026-11-01]. Runtime only.
+One edge case on type 0: when the envelope table ends, the note's attenuation is replaced even though the speaker has no volume. A base of 2 or more becomes 15, which turns the speaker off for the rest of the note. That needs a note longer than 67 ticks, and SQ1 has none among its 1,068 audible voice 1 notes [SQ1 data check, log 2026-11-01]. **Confirmed at runtime:** a single 150-tick note at attenuation 4 turned the speaker gate on, and off again 68 ticks later [2.917 runtime: speaker_long_note_cutoff].
 
 
 ## Reference implementations
@@ -192,7 +192,7 @@ Two playback programs are vendored under `AGI_Specifications/Code/` and indexed 
 - **Duration field.** `play.c:107` multiplies the 16-bit duration by 6 before emitting a MIDI delta, which is undocumented in the source. The binary gives the unit directly: 1/60 second.
 - **Multi-voice / volume-control vintage caveat.** `play.c:9-10` notes the program "was written before we worked out the details on the fourth voice and the volume control." Earlier reference code may not fully reflect the v2+ four-voice and `var(23)` volume semantics.
 
-All 50 SQ1 SOUNDs have voices whose 5-byte notes reach an `FF FF` terminator, with 3,687 notes in all. Voice 1 runs from 0 to 48 seconds at 60 Hz, with a median of about 1 second [SQ1 data check, log 2026-11-01]. Andromeda has no SOUND decoder yet, and all of the above comes from reading code, so the timing and the sound itself are Runtime only.
+All 50 SQ1 SOUNDs have voices whose 5-byte notes reach an `FF FF` terminator, with 3,687 notes in all. Voice 1 runs from 0 to 48 seconds at 60 Hz, with a median of about 1 second [SQ1 data check, log 2026-11-01]. Andromeda has no SOUND decoder yet. The timing is confirmed at runtime: on a Tandy, SOUND 1's voice 1 tone writes came every 3 ticks at 60 Hz, matching its 3-tick notes, with every divisor as stored, and its completion flag was set at the end [2.917 runtime: sound_chip_timing_on_tandy]. How it sounds is beyond the harness.
 
 ## Related runtime state
 
