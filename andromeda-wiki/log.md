@@ -1357,3 +1357,20 @@ Wrote `BUILD_GUIDE.md` at the repo root: a start-to-finish guide to building a 2
 While writing it, fixed stale notes found on the way: the audit-status headers of `interpreter/control-lines` and `concepts/screen-layers`, the "unread" Hercules notes on `entities/view` and `interpreter/command-semantics` (`get.string`, `get.num` and `echo.line` use the Hercules prompt window), the inverse-text mechanism on `interpreter/command-semantics`, and `entities/vol-file`'s "not run".
 
 **Audit status.** Every item in `WIKI_AUDIT_PLAN.md` is ticked. Open, because they need hardware or games that aren't local: analog display output, DOS's divide handler and its reads across a 64K offset boundary, menu box pixels, and other games' debug phrases.
+
+## [2026-11-07] lint | full-wiki
+
+Coverage: the mechanical checks on every page. For contradictions, every fact changed on 2026-11-07 was checked against the rest of the wiki; the other pages are unchanged since the full read of 2026-11-01.
+
+**Findings.**
+1. Contradictions: none. Block 5's size, `flag(8)` and `var(15)`, null message reads, the heap top, `erase` one past the table, `trace.on` twice, `quit(0)`, divide by zero, step time 0 and "Stack blown." agree everywhere. No "Runtime only" markers remain. One missing cross-reference: `entities/logic` §"Entry-point control" didn't say that a restore leaves LOGIC 0's scan start as it was.
+2. Orphans: none.
+3. Broken links: none. Every `[2.917 runtime: …]` citation names a scenario in `tools/agi_emu/scenarios.py`, and all 38 are cited.
+4. Stale deferrals: none new. The `sources/` and `index.md` hits are historical "Group" notes, kept as records. `interpreter/input-parsing`'s "Group-0 words" is the vocabulary group, a false positive.
+5. Conflict index: 47 callouts, 47 lines. The block 5 callout on `interpreter/save-restore` lacked the "(resolved)" its index line has.
+
+**Changes applied.**
+- `interpreter/save-restore`: "(resolved)" added to the block 5 callout title.
+- `entities/logic`: one sentence on restore and LOGIC 0's scan start, linking `interpreter/save-restore`.
+
+**Open items carried forward.** The audit's open list, unchanged: analog display output, DOS's divide handler and its reads across a 64K boundary, menu box pixels, other games' debug phrases.

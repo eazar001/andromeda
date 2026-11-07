@@ -110,7 +110,7 @@ FF FD 0D FF 03 00 FE F7 FF     ; do { ... } while (!havekey)
 
 ### Entry-point control
 
-`set.scan.start()` makes the byte after it the entry point for later runs of this LOGIC, and `reset.scan.start()` restores the start of the bytecode section [AGI 2.917 1000:1335, 1000:134A; 4-1-Logic.html §NEW INFORMATION ON LOGIC INTERPRETATION]. The entry point lives in the LOGIC's in-memory record, so it's lost when that record is discarded.
+`set.scan.start()` makes the byte after it the entry point for later runs of this LOGIC, and `reset.scan.start()` restores the start of the bytecode section [AGI 2.917 1000:1335, 1000:134A; 4-1-Logic.html §NEW INFORMATION ON LOGIC INTERPRETATION]. The entry point lives in the LOGIC's in-memory record, so it's lost when that record is discarded. A restore sets it only for the LOGICs it reloads, so LOGIC 0 keeps the scan start it had before the restore; see [[interpreter/save-restore]] §"LOGIC 0's scan start isn't restored".
 
 ## Argument dispatch
 

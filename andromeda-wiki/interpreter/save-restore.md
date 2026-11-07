@@ -19,7 +19,7 @@ The file offset of the game ID is 33, which is what the slot list reads to rejec
 
 SQ1's sizes work out to 18 object slots (774 bytes), 328 bytes of `OBJECT` data, and a script size of 50 entries (100 bytes), since no SQ1 LOGIC calls `script.size` and `DS:0141` starts at 50 [SQ1 data check]. That gives 2,748 + 4 × (loaded LOGICs + 2) bytes.
 
-> [!conflict] Static reading vs. AGI 2.917 at runtime: block 5's size
+> [!conflict] Static reading vs. AGI 2.917 at runtime: block 5's size (resolved)
 > The static reading gave 4 × (loaded LOGICs + 1). Real save files have one more entry: 12 bytes with LOGIC 0 alone and 16 with LOGIC 0 and a room [2.917 runtime: save_file_bytes]. The table builder starts its walk at the list-head variable `DS:096F` itself, treating it as a record, so the first entry is made from `DS:0971`–`DS:0976`. No code references those bytes and `AGIDATA.OVL` has them as zeros, so the pseudo-entry is always LOGIC 0 with offset 0 [AGI 2.917 1000:1369, 1000:137A].
 
 **Checked at runtime.** A one-room session saved to `sqsg.1` at 2,764 bytes, with block lengths 1,505, 774, 328, 100 and 16, the description first and `SQ` at offset 33 [2.917 runtime: save_file_bytes].
