@@ -38,8 +38,6 @@ Each of `LOGDIR`, `PICDIR`, `VIEWDIR` and `SNDDIR` is a flat array of 3-byte ent
 
 2.917 opens only `VOL.0` to `VOL.4`. A number past the end of a directory isn't checked and reads whatever follows in memory; treat it as absent. Loading an absent resource is fatal: the interpreter names the type, says it wasn't found, and exits.
 
-The Python prototype's `read_dir` drops absent slots, which shifts the numbering for most of SQ1's resources. That is the first thing to fix.
-
 ### VOL files
 
 Each resource starts with a 5-byte header: the signature `12 34`, the VOL number, and a little-endian payload length. 2.917 checks the signature and that the VOL byte equals the directory's VOL number, and treats a mismatch as the wrong disk. With no disk swapping, any read failure can be fatal.

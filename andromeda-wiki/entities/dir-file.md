@@ -59,7 +59,7 @@ In AGI 2.917, an entry is absent when the high nibble of its first byte is `F`. 
 > [!conflict] What marks an absent resource
 > **Refined:** the spec names only `FF FF FF` [3-1-Files.html §Version 2 directories]. On SQ1 that form accounts for 86 of the 87 absent entries. The other is `SNDDIR` slot 0, `FF 23 C1`, which earlier looked like an invalid entry pointing at `VOL.15`. The interpreter's rule covers it [SQ1 data check, log 2026-11-01].
 
-This enables sparse numbering: a game can define `PICTURE.5` without `PICTURE.0`–`PICTURE.4`. [resource/directory.py:read_dir] filters out only `FF FF FF`, which also loses the numbering: list position no longer equals resource number. On SQ1, 61 of 101 LOGIC, 73 of 73 PICTURE, 228 of 238 VIEW, and 46 of 51 SOUND entries sit at the wrong position [SQ1 data check, log 2026-11-01]. LOGIC addresses resources by number, so a reader must key entries by slot and apply the high-nibble rule.
+This enables sparse numbering: a game can define `PICTURE.5` without `PICTURE.0`–`PICTURE.4`. LOGIC addresses resources by number, so a reader must key entries by slot and apply the high-nibble rule. [resource/directory.py:read_dir] keeps every slot in place and returns absent ones with volume `F`, leaving the skip to callers. Its slot and absent counts match those below on all four SQ1 directories [SQ1 data check, log 2026-11-07]. Until 2026-11-07 it dropped `FF FF FF` slots instead, which put 61 of 101 LOGIC, 73 of 73 PICTURE, 228 of 238 VIEW, and 46 of 51 SOUND entries at the wrong position [SQ1 data check, log 2026-11-01].
 
 SQ1's counts of absent slots are 23 of 124 in `LOGDIR`, 32 of 105 in `PICDIR`, 16 of 254 in `VIEWDIR` and 16 of 66 in `SNDDIR` [SQ1 data check, log 2026-11-01].
 

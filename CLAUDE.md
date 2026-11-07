@@ -50,14 +50,14 @@ The game code has no tests or lint configuration yet. `tools/picture_emu/` and `
 
 AGI resources follow a two-step access pattern:
 
-1. **`*DIR` files** → `resource/directory.py:read_dir()` parses 3-byte triplets, each encoding a VOL file number (hi nibble of byte 1) and a byte offset into that VOL file (lo nibble of byte 1 + bytes 2-3). Returns a list of `(vol, offset)` pairs.
+1. **`*DIR` files** → `resource/directory.py:read_dir()` parses 3-byte triplets, each encoding a VOL file number (hi nibble of byte 1) and a byte offset into that VOL file (lo nibble of byte 1 + bytes 2-3). Returns one `(vol, offset)` pair per slot, so list position is the resource number. Absent slots stay in the list with `vol == 0xF`; callers must skip them.
 2. **`VOL.*` files** → `resource/volume.py:VolumeReader.read_resource(offset)` seeks to that offset, parses the 5-byte header, and returns `(ResourceHeader, payload)`.
 
 ### Modules
 
 - **`util/byte.py`** — single `nibble()` helper that extracts the high or low nibble from a byte.
 - **`util/crypto.py`** — `xor_cycle(key_string, file)` decrypts a file with a repeating XOR key.
-- **`resource/directory.py`** — parses `*DIR` index files into `(vol, offset)` pairs; skips entries where both equal `0xF`/`0xFFFFF` (missing resource sentinel). **Known bug:** see Implementation Status.
+- **`resource/directory.py`** — parses `*DIR` index files into one `(vol, offset)` pair per slot, reading at most 256. A slot is absent when `vol == 0xF`, whatever the offset; it stays in the list so numbering holds.
 - **`resource/header.py`** — `ResourceHeader.parse(f, offset)` reads the 5-byte VOL header. The signature is parsed but not validated.
 - **`resource/volume.py`** — `VolumeReader(path)` holds an open VOL file and reads resources from it.
 - **`resource/objects.py`** — decrypts and parses the `OBJECT` file. `Object.extract_inventory_objects(file)` returns `Object(index, name, room)` instances, with `name` as bytes. **Known bug:** see Implementation Status.
@@ -89,11 +89,10 @@ The interpreter binaries (`AGI`, `*.OVL`) may be read and analyzed. See `androme
 
 ### Implementation Status
 
-Working on all of SQ1: VOL header and payload reading, VIEW decoding, and cel compositing (transparency and mirroring).
+Working on all of SQ1: DIR parsing by slot, VOL header and payload reading, VIEW decoding, and cel compositing (transparency and mirroring).
 
-Parsed, with known bugs to fix before M3:
+Parsed, with a known bug to fix before M3:
 
-- **`read_dir`** drops empty slots, so list position does not equal resource number (wrong for 61 of 101 SQ1 LOGICs). It also accepts invalid entries such as SQ1's `SNDDIR` slot 0, which points at a nonexistent `VOL.15`.
 - **`OBJECT`** names are read sequentially rather than through entry pointers, so SQ1 returns 24 of 25 items and items 18–24 are misnumbered. The `+ 5` at `resource/objects.py:31` only works by skipping SQ1's `?\0` placeholder; do not change it to `+ 3` without moving to pointer lookup.
 
 Still needed: LOGIC (bytecode and interpreter), PICTURE (background), SOUND, WORDS.TOK, and AGI v3 support. `LOGDIR`, `PICDIR`, and `SNDDIR` are read only as indexes.

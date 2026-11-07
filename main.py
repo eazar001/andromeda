@@ -59,7 +59,7 @@ def main():
 
     stop = False
 
-    for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
+    for vol, view_offset in [(vol, offset) for vol, offset in read_dir('test_games/sq1/VIEWDIR') if vol < 0xF]:
         vol_reader = VolumeReader(f'test_games/sq1/VOL.{vol}')
         view = get_view_data(vol_reader, view_offset)
         vol_reader.close()

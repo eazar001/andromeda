@@ -12,12 +12,9 @@ def read_dir(file):
             if i % 3 == 0:
                 store.append(b)
                 vol, offset = read_byte_triplet(store)
-
-                if (vol, offset) != (0xF, 0xFFFFF):
-                    bs.append((vol, offset))
-                    count += 1
-
+                bs.append((vol, offset))
                 store.clear()
+                count += 1
             else:
                 store.append(b)
 

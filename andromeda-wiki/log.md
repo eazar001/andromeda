@@ -1374,3 +1374,9 @@ Coverage: the mechanical checks on every page. For contradictions, every fact ch
 - `entities/logic`: one sentence on restore and LOGIC 0's scan start, linking `interpreter/save-restore`.
 
 **Open items carried forward.** The audit's open list, unchanged: analog display output, DOS's divide handler and its reads across a 64K boundary, menu box pixels, other games' debug phrases.
+
+## [2026-11-07] file | `read_dir` keeps slots
+
+`resource/directory.py:read_dir` now returns one entry per slot, with absent slots (volume nibble `F`) left in place, and `main.py` skips them. SQ1 data check: 124/23, 105/32, 254/16 and 66/16 slots/absent for `LOGDIR`, `PICDIR`, `VIEWDIR` and `SNDDIR`, matching the counts on the page; all 238 present VIEWs decode, 1,652 cels.
+
+**Changes applied.** `entities/dir-file` §"Resource nonexistence": the bug note now describes the fixed reader and keeps the old position counts as history. Outside the wiki, the known-bug entries in `CLAUDE.md` and `DEVELOPMENT_PLAN.md` and the "first thing to fix" line in `BUILD_GUIDE.md` were removed.

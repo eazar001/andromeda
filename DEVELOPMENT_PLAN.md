@@ -31,7 +31,7 @@ What exists today (November 2026):
 
 | Module | Status | Notes |
 |---|---|---|
-| `resource/directory.py` | ⚠️ Known bug | Moved from `util/dir.py`. Parses `*DIR` files to `(vol, offset)` pairs and skips `(0xF, 0xFFFFF)` sentinels. **Dropping those slots loses resource numbers**, so `entries[n]` is not resource `n` (wrong for 61 of 101 SQ1 LOGICs). Must key by slot before M3. |
+| `resource/directory.py` | ✅ Working | Moved from `util/dir.py`. Parses `*DIR` files to one `(vol, offset)` pair per slot, so `entries[n]` is resource `n`. Absent slots (`vol == 0xF`, any offset) stay in place; callers skip them, as `main.py` does. Slot and absent counts match the wiki on all four SQ1 directories. |
 | `resource/volume.py` | ✅ Working | `VolumeReader(path)` holds an open file handle. `read_resource(offset)` returns `(ResourceHeader, payload_bytes)` without re-opening the VOL file. |
 | `util/byte.py` | ✅ Working | `nibble(byte, 'hi'/'lo')` helper. `cel_mirror()` removed — mirror flag and loop index are now extracted inline in `resource/view.py`. |
 | `resource/header.py` | ✅ Working | `ResourceHeader` dataclass with `@classmethod parse(f, offset)`. Reads the 5-byte VOL chunk header: 2-byte signature (`0x1234`, big-endian), 1-byte vol number, 2-byte LE resource length. Verified against all 462 SQ1 resources. The signature is parsed but not validated. |
