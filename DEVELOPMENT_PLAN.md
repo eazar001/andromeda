@@ -6,13 +6,16 @@ A personal working document for building a Python prototype of Sierra's AGI (Adv
 
 ## 0. Ground rules and caveats
 
-- **Sources.** Start from the publicly documented AGI specifications — primarily Peter Kelly's "AGI Specifications" (a.k.a. `agispec`) and Lance Ewing's notes, as mirrored on the ScummVM wiki, agidev.com, and agiwiki.sierrahelp.com. The specs contain errors, so claims are being checked against the AGI 2.917 interpreter from SQ1, which is the top source for that version's behavior (see `WIKI_AUDIT_PLAN.md`). ScummVM and NAGI are the cross-checks for other versions.
-- **Web verification caveat.** The research that backs this plan was compiled in an environment where live web fetching was disabled, so every byte-level claim below should be diffed against a freshly fetched copy of the Kelly spec before you commit code that depends on it. The gotchas listed per subsystem flag the high-risk spots.
+- **Sources.** The AGI 2.917 interpreter from SQ1 is the authority for that version's behavior. Every wiki claim has been audited against it, by reading its code and by running it whole under `tools/agi_emu/` (see `WIKI_AUDIT_PLAN.md`). Where the published specs disagree with it, the interpreter wins. Consult `andromeda-wiki/` first; the specs and the references below matter only where the wiki is silent, or for versions other than 2.917.
+- **Build companion.** `BUILD_GUIDE.md` is the audited, stage-by-stage reference for building against 2.917: the rules, the traps, and the wiki pages behind each stage. This plan tracks milestones and status; when a per-milestone note here disagrees with the guide or the wiki, the guide and the wiki win.
+- **Oracle.** `tools/agi_emu/` runs the real interpreter on the real game files with test resources substituted, and `tools/picture_emu/` runs its PICTURE routine alone. Use them to check a milestone's output against the interpreter's.
 - **Scope target.** First playable milestone is **Space Quest 1 room 1** (outside the Arcada): PIC loaded, ego drawn, input parsed, basic `said()` dialogue works. Everything else is scaffolding toward that.
 - **Language/stack.** Python 3.14, PySDL2 (already a dep). Avoid heavy dependencies — one goal is to keep the code pedagogical. This is the prototype: a Rust rewrite is planned, but its design and timing aren't covered in this plan yet.
 - **AGI v2 only for now.** v3 adds LZW compression and a handful of opcodes; defer until v2 is playable.
 
-### Canonical sources to verify against
+### Other references
+
+For versions other than 2.917, and anything the wiki doesn't cover. agidev.com has known byte-level errors; prefer ScummVM and NAGI where they disagree.
 
 - ScummVM AGI specs: http://wiki.scummvm.org/index.php/AGI and `.../AGI/Specifications/*`
 - AGI wiki: http://agiwiki.sierrahelp.com/
@@ -24,7 +27,7 @@ A personal working document for building a Python prototype of Sierra's AGI (Adv
 
 ## 1. Current state of the repo
 
-What exists today (April 2026):
+What exists today (November 2026):
 
 | Module | Status | Notes |
 |---|---|---|
@@ -40,7 +43,7 @@ What exists today (April 2026):
 
 **Confirmed facts from the existing code worth preserving:**
 
-- VOL resource header is 5 bytes (two-byte signature `0x12 0x34` + vol# + LE length word). `view/vol.py` correctly seeks `offset + 7` to land past the VIEW's own 2-byte header. The same 5-byte prefix applies to PIC, LOGIC, SOUND.
+- VOL resource header is 5 bytes (two-byte signature `0x12 0x34` + vol# + LE length word). The same 5-byte prefix applies to PIC, LOGIC, SOUND.
 - The DIR triplet encoding is: `nibble_hi(b0)` = vol number, `(nibble_lo(b0) << 16) | (b1 << 8) | b2` = byte offset into that VOL.
 - XOR decryption key for obfuscated sections is the ASCII string `"Avis Durgan"` (11 bytes, repeating).
 
@@ -48,8 +51,6 @@ What exists today (April 2026):
 
 - No resource manager exists. `VolumeReader` keeps a file handle open, but nothing caches resources or honors sticky (game-global) vs. per-room lifetimes (see §3).
 - The VIEW loader returns only `desc_offset`, not the description text (20 SQ1 views have one). A view with no loops crashes it, and a loop with no cels shifts later loops down a position; SQ1 has neither.
-- Note: `*.gitignore` should include `*.stackdump` to suppress Cygwin/MSYS2 crash dumps from appearing as untracked files.
-
 ---
 
 ## 2. Architecture overview
@@ -224,8 +225,8 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
   - Message section: `num_messages (u8)`, `end_offset (u16 LE)`, then `num_messages` u16 LE pointers to strings. String bodies are null-terminated and XOR-encrypted with `"Avis Durgan"`. Offset 0 in the pointer table = missing message. Messages are 1-indexed. **Pointers and `end_offset` are relative to the byte after `num_messages`**, not the section start.
   - XOR key range is **only** the string body area (from the first string onward up to `end_offset`), not the pointer table. Getting this bound off by one scrambles every message.
 - [ ] `runtime/commands.py`: the **opcode arity table**. This is the single most important piece of data in the whole project — one wrong arity and every instruction after it is garbage. Sources:
-  - `andromeda-wiki/interpreter/commands.md` (from spec chapter 4-3). Confirmed against all 101 SQ1 LOGICs for the commands SQ1 uses.
-  - Cross-verify against agiwiki.sierrahelp.com tables.
+  - `andromeda-wiki/interpreter/commands.md` (from spec chapter 4-3). Argument counts for every 2.917 test command and action commands `$00..$AD` match the interpreter's own tables, and all 101 SQ1 LOGICs decode without desyncs.
+  - Opcodes `$AE..$B5` don't exist in 2.917; their counts, and every other version's, are still unverified.
   - Store as a `dict[int, CommandSpec]` where `CommandSpec` is `(name, num_args, arg_kinds)`. `arg_kinds` is metadata like `"var" | "flag" | "obj" | "msg" | "num" | "str"` for prettier disassembly later.
 - [ ] `runtime/interp.py:disassemble(logic: Logic) -> str`: walk the bytecode, emit human-readable assembly. Handles the three special control bytes:
   - `0x00` = return
@@ -421,7 +422,7 @@ Not on the critical path to a playable SQ1.
 
 ---
 
-## 5. Key reference tables (verify before hardcoding)
+## 5. Key reference tables (summaries; the wiki has the audited detail)
 
 ### LOGIC control bytes
 
