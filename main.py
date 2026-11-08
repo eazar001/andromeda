@@ -3,6 +3,7 @@ import ctypes
 from gfx.palette import visual_screen_buffer_to_texture
 from gfx.screens import VisualScreen
 from gfx.view_render import composite_cel
+from resource.objects import Object
 from resource.view import get_view_data
 from resource.directory import read_dir
 from sdl2 import SDL_PollEvent, SDL_Event, SDL_RenderSetScale, SDL_Delay
@@ -48,31 +49,8 @@ def animate_cels(loop_idx, cels, window, frame_delay_ms=120, infinite=False):
 
 
 def main():
-    """Open one window and cycle through all `cels`. Close the window to exit."""
-    SDL_Init(SDL_INIT_VIDEO)
-    window = Window(
-        "Walk cycle",
-        (1280, 1024),
-        (SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED),
-        SDL_WINDOW_SHOWN
-    )
-
-    stop = False
-
-    for vol, view_offset in [(vol, offset) for vol, offset in read_dir('test_games/sq1/VIEWDIR') if vol < 0xF]:
-        vol_reader = VolumeReader(f'test_games/sq1/VOL.{vol}')
-        view = get_view_data(vol_reader, view_offset)
-        vol_reader.close()
-
-        for loop in view.loops:
-            if not animate_cels(loop.loop_idx, loop.cels, window):
-                stop = True
-
-        if stop:
-            break
-
-    window.close()
-    SDL_Quit()
+    for o in Object.extract_inventory_objects('test_games/sq1/OBJECT'):
+        print(o.index, o.name, o.room)
 
     for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
         print(vol, view_offset)
