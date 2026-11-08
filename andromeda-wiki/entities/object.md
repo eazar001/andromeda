@@ -73,9 +73,9 @@ There is no `drop.v`, as the table in [[interpreter/commands]] already shows. `d
 ## Reference implementations
 
 - **`AGI_Specifications/Code/object.pas`** (Peter Kelly, indexed by [[sources/8-3-samplecode]]) — interactive OBJECT viewer. Implements the cyclic-key decryption (`object.pas:25-37`), little-endian header parsing (`object.pas:50-52`), 3-byte-stride entry iteration (`object.pas:54-71`), and null-terminated name recovery.
-- **`resource/objects.py`** (andromeda) — `Object.extract_inventory_objects` returns 24 of SQ1's 25 items: it reads names sequentially, drops item 17, and renumbers items 18–24 down by one [SQ1 data check, log 2026-11-01]. `decrypt_object_file` (`objects.py:72-73`) uses `util.crypto.xor_cycle` with the `"Avis Durgan"` key.
+- **`resource/objects.py`** (andromeda) — `Object.extract_inventory_objects` returns one object per entry, and `parse_object_name` resolves each name through its entry's pointer. SQ1 gives all 25 items in order, with item 17 reading `?` [SQ1 data check, log 2026-11-07]. Before 2026-11-07 it read names in sequence and returned 24 items, with 18–24 renumbered down by one. `decrypt_object_file` uses `util.crypto.xor_cycle` with the `"Avis Durgan"` key.
 
-**Resolved: `+ 5` vs. `+ 3`.** The spec's `+ 3` is correct: the name section starts at `inventory_offset + 3`. The `+ 5` at `resource/objects.py:31` skips SQ1's two-byte `?\0` placeholder, which is why item 0 still reads `dummy`. Changing it to `+ 3` alone makes things worse, because every name moves down one item [SQ1 data check, log 2026-11-01]. The fix is pointer-based name lookup, which is also what 2.917 does.
+**Resolved: `+ 5` vs. `+ 3`.** The spec's `+ 3` is correct: the name section starts at `inventory_offset + 3`. The prototype's former `+ 5` skipped SQ1's two-byte `?\0` placeholder, which is why item 0 still read `dummy`; changing it to `+ 3` alone would have moved every name down one item [SQ1 data check, log 2026-11-01]. Pointer-based name lookup, which is also what 2.917 does, replaced it on 2026-11-07, so the prototype no longer computes a name-section start.
 
 ## See also
 

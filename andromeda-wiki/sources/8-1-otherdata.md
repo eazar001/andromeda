@@ -20,7 +20,7 @@ Despite the chapter title "OtherData", scope is exclusively the OBJECT resource.
 
 - **Encryption is version-conditional.** v2.089 and v2.272 ship OBJECT in cleartext; v2.411 onward and all v3 use the Avis-Durgan cyclic XOR [[sources/2-8-interpreter]]. Decoders must check interpreter version.
 - **Key reuse with LOGIC text.** Same `"Avis Durgan"` 11-byte key encrypts both OBJECT and v2 LOGIC text-message sections [[entities/logic]]. Historical artifact of minimal-effort Sierra encryption.
-- **Spec's offset semantics vs. andromeda's decoder.** The spec defines the name-section offset as relative to "the start of entry 0" (file byte 3). `resource/objects.py:31` adds `+ 5` instead of `+ 3` to reach the name section. Resolved on [[entities/object]]: `+ 3` is correct, and `+ 5` only works on SQ1 because it skips a two-byte placeholder.
+- **Spec's offset semantics vs. andromeda's decoder.** The spec defines the name-section offset as relative to "the start of entry 0" (file byte 3). `resource/objects.py:31` added `+ 5` instead of `+ 3` to reach the name section. Resolved on [[entities/object]]: `+ 3` is correct, and `+ 5` only worked on SQ1 because it skipped a two-byte placeholder. The prototype switched to pointer lookup on 2026-11-07.
 - **Object cap and animation slots.** Header byte 2 is the maximum simultaneous animated-object count, used to size the runtime VIEW-object table — not the inventory-entry count, which is implicit in the name-section offset.
 
 ## Open items
