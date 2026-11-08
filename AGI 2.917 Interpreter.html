@@ -1,0 +1,356 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>AGI 2.917 Interpreter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout: one narrow reading column; each figure makes one claim and scrolls sideways inside its own frame on phones. */
+  :root {
+    --bg: #f3f6fa;
+    --surface: #ffffff;
+    --fg: #13202f;
+    --muted: #56667a;
+    --line: #8d9bad;
+    --hair: #d3dae3;
+    --accent: #0b62b3;
+    --wash: #e8f0fa;
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1520; --surface: #161f2d; --fg: #e4ebf3; --muted: #9aaabd;
+      --line: #61748b; --hair: #27344a; --accent: #6db6ff; --wash: #122a45;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1520; --surface: #161f2d; --fg: #e4ebf3; --muted: #9aaabd;
+    --line: #61748b; --hair: #27344a; --accent: #6db6ff; --wash: #122a45;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font: 15px/1.6 var(--sans);
+    padding-block: 32px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+  header { max-width: 68ch; display: flex; flex-direction: column; gap: 10px; }
+  h1 { font: 600 28px/1.2 var(--sans); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  h2 { font: 600 18px/1.3 var(--sans); margin: 0; text-wrap: balance; }
+  p { margin: 0; max-width: 68ch; }
+  .lede { color: var(--muted); }
+  code { font: 13px var(--mono); background: var(--wash); padding: 1px 5px; border-radius: 3px; }
+  .key { display: inline-block; width: 11px; height: 11px; border: 2px solid var(--accent); background: var(--wash); vertical-align: -1px; margin-right: 4px; }
+
+  section { display: flex; flex-direction: column; gap: 12px; }
+  figure { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .frame { overflow-x: auto; background: var(--surface); border: 1px solid var(--hair); border-radius: 6px; padding: 12px; }
+  .frame svg { display: block; width: 100%; min-width: 760px; height: auto; }
+  figcaption { color: var(--muted); font-size: 13.5px; max-width: 76ch; }
+  footer { color: var(--muted); font-size: 13px; max-width: 68ch; border-top: 1px solid var(--hair); padding-top: 14px; }
+
+  /* SVG parts, styled from the page so both themes follow the tokens. */
+  svg .box { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+  svg .box.mem { fill: var(--wash); }
+  svg .box.hot { fill: var(--wash); stroke: var(--accent); stroke-width: 2; }
+  svg .ttl { font: 600 13px var(--sans); fill: var(--fg); }
+  svg .txt { font: 12px var(--sans); fill: var(--muted); }
+  svg .lbl { font: 500 11px var(--mono); fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+  svg .col { font: 600 10.5px var(--sans); letter-spacing: 0.1em; fill: var(--muted); }
+  svg .num { font: 600 12px var(--mono); fill: var(--muted); }
+  svg .num.hot { fill: var(--accent); }
+  svg .edge { fill: none; stroke: var(--line); stroke-width: 1.4; }
+  svg .edge.hot { stroke: var(--accent); stroke-width: 1.8; }
+  svg .edge.dash { stroke-dasharray: 5 4; }
+  svg .brk { fill: none; stroke: var(--line); stroke-width: 1.2; }
+  svg .mk { fill: var(--line); }
+  svg .mk.hot { fill: var(--accent); }
+</style>
+
+<main>
+  <header>
+    <h1>AGI 2.917 Interpreter</h1>
+    <p class="lede">How the interpreter that ships with Space Quest 1 fits together, drawn from the build guide: where data flows, what runs each cycle, and how a keypress becomes something LOGIC can test.</p>
+    <p class="lede"><span class="key"></span>Blue marks LOGIC executing, the one thing every figure turns on.</p>
+  </header>
+
+  <section>
+    <h2>From game files to screen</h2>
+    <figure>
+      <div class="frame">
+        <svg viewBox="0 0 980 470" role="img" aria-label="Game files load through a resource heap into the LOGIC VM. The VM and a 20 Hz input timer share one machine state, and everything drawn lands in a single screen buffer that is copied to the display.">
+          <defs>
+            <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><polygon class="mk" points="0,0 10,5 0,10"/></marker>
+            <marker id="a1h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><polygon class="mk hot" points="0,0 10,5 0,10"/></marker>
+          </defs>
+
+          <text class="col" x="20" y="24">FILES</text>
+          <text class="col" x="270" y="24">LOADED</text>
+          <text class="col" x="580" y="24">RUNNING</text>
+          <text class="col" x="825" y="24">OUTPUT</text>
+
+          <rect class="box" x="20" y="40" width="190" height="58" rx="4"/>
+          <text class="ttl" x="32" y="60">*DIR index files</text>
+          <text class="txt" x="32" y="76">3-byte slots, no header</text>
+          <text class="txt" x="32" y="92">position = resource number</text>
+
+          <rect class="box" x="20" y="122" width="190" height="58" rx="4"/>
+          <text class="ttl" x="32" y="142">VOL.0 – VOL.4</text>
+          <text class="txt" x="32" y="158">5-byte header,</text>
+          <text class="txt" x="32" y="174">then the payload</text>
+
+          <rect class="box" x="20" y="204" width="190" height="58" rx="4"/>
+          <text class="ttl" x="32" y="224">OBJECT</text>
+          <text class="txt" x="32" y="240">XOR-encrypted, key</text>
+          <text class="txt" x="32" y="256">“Avis Durgan”</text>
+
+          <rect class="box" x="20" y="286" width="190" height="58" rx="4"/>
+          <text class="ttl" x="32" y="306">WORDS.TOK</text>
+          <text class="txt" x="32" y="322">26 letter offsets,</text>
+          <text class="txt" x="32" y="338">then packed entries</text>
+
+          <path class="edge" d="M115 98 V122" marker-end="url(#a1)"/>
+          <text class="lbl" x="123" y="114">vol + offset</text>
+
+          <rect class="box" x="270" y="105" width="210" height="92" rx="4"/>
+          <text class="ttl" x="282" y="127">Resource lists</text>
+          <text class="txt" x="282" y="145">LOGIC, PICTURE, VIEW, SOUND</text>
+          <text class="txt" x="282" y="161">bump heap, 57,744 bytes</text>
+          <text class="txt" x="282" y="177">released from the top</text>
+          <path class="edge" d="M210 151 H270" marker-end="url(#a1)"/>
+          <text class="lbl" x="240" y="143" text-anchor="middle">load.*</text>
+
+          <rect class="box hot" x="580" y="40" width="210" height="66" rx="4"/>
+          <text class="ttl" x="592" y="62">LOGIC VM</text>
+          <text class="txt" x="592" y="80">LOGIC 0 runs every cycle</text>
+          <text class="txt" x="592" y="96">call = a nested LOGIC run</text>
+          <path class="edge hot" d="M480 126 H530 V73 H580" marker-end="url(#a1h)"/>
+          <text class="lbl" x="555" y="66" text-anchor="middle">bytecode</text>
+
+          <rect class="box mem" x="580" y="150" width="210" height="150" rx="4"/>
+          <text class="ttl" x="592" y="172">Machine state</text>
+          <text class="txt" x="592" y="192">256 variables, 256 flags</text>
+          <text class="txt" x="592" y="208">24 strings, 40 bytes each</text>
+          <text class="txt" x="592" y="224">object table (18 slots in SQ1)</text>
+          <text class="txt" x="592" y="240">inventory room bytes</text>
+          <text class="txt" x="592" y="256">controller table (50)</text>
+          <text class="txt" x="592" y="272">event queue (20)</text>
+          <path class="edge hot" d="M685 106 V150" marker-start="url(#a1h)" marker-end="url(#a1h)"/>
+          <text class="lbl" x="693" y="133">reads / writes</text>
+
+          <path class="edge" d="M210 233 H580" marker-end="url(#a1)"/>
+          <text class="lbl" x="395" y="226" text-anchor="middle">inventory + table size</text>
+
+          <rect class="box" x="270" y="286" width="210" height="58" rx="4"/>
+          <text class="ttl" x="282" y="306">Parser</text>
+          <text class="txt" x="282" y="322">longest match, drops fillers</text>
+          <path class="edge" d="M210 315 H270" marker-end="url(#a1)"/>
+          <text class="lbl" x="240" y="307" text-anchor="middle">vocab</text>
+          <path class="edge" d="M480 315 H640 V300" marker-end="url(#a1)"/>
+          <text class="lbl" x="560" y="331" text-anchor="middle">words, flag(2), var(9)</text>
+
+          <rect class="box" x="270" y="380" width="210" height="70" rx="4"/>
+          <text class="ttl" x="282" y="402">20 Hz timer routine</text>
+          <text class="txt" x="282" y="420">polls keyboard + joystick</text>
+          <text class="txt" x="282" y="436">counts var(10), runs the clock</text>
+          <path class="edge" d="M480 415 H730 V300" marker-end="url(#a1)"/>
+          <text class="lbl" x="605" y="408" text-anchor="middle">key + direction events</text>
+
+          <rect class="box mem" x="825" y="40" width="150" height="100" rx="4"/>
+          <text class="ttl" x="837" y="62">Screen buffer</text>
+          <text class="txt" x="837" y="80">160 × 168 bytes</text>
+          <text class="txt" x="837" y="96">low nibble: color</text>
+          <text class="txt" x="837" y="112">high nibble: priority</text>
+          <path class="edge hot" d="M790 73 H825" marker-end="url(#a1h)"/>
+          <text class="lbl" x="807" y="66" text-anchor="middle">draw</text>
+          <path class="edge" d="M790 190 H880 V140" marker-end="url(#a1)"/>
+          <text class="lbl" x="835" y="183" text-anchor="middle">objects</text>
+
+          <rect class="box" x="825" y="230" width="150" height="60" rx="4"/>
+          <text class="ttl" x="837" y="252">Display</text>
+          <text class="txt" x="837" y="270">EGA, each pixel doubled</text>
+          <path class="edge" d="M940 140 V230" marker-end="url(#a1)"/>
+          <text class="lbl" x="934" y="214" text-anchor="end">show.pic</text>
+        </svg>
+      </div>
+      <figcaption>Resources come off disk through the directory and volume files onto a fixed heap, and only LOGIC reads them as code. The VM and the timer-driven input path meet in one machine state. Pictures and objects share a single buffer, and nothing reaches the display until <code>show.pic</code>. Sound and save/restore are left out.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>One game cycle</h2>
+    <figure>
+      <div class="frame">
+        <svg viewBox="0 0 980 520" role="img" aria-label="The 13 steps of one game cycle in order. Step 9 runs LOGIC 0 and loops back on itself when a room change, restore or restart happens.">
+          <defs>
+            <marker id="a2h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><polygon class="mk hot" points="0,0 10,5 0,10"/></marker>
+          </defs>
+
+          <path class="brk" d="M178 20 H172 V122 H178"/>
+          <text class="txt" x="160" y="75" text-anchor="end">Pace and reset</text>
+          <path class="brk" d="M178 128 H172 V194 H178"/>
+          <text class="txt" x="160" y="165" text-anchor="end">Input</text>
+          <path class="brk" d="M178 200 H172 V266 H178"/>
+          <text class="txt" x="160" y="237" text-anchor="end">Objects, before LOGIC</text>
+          <path class="brk" d="M178 272 H172 V410 H178"/>
+          <text class="txt" x="160" y="345" text-anchor="end">LOGIC and status</text>
+          <path class="brk" d="M178 416 H172 V482 H178"/>
+          <text class="txt" x="160" y="453" text-anchor="end">Clean up and draw</text>
+
+          <rect class="box" x="190" y="20" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="40">1</text>
+          <text class="txt" x="232" y="40">Wait until var(10) ticks of 20 Hz have passed (0 = no wait)</text>
+
+          <rect class="box" x="190" y="56" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="76">2</text>
+          <text class="txt" x="232" y="76">Clear the controller table</text>
+
+          <rect class="box" x="190" y="92" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="112">3</text>
+          <text class="txt" x="232" y="112">Clear flag(2) and flag(4)</text>
+
+          <rect class="box" x="190" y="128" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="148">4</text>
+          <text class="txt" x="232" y="148">Read the joystick, if present</text>
+
+          <rect class="box" x="190" y="164" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="184">5</text>
+          <text class="txt" x="232" y="184">Drain the event queue (first clears var(19) and var(9))</text>
+
+          <rect class="box" x="190" y="200" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="220">6</text>
+          <text class="txt" x="232" y="220">Sync EGO’s direction with var(6)</text>
+
+          <rect class="box" x="190" y="236" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="256">7</text>
+          <text class="txt" x="232" y="256">Motion pass: moving objects pick new directions</text>
+
+          <rect class="box" x="190" y="272" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="292">8</text>
+          <text class="txt" x="232" y="292">Snapshot the score and flag(9)</text>
+
+          <rect class="box hot" x="190" y="308" width="440" height="30" rx="3"/>
+          <text class="num hot" x="204" y="328">9</text>
+          <text class="ttl" x="232" y="328">Run LOGIC 0</text>
+
+          <rect class="box" x="190" y="344" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="364">10</text>
+          <text class="txt" x="232" y="364">Set EGO’s direction from var(6)</text>
+
+          <rect class="box" x="190" y="380" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="400">11</text>
+          <text class="txt" x="232" y="400">Redraw the status line if the score or flag(9) changed</text>
+
+          <rect class="box" x="190" y="416" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="436">12</text>
+          <text class="txt" x="232" y="436">Clear var(4), var(5), flag(5), flag(6), flag(12)</text>
+
+          <rect class="box" x="190" y="452" width="440" height="30" rx="3"/>
+          <text class="num" x="204" y="472">13</text>
+          <text class="txt" x="232" y="472">Screen pass: cycle, step and redraw objects</text>
+
+          <text class="txt" x="190" y="504">then back to step 1</text>
+
+          <path class="edge hot dash" d="M630 332 H656 V314 H632" marker-end="url(#a2h)"/>
+          <text class="txt" x="676" y="312">LOGIC 0 returns 0 after new.room,</text>
+          <text class="txt" x="676" y="328">restore.game or restart.game.</text>
+          <text class="txt" x="676" y="344">Clear var(9), var(4), var(5), flag(2),</text>
+          <text class="txt" x="676" y="360">then run LOGIC 0 again at once.</text>
+        </svg>
+      </div>
+      <figcaption>The order is read from the interpreter, not the published spec. A room change takes effect straight after LOGIC 0, before objects update, so <code>new.room</code> reruns step 9 without a new wait or input poll.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>From keypress to <code>said</code></h2>
+    <figure>
+      <div class="frame">
+        <svg viewBox="0 0 980 390" role="img" aria-label="Devices are polled by a 20 Hz timer into a 20-entry event queue, drained at cycle step 5 into key, direction and controller events. A key event can be an Enter that parses the line into words, which LOGIC tests with said.">
+          <defs>
+            <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><polygon class="mk" points="0,0 10,5 0,10"/></marker>
+            <marker id="a3h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><polygon class="mk hot" points="0,0 10,5 0,10"/></marker>
+          </defs>
+
+          <rect class="box" x="20" y="24" width="200" height="66" rx="4"/>
+          <text class="ttl" x="32" y="46">Keyboard, joystick</text>
+          <text class="txt" x="32" y="64">raw key and stick state</text>
+
+          <rect class="box" x="265" y="24" width="200" height="66" rx="4"/>
+          <text class="ttl" x="277" y="46">20 Hz timer routine</text>
+          <text class="txt" x="277" y="64">turns state into events</text>
+
+          <rect class="box mem" x="510" y="24" width="200" height="66" rx="4"/>
+          <text class="ttl" x="522" y="46">Event queue</text>
+          <text class="txt" x="522" y="64">20 entries; the newest is</text>
+          <text class="txt" x="522" y="78">dropped when it is full</text>
+
+          <rect class="box" x="755" y="24" width="200" height="66" rx="4"/>
+          <text class="ttl" x="767" y="46">Drain, cycle step 5</text>
+          <text class="txt" x="767" y="64">clears var(19), var(9) first</text>
+
+          <path class="edge" d="M220 57 H265" marker-end="url(#a3)"/>
+          <text class="lbl" x="242" y="50" text-anchor="middle">poll</text>
+          <path class="edge" d="M465 57 H510" marker-end="url(#a3)"/>
+          <text class="lbl" x="487" y="50" text-anchor="middle">queue</text>
+          <path class="edge" d="M710 57 H755" marker-end="url(#a3)"/>
+          <text class="lbl" x="732" y="50" text-anchor="middle">drain</text>
+
+          <path class="edge" d="M855 90 V120 H365 V150" marker-end="url(#a3)"/>
+          <path class="edge" d="M855 90 V120 H610 V150" marker-end="url(#a3)"/>
+          <path class="edge" d="M855 90 V150" marker-end="url(#a3)"/>
+          <text class="lbl" x="373" y="142">type 1</text>
+          <text class="lbl" x="618" y="142">type 2</text>
+          <text class="lbl" x="863" y="142">type 3</text>
+
+          <rect class="box" x="265" y="150" width="200" height="108" rx="4"/>
+          <text class="ttl" x="277" y="172">Key</text>
+          <text class="txt" x="277" y="190">var(19) = key code</text>
+          <text class="txt" x="277" y="206">echoed to the input line</text>
+          <text class="txt" x="277" y="222">A set.key binding makes it</text>
+          <text class="txt" x="277" y="238">a controller event instead</text>
+
+          <rect class="box" x="510" y="150" width="200" height="108" rx="4"/>
+          <text class="ttl" x="522" y="172">Direction</text>
+          <text class="txt" x="522" y="190">var(6) = direction, or 0 if</text>
+          <text class="txt" x="522" y="206">EGO already moves that way</text>
+          <text class="txt" x="522" y="222">Under player control it also</text>
+          <text class="txt" x="522" y="238">stops EGO’s motion</text>
+
+          <rect class="box" x="755" y="150" width="200" height="108" rx="4"/>
+          <text class="ttl" x="767" y="172">Controller</text>
+          <text class="txt" x="767" y="190">sets its entry in the</text>
+          <text class="txt" x="767" y="206">controller table</text>
+          <text class="txt" x="767" y="222">for this cycle only;</text>
+          <text class="txt" x="767" y="238">controller(n) reads it</text>
+
+          <path class="edge" d="M365 258 V306" marker-end="url(#a3)"/>
+          <text class="lbl" x="373" y="288">Enter</text>
+
+          <rect class="box" x="265" y="306" width="200" height="62" rx="4"/>
+          <text class="ttl" x="277" y="328">Parse the line</text>
+          <text class="txt" x="277" y="346">split, look up, drop fillers</text>
+          <text class="txt" x="277" y="360">keeps at most 10 words</text>
+
+          <rect class="box hot" x="510" y="306" width="260" height="62" rx="4"/>
+          <text class="ttl" x="522" y="328">said(...) in LOGIC</text>
+          <text class="txt" x="522" y="346">compares patterns to the words;</text>
+          <text class="txt" x="522" y="360">a match sets flag(4)</text>
+          <path class="edge hot" d="M465 337 H510" marker-end="url(#a3h)"/>
+          <text class="lbl" x="487" y="330" text-anchor="middle">words</text>
+        </svg>
+      </div>
+      <figcaption>The cycle never reads the keyboard itself; the 20 Hz routine does, so input waits in the queue until step 5. Only Enter on a non-empty line reaches the parser. A match sets <code>flag(4)</code>, so a later <code>said</code> in the same cycle fails.</figcaption>
+    </figure>
+  </section>
+
+  <footer>Drawn from <code>BUILD_GUIDE.md</code>, which is generated from the audited wiki. I haven't re-checked these against the interpreter binary.</footer>
+</main>
+
+</body></html>
