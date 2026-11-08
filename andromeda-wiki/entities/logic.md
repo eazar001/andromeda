@@ -192,4 +192,4 @@ The interpreter never looks for an `else`. The distance inflated by 3 is purely 
 
 ## Implementation gap
 
-`resource/` contains no LOGIC decoder. Validating these claims in project code requires implementing — at minimum — a header parser, a control-flow walker that respects the `$FF/$FE/$FD/$FC` opcodes, the AGIDATA.OVL-equivalent argument dispatch table, and the text-section XOR. The Avis Durgan XOR primitive is already in `util/crypto.py` and reused by [resource/objects.py:Objects.extract_inventory_objects]; the same primitive will decrypt LOGIC text messages once a parser exists.
+`resource/` contains no LOGIC decoder. Validating these claims in project code requires implementing — at minimum — a header parser, a control-flow walker that respects the `$FF/$FE/$FD/$FC` opcodes, the AGIDATA.OVL-equivalent argument dispatch table, and the text-section XOR. The Avis Durgan XOR primitive is already in `util/crypto.py` and reused by [resource/objects.py:Object.extract_inventory_objects]; the same primitive will decrypt LOGIC text messages once a parser exists.

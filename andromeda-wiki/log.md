@@ -1380,3 +1380,9 @@ Coverage: the mechanical checks on every page. For contradictions, every fact ch
 `resource/directory.py:read_dir` now returns one entry per slot, with absent slots (volume nibble `F`) left in place, and `main.py` skips them. SQ1 data check: 124/23, 105/32, 254/16 and 66/16 slots/absent for `LOGDIR`, `PICDIR`, `VIEWDIR` and `SNDDIR`, matching the counts on the page; all 238 present VIEWs decode, 1,652 cels.
 
 **Changes applied.** `entities/dir-file` §"Resource nonexistence": the bug note now describes the fixed reader and keeps the old position counts as history. Outside the wiki, the known-bug entries in `CLAUDE.md` and `DEVELOPMENT_PLAN.md` and the "first thing to fix" line in `BUILD_GUIDE.md` were removed.
+
+## [2026-11-07] file | OBJECT pointer lookup
+
+`resource/objects.py` now resolves each OBJECT name through its entry's pointer (`parse_object_name`), and the `+ 5` name-section start is gone. SQ1 data check: 25 entries, all 25 names in order, item 17 the only entry pointing at the `?` placeholder (offset 75), every starting room 0.
+
+**Changes applied.** `entities/object` §"Reference implementations": the prototype note and the "Resolved: `+ 5` vs. `+ 3`" paragraph now describe the fix, keeping the old behavior as history. `sources/8-1-otherdata`, `sources/8-3-samplecode` and their `index.md` entries put the `+ 5` in the past tense. Mini-lint: no contradictions or upgrades in the neighborhood; fixed the class name `Objects` → `Object` in `entities/logic` §"Implementation gap". Outside the wiki, `BUILD_GUIDE.md`'s claim that two SQ1 items share the placeholder was corrected to item 17 only.
