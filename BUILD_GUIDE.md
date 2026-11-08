@@ -52,7 +52,7 @@ The whole file is XOR-encrypted with the repeating key `Avis Durgan`, starting a
 | 2 | Highest object-table slot number. The table has this many plus 1 slots; SQ1 has 18 |
 | 3 onward | 3-byte entries up to the name section: a name offset from byte 3, then the starting room |
 
-**Resolve each name through its entry's pointer.** The names aren't one per item in order: SQ1 starts with a `?` placeholder, and two items share it. Room 255 means carried. The prototype reads names in sequence and misnumbers items 18–24; pointer lookup fixes it.
+**Resolve each name through its entry's pointer.** The names aren't one per item in order: SQ1's name section starts with a `?` placeholder that only item 17 points to, ahead of item 0's `dummy`. Room 255 means carried.
 
 ### WORDS.TOK
 
