@@ -16,9 +16,12 @@ uv sync
 
 # Run the test harness: plays every VIEW cel in a window, then prints the directory listings
 uv run python -m main
+
+# Run the unit tests
+uv run pytest
 ```
 
-The game code has no tests or lint configuration yet. `tools/picture_emu/` and `tools/agi_emu/` have their own tests; see their READMEs.
+`tests/` holds golden-value tests for OBJECT and DIR decoding, parameterized per game: each `tests/games/<name>.toml` holds one game's expected values, and its tests run when `test_games/<name>/` exists (override the root with `GAME_ROOT`), otherwise they skip. Only SQ1 has golden values so far. To add a game, generate its TOML with `uv run python tests/make_golden.py test_games/<name> > tests/games/<name>.toml`. The generator reads the raw files without using `resource/` or `util/`, so the decoders are never checked against their own output. No test code changes are needed. There is no lint configuration yet. `tools/picture_emu/` and `tools/agi_emu/` have their own tests; see their READMEs.
 
 ## Directory Structure
 
@@ -28,6 +31,7 @@ The game code has no tests or lint configuration yet. `tools/picture_emu/` and `
 ├── gfx/                 # Screen buffers, palette, and cel compositing
 ├── resource/            # AGI resource decoding
 ├── util/                # Byte and XOR helpers
+├── tests/               # Per-game golden-value tests (tests/games/<name>.toml)
 ├── tools/ghidra/        # Headless Ghidra scripts for interpreter analysis
 ├── tools/picture_emu/   # Runs the interpreter's PICTURE routine under emulation, with tests
 ├── tools/agi_emu/       # Runs the whole interpreter under emulation: the runtime evidence for the wiki

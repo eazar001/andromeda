@@ -22,6 +22,14 @@ uv run python -m main
 
 This opens a window that plays through every VIEW cel, then prints the directory listings. It does not play the game.
 
+To run the unit tests:
+
+```bash
+uv run pytest
+```
+
+They check OBJECT and DIR decoding against expected values for each game in `tests/games/<game>.toml`, and skip any game whose data isn't in `test_games/<game>/`. Only Space Quest 1 is covered so far. To add a game, run `uv run python tests/make_golden.py test_games/<game> > tests/games/<game>.toml`.
+
 ## Project layout
 
 ```
