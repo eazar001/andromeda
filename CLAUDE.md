@@ -60,7 +60,7 @@ AGI resources follow a two-step access pattern:
 - **`resource/directory.py`** — parses `*DIR` index files into one `(vol, offset)` pair per slot, reading at most 256. A slot is absent when `vol == 0xF`, whatever the offset; it stays in the list so numbering holds.
 - **`resource/header.py`** — `ResourceHeader.parse(f, offset)` reads the 5-byte VOL header. The signature is parsed but not validated.
 - **`resource/volume.py`** — `VolumeReader(path)` holds an open VOL file and reads resources from it.
-- **`resource/objects.py`** — decrypts and parses the `OBJECT` file. `Object.extract_inventory_objects(file)` returns `Object(index, name, room)` instances, with `name` as bytes. **Known bug:** see Implementation Status.
+- **`resource/objects.py`** — decrypts and parses the `OBJECT` file. `Object.extract_inventory_objects(file)` returns `Object(index, name, room)` instances, one per 3-byte entry, with `name` as a `bytearray`. Each name is resolved through its entry's pointer by `parse_object_name`.
 - **`resource/view.py`** — `get_view_data(reader, view_offset)` takes a `VolumeReader` and returns `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(...)])])`. `Cel` holds width, height, mirror, non_mirror_idx, alpha, and `cel_data` as `(color, count)` pairs that include the `(0, 0)` row terminators.
 - **`gfx/screens.py`** — `VisualScreen` (default fill 15) and `PriorityScreen` (default fill 4) buffers.
 - **`gfx/palette.py`** — the 16-color EGA palette; `visual_screen_to_bytes()` converts a screen to horizontally doubled RGBA, and `visual_screen_buffer_to_texture()` makes an SDL texture from it.
@@ -89,10 +89,6 @@ The interpreter binaries (`AGI`, `*.OVL`) may be read and analyzed. See `androme
 
 ### Implementation Status
 
-Working on all of SQ1: DIR parsing by slot, VOL header and payload reading, VIEW decoding, and cel compositing (transparency and mirroring).
-
-Parsed, with a known bug to fix before M3:
-
-- **`OBJECT`** names are read sequentially rather than through entry pointers, so SQ1 returns 24 of 25 items and items 18–24 are misnumbered. The `+ 5` at `resource/objects.py:31` only works by skipping SQ1's `?\0` placeholder; do not change it to `+ 3` without moving to pointer lookup.
+Working on all of SQ1: DIR parsing by slot, VOL header and payload reading, VIEW decoding, cel compositing (transparency and mirroring), and OBJECT parsing (all 25 items, names resolved through entry pointers).
 
 Still needed: LOGIC (bytecode and interpreter), PICTURE (background), SOUND, WORDS.TOK, and AGI v3 support. `LOGDIR`, `PICDIR`, and `SNDDIR` are read only as indexes.

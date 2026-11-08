@@ -4,7 +4,7 @@ A re-implementation of Sierra On-Line's AGI (Adventure Game Interpreter) v2, the
 
 ## Status
 
-Pre-alpha. `VIEW` decoding and cel compositing work on all of Space Quest 1. `OBJECT` and the `*DIR` index files are parsed with known bugs (see the plan's section 1). `LOGDIR`, `PICDIR`, and `SNDDIR` are only read as indexes: the LOGIC, PICTURE, and SOUND resources themselves are not decoded, and nothing runs game logic yet. See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the detailed roadmap and design notes.
+Pre-alpha. `VIEW` decoding, cel compositing, `OBJECT` parsing, and the `*DIR` index files work on all of Space Quest 1. `LOGDIR`, `PICDIR`, and `SNDDIR` are only read as indexes: the LOGIC, PICTURE, and SOUND resources themselves are not decoded, and nothing runs game logic yet. See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for the detailed roadmap and design notes.
 
 ## Quick start
 
