@@ -5,6 +5,7 @@ from gfx.screens import VisualScreen
 from gfx.view_render import composite_cel
 from resource.objects import Object
 from resource.view import get_view_data
+from resource.pic import preprocess_pic_stream
 from resource.directory import read_dir
 from sdl2 import SDL_PollEvent, SDL_Event, SDL_RenderSetScale, SDL_Delay
 from sdl2.ext.renderer import Renderer
@@ -75,20 +76,27 @@ def main():
     # window.close()
     # SDL_Quit()
 
-    for o in Object.extract_inventory_objects('test_games/sq1/OBJECT'):
-        print(o.index, o.name, o.room)
-
-    for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
-        print(vol, view_offset)
-
-    for vol, logic_offset in read_dir('test_games/sq1/LOGDIR'):
-        print(vol, logic_offset)
+    # for o in Object.extract_inventory_objects('test_games/sq1/OBJECT'):
+    #     print(o.index, o.name, o.room)
+    #
+    # for vol, view_offset in read_dir('test_games/sq1/VIEWDIR'):
+    #     print(vol, view_offset)
+    #
+    # for vol, logic_offset in read_dir('test_games/sq1/LOGDIR'):
+    #     print(vol, logic_offset)
 
     for vol, pic_offset in read_dir('test_games/sq1/PICDIR'):
-        print(vol, pic_offset)
+        if vol == 0xF:
+            continue
 
-    for vol, sound_offset in read_dir('test_games/sq1/SNDDIR'):
-        print(vol, sound_offset)
+        reader = VolumeReader(f'test_games/sq1/VOL.{vol}')
+        header, bs = reader.read_resource(pic_offset)
+        preprocess_pic_stream(bs)
+
+        print(header, bs)
+
+    # for vol, sound_offset in read_dir('test_games/sq1/SNDDIR'):
+    #     print(vol, sound_offset)
 
 
 if __name__ == '__main__':
