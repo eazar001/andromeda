@@ -188,7 +188,7 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
 
 - [x] `gfx/screens.py`: `VisualScreen` (160×168, uint8 color index) and `PriorityScreen` (160×168, uint8 priority/control value). Clear visual to **15** (white) and priority to **4** (lowest valid band) on reset — this is critical for flood fill to work.
 - [x] `gfx/palette.py`: the 16-color EGA palette (already in `gfx/view_render.py`). Add a helper that converts a `VisualScreen` buffer to a 320×200 RGBA SDL texture with horizontal doubling. Implemented as `visual_screen_buffer_to_texture(screen, renderer)` in `gfx/palette.py`; renders at 320×168 (play area only, X-doubled from 160).
-- [ ] `resource/pic.py`: `decode_pic(payload: bytes) -> list[PicOp]`. PIC is a stream of opcodes `0xF0`–`0xFF` each followed by a variable parameter run that ends at the next byte `>= 0xF0`. Opcodes to implement:
+- [ ] `resource/pic.py`: `decode_pic(payload: bytes) -> list[PicOp]`. Each `PicOp` is a structured command with its arguments resolved (colors, pen settings, absolute points), never a raw byte; the renderer shouldn't need to look at bytes again. Keep one command type per opcode so a printed op list maps one-to-one onto the bytes. PIC is a stream of opcodes `0xF0`–`0xFF`. `0xF1` and `0xF3` take no arguments; `0xF0`, `0xF2` and `0xF9` take exactly one byte, unchecked, so even `0xFF` is taken as the argument; the rest read arguments until the next byte `>= 0xF0`. Opcodes to implement:
   - `0xF0` set picture color + enable visual, `0xF1` disable visual
   - `0xF2` set priority color + enable priority, `0xF3` disable priority
   - `0xF4` Y-corner (alternating vert/horiz), `0xF5` X-corner
@@ -197,20 +197,26 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
   - `0xF8` flood fill (list of seed points)
   - `0xF9` set pen (bit 5 texture 0=solid/1=splatter, bit 4 shape 0=circle/1=square, bits 0-2 size 0-7)
   - `0xFA` plot pen (solid: `(x,y)` per point; splatter: `(pattern, x, y)` per point)
-  - `0xFF` end of picture
+  - `0xFF` end of picture. Nothing checks the resource length, so stopping at the payload end is a safety net the original lacks.
+  - `0xFB`–`0xFE`, and any byte below `0xF0` outside a command, are skipped silently up to the next valid opcode. They are not errors.
+- [ ] Decoder rules (see `andromeda-wiki/entities/picture.md`):
+  - Coordinates: X bytes `0xA0..0xEF` clamp to 159; Y bytes `0xA8..0xEF` clamp to 167.
+  - A half-read group is dropped, so a lone `x` before the next opcode draws nothing.
+  - `0xF7` steps add in 8 bits and then clamp: past 159 or 167 becomes the edge, but stepping left of 0 or above 0 wraps to the far edge. Δx = −7 can't be encoded, since that byte would be `>= 0xF0`.
+  - Each picture starts with both layers disabled and pen `0` (solid circle, size 0), so `0xFA` reads pairs until an `0xF9` selects splatter. State does not carry over between pictures.
 - [ ] `gfx/pic_render.py`: executes a decoded PIC op list into a `VisualScreen` + `PriorityScreen` pair. Implement:
-  - Line drawing — use the integer rule in `andromeda-wiki/concepts/picture-rendering.md`, not textbook Bresenham, or you'll get one-pixel gaps that let floods leak.
-  - Flood fill: **iterative** (stack-based), not recursive. Fill rules:
-    - Visual enabled only: fill pixels currently == 15 (white).
-    - Priority enabled only: fill cells currently == 4.
-    - Both enabled: **visual drives** — flood the visual on the "== 15" rule, and for every pixel you paint visually, also write the priority latch. Do **not** apply the priority-only rule. One narrow open conflict on priority writes is recorded in `andromeda-wiki/entities/picture.md`.
+  - Line drawing — use the integer rule in `andromeda-wiki/concepts/picture-rendering.md`, not textbook Bresenham. A different method can put pixels elsewhere and move fill boundaries, and the rule's 8-bit error terms make very long diagonals stop short; the next segment starts where the line actually ended.
+  - Flood fill: **iterative** (stack-based), not recursive. The result is the 4-connected region of qualifying pixels around the seed, and the seed must itself qualify. Fill rules:
+    - Visual enabled only: no fill if the visual color is 15; otherwise fill pixels currently == 15 (white).
+    - Priority enabled only: no fill if the priority color is 4; otherwise fill cells currently == 4.
+    - Both enabled: **visual drives** — no fill if the visual color is 15; otherwise flood the visual on the "== 15" rule and write priority at every filled pixel, whatever it was. Do **not** apply the priority-only rule.
     - Both disabled: consume coordinates, no-op.
-  - Splatter pen: needs the 256-bit pattern and 128-entry offset table in `andromeda-wiki/entities/picture.md`. SQ1 has no `0xF9`, so this isn't needed for the first playable.
-  - Circle pen at sizes 0–3 uses hand-tuned bitmaps from the spec — don't rasterize from `math.hypot`.
+  - Splatter pen: 2.917 generates the pattern with an 8-bit shift register (`andromeda-wiki/concepts/picture-rendering.md`). The spec's tables are an equivalent precomputed form: a 32-byte, 255-bit pattern that wraps from bit 254 to bit 0, and a 120-entry offset table (`andromeda-wiki/entities/picture.md`). SQ1 has no `0xF9`, so this isn't needed for the first playable.
+  - Pens: all eight circle sizes (0–7) come from the mask table in `andromeda-wiki/concepts/picture-rendering.md` — don't rasterize from `math.hypot`. Every pen is `size + 1` columns wide and `2·size + 1` rows tall in the 160-wide frame, not square.
 - [ ] Main-file smoke test: load `PICDIR` → pick pic 1 → decode → render both screens → blit visual to an SDL window.
 
 **Gotchas called out by research:**
-- Parameter runs end when the next byte is `>= 0xF0`, not when a count is exhausted. Rewind one byte and re-dispatch.
+- Variable parameter runs end when the next byte is `>= 0xF0`, not when a count is exhausted. Rewind one byte and re-dispatch. The one-byte arguments of `0xF0`, `0xF2` and `0xF9` are exempt.
 - Keep PIC rendering in logical 160×168 space; X-doubling happens only at blit time.
 - Control cells (priority values 0–3) overlay the priority screen. When the sprite system later needs "true" priority under a control cell, search downward (increasing y) in the priority buffer until a value ≥ 4 is found.
 
@@ -449,9 +455,10 @@ Not on the critical path to a playable SQ1.
 | `0xF8` | flood fill | `(x,y)` seeds |
 | `0xF9` | set pen descriptor | 1 byte |
 | `0xFA` | plot pen | solid: `(x,y)`; splatter: `(pat,x,y)` |
+| `0xFB`–`0xFE` | unused; skipped to the next valid opcode | — |
 | `0xFF` | end of picture | — |
 
-Parameter runs end when the next byte is `>= 0xF0`.
+Variable parameter runs end when the next byte is `>= 0xF0`. The one-byte arguments of `0xF0`, `0xF2` and `0xF9` are taken unchecked.
 
 ### Priority band quick reference
 
