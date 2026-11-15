@@ -66,7 +66,45 @@ class EndOfPicture(PicOp):
 
 
 def decode_pic(payload: bytes) -> list[PicOp]:
-    pass
+    return [decode_bytes(op) for op in preprocess_pic_stream(payload)]
+
+
+def decode_bytes(bs: bytes) -> PicOp:
+    op = bs[0]
+
+    match op:
+        case 0xF0:
+            return SetVisualColor(color=bs[1])
+        case 0xF1:
+            return DisableVisualDraw()
+        case 0xF2:
+            return SetPriorityColor(color=bs[1])
+        case 0xF3:
+            return DisablePriorityDraw()
+        case 0xF4:
+            args = bs[1:]
+            return YCorner(coord=list(args))
+        case 0xF5:
+            args = bs[1:]
+            return XCorner(coord=list(args))
+        case 0xF6 | 0xF8:
+            args = bs[1:]
+            pairs = zip(args[::2], args[1::2])
+            return AbsoluteLine(coord=list(pairs)) if op == 0xF6 else FloodFill(coord=list(pairs))
+        case 0xF7:
+            args = bs[1:]
+            return RelativeLine(coord=list(args))
+        case 0xF9:
+            return SetPenStyle(style=bs[1])
+        case 0xFA:
+            args = bs[1:]
+            return PlotWithPen(coord=list(args))
+        case 0xFB | 0xFC | 0xFD | 0xFE:
+            return NoOp()
+        case 0xFF:
+            return EndOfPicture()
+        case _:
+            return NoOp()
 
 
 def preprocess_pic_stream(payload: bytes) -> list[bytes]:
