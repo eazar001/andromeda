@@ -89,7 +89,8 @@ def decode_bytes(bs: bytes) -> PicOp:
             return XCorner(coord=list(args))
         case 0xF6 | 0xF8:
             args = bs[1:]
-            pairs = zip(args[::2], args[1::2])
+            x_clamp, y_clamp = 0x9F, 0xA7
+            pairs = list(map(lambda p: (min(x_clamp, p[0]), min(y_clamp, p[1])), zip(args[::2], args[1::2])))
             return AbsoluteLine(coord=list(pairs)) if op == 0xF6 else FloodFill(coord=list(pairs))
         case 0xF7:
             args = bs[1:]
