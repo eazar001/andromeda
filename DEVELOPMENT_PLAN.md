@@ -199,12 +199,12 @@ Migrate incrementally — don't do a big-bang rename. Each milestone below menti
   - `0xFA` plot pen (solid: `(x,y)` per point; splatter: `(pattern, x, y)` per point)
   - `0xFF` end of picture. Nothing checks the resource length, so stopping at the payload end is a safety net the original lacks.
   - `0xFB`–`0xFE`, and any byte below `0xF0` outside a command, are skipped silently up to the next valid opcode. They are not errors.
-  - **Progress (2026-11-14):** `preprocess_pic_stream` splits the payload into one chunk per command, and `decode_pic` maps `decode_bytes` over the chunks, giving one op per command. Every opcode has a `PicOp` class. `0xF6` and `0xF8` decode to `(x, y)` pairs; `0xF4`, `0xF5`, `0xF7` and `0xFA` keep flat argument lists; `0xFB`–`0xFE` and stray bytes decode to `NoOp`. All 73 SQ1 pictures decode, and the tests are in `tests/test_pic.py`. Still to do before this box is checked:
+  - **Progress (2026-11-15):** `preprocess_pic_stream` splits the payload into one chunk per command, and `decode_pic` maps `decode_bytes` over the chunks, giving one op per command. Every opcode has a `PicOp` class. `0xF6` and `0xF8` decode to clamped `(x, y)` pairs; `0xF4`, `0xF5`, `0xF7` and `0xFA` keep flat argument lists; `0xFB`–`0xFE` and stray bytes decode to `NoOp`. All 73 SQ1 pictures decode, and the tests are in `tests/test_pic.py`. Still to do before this box is checked:
     - Arguments aren't resolved yet. `0xF4`/`0xF5` are not yet absolute points, `0xF7` is still raw displacement bytes, and `0xF9` is a raw style byte.
     - `0xFA` still needs grouping by pen style, which means `decode_pic` has to track the last `0xF9`.
     - A truncated `0xF0`, `0xF2` or `0xF9` at the end of the payload raises `IndexError`. Decide what it should do.
 - [ ] Decoder rules (see `andromeda-wiki/entities/picture.md`):
-  - Coordinates: X bytes `0xA0..0xEF` clamp to 159; Y bytes `0xA8..0xEF` clamp to 167.
+  - Coordinates: X bytes `0xA0..0xEF` clamp to 159; Y bytes `0xA8..0xEF` clamp to 167. *(Done for `0xF6` and `0xF8`, via `clamp_x` and `clamp_y`.)*
   - A half-read group is dropped, so a lone `x` before the next opcode draws nothing. *(Done for `0xF6` and `0xF8`.)*
   - `0xF7` steps add in 8 bits and then clamp: past 159 or 167 becomes the edge, but stepping left of 0 or above 0 wraps to the far edge. Δx = −7 can't be encoded, since that byte would be `>= 0xF0`.
   - Each picture starts with both layers disabled and pen `0` (solid circle, size 0), so `0xFA` reads pairs until an `0xF9` selects splatter. State does not carry over between pictures.

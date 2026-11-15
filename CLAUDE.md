@@ -21,7 +21,7 @@ uv run python -m main
 uv run pytest
 ```
 
-`tests/` holds golden-value tests for OBJECT and DIR decoding, parameterized per game: each `tests/games/<name>.toml` holds one game's expected values, and its tests run when `test_games/<name>/` exists (override the root with `GAME_ROOT`), otherwise they skip. Only SQ1 has golden values so far. To add a game, generate its TOML with `uv run python tests/make_golden.py test_games/<name> > tests/games/<name>.toml`. The generator reads the raw files without using `resource/` or `util/`, so the decoders are never checked against their own output. No test code changes are needed. There is no lint configuration yet. `tools/picture_emu/` and `tools/agi_emu/` have their own tests; see their READMEs.
+`tests/` holds golden-value tests for OBJECT and DIR decoding, parameterized per game: each `tests/games/<name>.toml` holds one game's expected values, and its tests run when `test_games/<name>/` exists (override the root with `GAME_ROOT`), otherwise they skip. Only SQ1 has golden values so far. To add a game, generate its TOML with `uv run python tests/make_golden.py test_games/<name> > tests/games/<name>.toml`. The generator reads the raw files without using `resource/` or `util/`, so the decoders are never checked against their own output. No test code changes are needed. `tests/test_pic.py` has spec-derived unit tests for PICTURE decoding, plus checks that run over every picture in each game. There is no lint configuration yet. `tools/picture_emu/` and `tools/agi_emu/` have their own tests; see their READMEs.
 
 ## Directory Structure
 
@@ -66,6 +66,7 @@ AGI resources follow a two-step access pattern:
 - **`resource/volume.py`** — `VolumeReader(path)` holds an open VOL file and reads resources from it.
 - **`resource/objects.py`** — decrypts and parses the `OBJECT` file. `Object.extract_inventory_objects(file)` returns `Object(index, name, room)` instances, one per 3-byte entry, with `name` as a `bytearray`. Each name is resolved through its entry's pointer by `parse_object_name`.
 - **`resource/view.py`** — `get_view_data(reader, view_offset)` takes a `VolumeReader` and returns `View(desc_offset, loops=[Loop(loop_idx, cels=[Cel(...)])])`. `Cel` holds width, height, mirror, non_mirror_idx, alpha, and `cel_data` as `(color, count)` pairs that include the `(0, 0)` row terminators.
+- **`resource/pic.py`** — `preprocess_pic_stream(payload)` splits a PICTURE payload into one chunk per command, ending at `0xFF`, and `decode_pic(payload)` decodes each chunk into a `PicOp` with `decode_bytes`. `0xF6` and `0xF8` give clamped `(x, y)` pairs; `0xF4`, `0xF5`, `0xF7`, `0xF9` and `0xFA` still hold raw argument bytes. `clamp_x` and `clamp_y` clamp coordinates to 159 and 167.
 - **`gfx/screens.py`** — `VisualScreen` (default fill 15) and `PriorityScreen` (default fill 4) buffers.
 - **`gfx/palette.py`** — the 16-color EGA palette; `visual_screen_to_bytes()` converts a screen to horizontally doubled RGBA, and `visual_screen_buffer_to_texture()` makes an SDL texture from it.
 - **`gfx/view_render.py`** — `composite_cel(screen, loop_idx, cel)` writes a cel into a screen buffer, handling transparency and mirroring. It always draws at the top-left corner; x/y placement and priority come in M4.
@@ -93,6 +94,6 @@ The interpreter binaries (`AGI`, `*.OVL`) may be read and analyzed. See `androme
 
 ### Implementation Status
 
-Working on all of SQ1: DIR parsing by slot, VOL header and payload reading, VIEW decoding, cel compositing (transparency and mirroring), and OBJECT parsing (all 25 items, names resolved through entry pointers).
+Working on all of SQ1: DIR parsing by slot, VOL header and payload reading, VIEW decoding, cel compositing (transparency and mirroring), and OBJECT parsing (all 25 items, names resolved through entry pointers). All 73 PICTUREs decode into ops, but not every op's arguments are resolved yet, and nothing draws them.
 
-Still needed: LOGIC (bytecode and interpreter), PICTURE (background), SOUND, WORDS.TOK, and AGI v3 support. `LOGDIR`, `PICDIR`, and `SNDDIR` are read only as indexes.
+Still needed: LOGIC (bytecode and interpreter), PICTURE (finishing the decoder, then rendering), SOUND, WORDS.TOK, and AGI v3 support. `LOGDIR`, `PICDIR`, and `SNDDIR` are read only as indexes.
