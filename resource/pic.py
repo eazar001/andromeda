@@ -89,9 +89,8 @@ def decode_bytes(bs: bytes) -> PicOp:
             return XCorner(coord=list(args))
         case 0xF6 | 0xF8:
             args = bs[1:]
-            x_clamp, y_clamp = 0x9F, 0xA7
-            pairs = list(map(lambda p: (min(x_clamp, p[0]), min(y_clamp, p[1])), zip(args[::2], args[1::2])))
-            return AbsoluteLine(coord=list(pairs)) if op == 0xF6 else FloodFill(coord=list(pairs))
+            pairs = [(clamp_x(x), clamp_y(y)) for x, y in zip(args[::2], args[1::2])]
+            return AbsoluteLine(coord=pairs) if op == 0xF6 else FloodFill(coord=pairs)
         case 0xF7:
             args = bs[1:]
             return RelativeLine(coord=list(args))
@@ -152,3 +151,16 @@ def parse(bs: bytes, op_type: OpType) -> tuple[bytes, bytes]:
         command.append(b)
 
     return bytes(command), bs[len(command):]
+
+
+# Last column and row of the 160x168 picture. Coordinate bytes past them (up to 0xEF) clamp
+# to the edge [andromeda-wiki/entities/picture.md, "Coordinate encoding"].
+MAX_X, MAX_Y = 159, 167
+
+
+def clamp_x(b: int) -> int:
+    return min(b, MAX_X)
+
+
+def clamp_y(b: int) -> int:
+    return min(b, MAX_Y)

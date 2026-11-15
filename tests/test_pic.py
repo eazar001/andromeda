@@ -55,6 +55,12 @@ def test_preprocess_pic_stream(payload, expected):
     pytest.param("f7 10 20 33", RelativeLine(coord=[0x10, 0x20, 0x33]), id="f7-relative-line"),
     pytest.param("f8 01 02 03 04", FloodFill(coord=[(1, 2), (3, 4)]), id="f8-pairs"),
     pytest.param("f8 01", FloodFill(coord=[]), id="f8-drops-partial-pair"),
+    # Coordinate clamps [picture.md, "Coordinate encoding"]: X 0xA0..0xEF -> 159, Y 0xA8..0xEF -> 167.
+    pytest.param("f6 9f a7", AbsoluteLine(coord=[(159, 167)]), id="clamp-last-valid-kept"),
+    pytest.param("f6 a0 a8", AbsoluteLine(coord=[(159, 167)]), id="clamp-first-past-edge"),
+    pytest.param("f6 ef ef", AbsoluteLine(coord=[(159, 167)]), id="clamp-largest-byte"),
+    pytest.param("f8 c8 10", FloodFill(coord=[(159, 0x10)]), id="clamp-x-only"),
+    pytest.param("f8 10 c8", FloodFill(coord=[(0x10, 167)]), id="clamp-y-only"),
     pytest.param("f9 10", SetPenStyle(style=0x10), id="f9-pen-style"),
     pytest.param("fa 01 02", PlotWithPen(coord=[1, 2]), id="fa-plot-with-pen"),
     pytest.param("fb", NoOp(), id="fb-skipped"),
