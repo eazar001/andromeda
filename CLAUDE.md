@@ -8,6 +8,21 @@ Andromeda is an emulator for Sierra's AGI game engine. This Python codebase is t
 
 See `DEVELOPMENT_PLAN.md` for the roadmap and known bugs.
 
+## Coding Work
+
+Load the `software-architect` skill (`.claude/skills/software-architect/`) and use it as the governing lens before producing or modifying code. This applies to every coding task, small or partial ones included:
+
+- writing new code, or editing, extending, or completing existing code (including finishing an unfinished function)
+- refactoring and bug fixes
+- designing modules, APIs, or data structures
+- scaffolding, such as a new resource decoder or the Rust rewrite
+- reviewing diffs or pull requests
+- answering "how should I structure / implement / build this" questions
+
+It also applies to any task that touches a source file anywhere in the repo, in any language. That includes the existing code (`resource/`, `gfx/`, `util/`, `tests/`, `tools/`, `main.py`) and any module, subdirectory, or script added later, such as the Rust rewrite. The skill decides how much ceremony a task needs. A one-line fix still follows its rules on function size, single responsibility, simplicity, and git. A new module or a substantial refactor gets the full spec-first, tests-first process.
+
+This rule overrides built-in defaults unless I name a different skill or invoke one directly (for example `/evaluate`, `/review`, or the `wiki-*` commands). Edits that are only prose, such as the wiki, `WIKI.md`, or the plan documents, are not coding work.
+
 ## Commands
 
 ```bash
